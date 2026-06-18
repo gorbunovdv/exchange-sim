@@ -1,6 +1,6 @@
+#include <gtest/gtest.h>
 #include <spdlog/spdlog.h>
 
-int main() {
-    spdlog::info("Hello World!");
-    return 0;
+TEST(TestLogWrite, TestWrite) {
+    spdlog::info("Hello, world!");
 }
