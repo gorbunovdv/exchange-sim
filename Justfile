@@ -8,8 +8,10 @@ default:
     @just --list
 
 bootstrap:
-    apt update && apt upgrade -y
-    apt install clang cmake just -y
+    apt update
+    apt install clang cmake just python3-pip pipx -y
+    pipx ensurepath
+    pipx install conan
 
 # todo(dgorbunov): Create prerequisites check script & move to separate area
 apply-core-isol-and-perf:
@@ -35,5 +37,3 @@ test-from-scratch:
     cmake -S . -B "{{ DEFAULT_BUILD_DIRECTORY }}" -DCMAKE_TOOLCHAIN_FILE="{{ DEFAULT_BUILD_DIRECTORY }}/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Debug
     cmake --build "{{ DEFAULT_BUILD_DIRECTORY }}"
     ctest --test-dir "{{ DEFAULT_BUILD_DIRECTORY }}" --output-on-failure --verbose
-
-
