@@ -28,4 +28,7 @@ jobs:
         run: conan profile detect
 
       - name: Run tests from scratch
-        run: just test-from-scratch
+        run: |
+          just test-from-scratch address
+          just test-from-scratch thread
+          just test-from-scratch none Release

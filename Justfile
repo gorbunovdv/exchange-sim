@@ -9,7 +9,7 @@ default:
 
 bootstrap:
     apt update
-    apt install clang cmake just python3-pip pipx -y
+    apt install gcc clang cmake just python3-pip pipx -y
     pipx ensurepath
     pipx install conan
 
@@ -31,9 +31,9 @@ apply-core-isol-and-perf:
     sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
     sudo systemctl set-property --runtime user.slice   AllowedCPUs=0-1,8-23
 
-test-from-scratch:
+test-from-scratch sanitizer="none" build_type="Debug":
     rm -Rf build/
-    conan install . --build=missing --output-folder "{{ DEFAULT_BUILD_DIRECTORY }}" -s build_type=Debug
-    cmake -S . -B "{{ DEFAULT_BUILD_DIRECTORY }}" -DSANITIZER=address -DCMAKE_TOOLCHAIN_FILE="{{ DEFAULT_BUILD_DIRECTORY }}/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Debug
+    conan install . --build=missing --output-folder "{{ DEFAULT_BUILD_DIRECTORY }}" -s build_type="{{build_type}}"
+    cmake -S . -B "{{ DEFAULT_BUILD_DIRECTORY }}" -DSANITIZER=address -DCMAKE_TOOLCHAIN_FILE="{{ DEFAULT_BUILD_DIRECTORY }}/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE="{{ build_type }}"
     cmake --build "{{ DEFAULT_BUILD_DIRECTORY }}"
     ctest --test-dir "{{ DEFAULT_BUILD_DIRECTORY }}" --output-on-failure --verbose
