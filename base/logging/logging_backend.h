@@ -71,6 +71,6 @@ inline quill::Logger* get_logger() {
 #define INFO(...) LOG_INFO(get_logger(), __VA_ARGS__)
 #define DEBUG(...) LOG_DEBUG(get_logger(), __VA_ARGS__)
 #define ERROR(...) LOG_ERROR(get_logger(), __VA_ARGS__)
-#define CRITICAL(...) (({{LOG_CRITICAL(get_logger(), __VA_ARGS__); std::abort(); }}))
+#define CRITICAL(...) do {LOG_CRITICAL(get_logger(), __VA_ARGS__); std::abort(); } while (false)
 
 }
