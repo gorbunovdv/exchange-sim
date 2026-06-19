@@ -1,5 +1,7 @@
 [requires]
 gtest/1.17.0
+magic_enum/0.9.7
+quill/11.1.0
 
 [generators]
 CMakeConfigDeps
