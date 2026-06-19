@@ -34,7 +34,7 @@ TEST(LoggableClass, TestLoggableClass) {
         expected_logs += std::format("{{Structure}} {}\n", i);
     }
 
-    LoggingBackend::instance().get_logger()->flush_log();
+    structure.get_logger()->flush_log();
 
     std::string logs = read_file(log_path);
     std::filesystem::remove(log_path);
