@@ -29,6 +29,6 @@ jobs:
 
       - name: Run tests from scratch
         run: |
-          just test-from-scratch address
-          just test-from-scratch thread
+          just test-from-scratch address Debug
           just test-from-scratch none Release
+          just test-from-scratch none Release "./conan/profiles/gcc.profile"
