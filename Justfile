@@ -9,7 +9,7 @@ default:
 
 bootstrap:
     apt update
-    apt install gcc clang cmake just python3-pip pipx -y
+    apt install gcc-15 g++-15 clang-21 cmake just python3-pip pipx -y
     pipx ensurepath
     pipx install conan
 

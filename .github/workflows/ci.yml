@@ -24,9 +24,6 @@ jobs:
           DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC just bootstrap
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Detect conan profile
-        run: conan profile detect
-
       - name: Run tests from scratch
         run: |
           just test-from-scratch address Debug "./conan/profiles/clang.profile"
