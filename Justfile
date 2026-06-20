@@ -31,12 +31,15 @@ apply-core-isol-and-perf:
     sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
     sudo systemctl set-property --runtime user.slice   AllowedCPUs=0-1,8-23
 
+clean:
+    rm -Rf "{{ DEFAULT_BUILD_DIRECTORY }}"
+
 build sanitizer="none" build_type="Release" profile="./conan/profiles/clang.profile":
     conan install . -pr:a="{{ profile }}" --build=missing --output-folder "{{ DEFAULT_BUILD_DIRECTORY }}" -s build_type="{{build_type}}"
     cmake -S . -B "{{ DEFAULT_BUILD_DIRECTORY }}" -DSANITIZER={{ sanitizer }} -DCMAKE_TOOLCHAIN_FILE="{{ DEFAULT_BUILD_DIRECTORY }}/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE="{{ build_type }}"
     cmake --build "{{ DEFAULT_BUILD_DIRECTORY }}"
 
 test-from-scratch sanitizer="address" build_type="Debug" profile="./conan/profiles/clang.profile":
-    rm -Rf build/
+    @just clean
     @just build "{{ sanitizer }}" "{{ build_type }}" "{{profile}}"
     ctest --test-dir "{{ DEFAULT_BUILD_DIRECTORY }}" --output-on-failure --verbose
