@@ -1,4 +1,4 @@
-#include "../loggable_class.h"
+#include "base/logging/loggable_class.h"
 #include "helper.h"
 #include <gtest/gtest.h>
 

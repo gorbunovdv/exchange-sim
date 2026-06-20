@@ -33,21 +33,11 @@ public:
     return get_or_create();
   }
 
-  quill::LogLevel get_log_level() const {
-    return config_.log_level;
-  }
-
-  quill::PatternFormatterOptions get_format() const {
-    return config_.format;
-  }
-
   quill::Logger* get_logger() {
     return root_logger_;
   }
 
-  std::shared_ptr<quill::Sink> get_sink() {
-    return sink_;
-  }
+  quill::Logger* create_logger(const std::string& name);
 
   static const LoggingConfig constDefaultConfig;
 

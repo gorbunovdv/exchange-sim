@@ -34,4 +34,6 @@ elseif(SANITIZER STREQUAL "undefined")
     add_link_options(-fsanitize=undefined)
 endif()
 
+include_directories(${PROJECT_SOURCE_DIR})
+
 add_subdirectory(base)

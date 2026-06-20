@@ -1,8 +1,7 @@
-#include <numeric>
-
-#include "../logging_backend.h"
 #include "helper.h"
+#include "base/logging/logging_backend.h"
 #include <gtest/gtest.h>
+#include <numeric>
 
 TEST(LoggingBackendTests, LoggingBackend) {
   using namespace exchange_sim;

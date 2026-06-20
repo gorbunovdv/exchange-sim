@@ -1,8 +1,17 @@
 #include "logging_backend.h"
-
 #include <iostream>
 
 namespace exchange_sim {
+
+quill::Logger* LoggingBackend::create_logger(const std::string& name) {
+  quill::Logger* logger = quill::Frontend::create_or_get_logger(
+    name,
+    sink_,
+    config_.format
+  );
+  logger->set_log_level(config_.log_level);
+  return logger;
+}
 
 const LoggingBackend::LoggingConfig LoggingBackend::constDefaultConfig = {
   .type = LoggingConfig::Type::CONSOLE,
