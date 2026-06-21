@@ -32,7 +32,9 @@ elseif(SANITIZER STREQUAL "thread")
 elseif(SANITIZER STREQUAL "undefined")
     add_compile_options(-fsanitize=undefined)
     add_link_options(-fsanitize=undefined)
-endif()
+elseif(NOT SANITIZER STREQUAL "none")
+    message(FATAL_ERROR "Unknown sanitizer type: ${SANITIZER}")
+endif ()
 
 include_directories(${PROJECT_SOURCE_DIR})
 
