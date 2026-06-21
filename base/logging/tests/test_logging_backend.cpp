@@ -6,13 +6,11 @@
 TEST(LoggingBackendTests, LoggingBackend) {
   using namespace exchange_sim;
 
-  auto temp_directory = std::filesystem::temp_directory_path();
-
-  std::filesystem::path log_path = temp_directory / "log.txt";
+  TemporaryFile file("logs");
 
   LoggingBackend::init(LoggingBackend::LoggingConfig{
       .type = LoggingBackend::LoggingConfig::Type::FILE,
-      .path = log_path,
+      .path = file.path(),
       .log_level = quill::LogLevel::Info,
       .format = quill::PatternFormatterOptions("{{%(logger)}} %(message)")
   });
@@ -26,8 +24,7 @@ TEST(LoggingBackendTests, LoggingBackend) {
 
   LoggingBackend::instance().get_logger()->flush_log();
 
-  std::string logs = read_file(log_path);
-  std::filesystem::remove(log_path);
+  std::string logs = read_file(file.path());
 
   EXPECT_EQ(logs, expected_logs);
 }
