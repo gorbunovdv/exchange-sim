@@ -1,8 +1,10 @@
+#include "base/temporary.h"
 #include "base/logging/loggable_class.h"
 #include "helper.h"
+
 #include <gtest/gtest.h>
 
-TEST(LoggableClass, TestLoggableClass) {
+TEST(LoggableClass, BasicLoggableClassTest) {
   using namespace exchange_sim;
 
   struct Structure : LoggableClass {

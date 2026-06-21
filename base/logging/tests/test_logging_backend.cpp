@@ -1,9 +1,10 @@
 #include "helper.h"
 #include "base/logging/logging_backend.h"
+#include "base/temporary.h"
 #include <gtest/gtest.h>
 #include <numeric>
 
-TEST(LoggingBackendTests, LoggingBackend) {
+TEST(LoggingBackendTests, BasicLoggingBackendTest) {
   using namespace exchange_sim;
 
   TemporaryFile file("logs");
