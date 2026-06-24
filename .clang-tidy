@@ -1,0 +1,24 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  concurrency-*,
+  performance-*,
+  portability-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-equals-default,
+  modernize-use-equals-delete,
+  readability-container-size-empty,
+  readability-duplicate-include,
+  readability-misleading-indentation,
+  readability-redundant-*
+
+WarningsAsErrors: '*'
+
+HeaderFilterRegex: '.*'
+ExcludeHeaderFilterRegex: '(^|/)(build|\.conan2|cmake-build-[^/]+)(/|$)'
+SystemHeaders: false
+
+FormatStyle: file

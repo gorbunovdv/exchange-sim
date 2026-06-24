@@ -1,15 +1,16 @@
-set shell := ["bash", "-eu", "-c"]
+set shell := ["bash", "-euo", "pipefail", "-c"]
 set export
 
 ROOT_DIR := justfile_directory()
-DEFAULT_BUILD_DIRECTORY := ROOT_DIR + "/build"
+CLANG_FORMAT := "clang-format-21"
+CLANG_TIDY := "clang-tidy-21"
 
 default:
     @just --list
 
 bootstrap:
     apt update
-    apt install gcc-15 g++-15 clang-21 cmake just python3-pip pipx -y
+    apt install git gcc-15 g++-15 clang-21 "{{ CLANG_FORMAT }}" "{{ CLANG_TIDY }}" cmake just python3-pip pipx -y
     pipx ensurepath
     pipx install conan
 
@@ -31,15 +32,32 @@ apply-core-isol-and-perf:
     sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
     sudo systemctl set-property --runtime user.slice   AllowedCPUs=0-1,8-23
 
-clean:
-    rm -Rf "{{ DEFAULT_BUILD_DIRECTORY }}"
+clean preset:
+    rm -Rf "cmake-build-{{ preset }}"
 
-build sanitizer="none" build_type="Release" profile="./conan/profiles/clang.profile":
-    conan install . -pr:a="{{ profile }}" --build=missing --output-folder "{{ DEFAULT_BUILD_DIRECTORY }}" -s build_type="{{build_type}}"
-    cmake -S . -B "{{ DEFAULT_BUILD_DIRECTORY }}" -DSANITIZER={{ sanitizer }} -DCMAKE_TOOLCHAIN_FILE="{{ DEFAULT_BUILD_DIRECTORY }}/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE="{{ build_type }}"
-    cmake --build "{{ DEFAULT_BUILD_DIRECTORY }}"
+configure preset='clang-release':
+    cmake --preset "{{ preset }}"
 
-test-from-scratch sanitizer="address" build_type="Debug" profile="./conan/profiles/clang.profile":
-    @just clean
-    @just build "{{ sanitizer }}" "{{ build_type }}" "{{profile}}"
-    ctest --test-dir "{{ DEFAULT_BUILD_DIRECTORY }}" --output-on-failure --verbose
+build preset='clang-release':
+    @just configure "{{ preset }}"
+    cmake --build --preset "{{ preset }}"
+
+test-from-scratch preset='clang-debug-asan':
+    @just clean "{{ preset }}"
+    @just build "{{ preset }}"
+    ctest --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
+
+format:
+    git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r {{ CLANG_FORMAT }} --style=file -i
+
+format-check:
+    git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r {{ CLANG_FORMAT }} --style=file --dry-run --Werror
+
+lint preset:
+    test -f "cmake-build-{{ preset }}/compile_commands.json"
+    git ls-files -z -- '*.cpp' | xargs -0 -r {{ CLANG_TIDY }} -p "./cmake-build-{{ preset }}/" --quiet
+
+lint-from-scratch preset='clang-debug':
+    @just clean {{ preset }}
+    @just build {{ preset }}
+    @just lint {{ preset }}
