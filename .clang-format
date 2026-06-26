@@ -16,6 +16,7 @@ BreakBeforeTernaryOperators: false
 BreakConstructorInitializers: AfterColon
 ColumnLimit: 120
 DeriveLineEnding: false
+FixNamespaceComments: true
 IncludeBlocks: Preserve
 IndentCaseBlocks: false
 IndentExternBlock: AfterExternBlock
@@ -23,6 +24,7 @@ InsertTrailingCommas: Wrapped
 MaxEmptyLinesToKeep: 2
 PenaltyBreakFirstLessLess: 0
 PenaltyExcessCharacter: 4000
+ShortNamespaceLines: 0
 SortIncludes: Never
 SpaceAfterCStyleCast: true
 SpaceAfterTemplateKeyword: false

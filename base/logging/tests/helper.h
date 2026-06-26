@@ -1,6 +1,5 @@
 #pragma once
 
-#include <base/noncopyable.h>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
