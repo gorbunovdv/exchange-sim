@@ -13,7 +13,7 @@ jobs:
       - name: Update apt
         run: apt update
 
-      - name: Install just
+      - name: Install just and git
         run: apt install just git -y
 
       - name: Checkout code
