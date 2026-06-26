@@ -19,6 +19,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug checkout
+        run: |
+          pwd
+          ls -la
+          which git || true
+          git rev-parse --show-toplevel || true
+          ls -la .git || true
+
       - name: Bootstrap requirements
         run: |
           DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC just bootstrap
