@@ -2,4 +2,3 @@
 cmake-build-*
 CMakeUserPresets.json
 build/
-.clang-format

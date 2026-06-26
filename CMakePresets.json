@@ -1,0 +1,145 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/cmake-build-${presetName}",
+      "cacheVariables": {
+        "CMAKE_PROJECT_TOP_LEVEL_INCLUDES": "${sourceDir}/conan/conan_provider.cmake",
+        "CONAN_INSTALL_ARGS": "--build=missing;-c;tools.cmake.cmaketoolchain:user_presets="
+      }
+    },
+    {
+      "name": "clang",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-21",
+        "CMAKE_CXX_COMPILER": "clang++-21",
+        "CONAN_HOST_PROFILE": "${sourceDir}/conan/profiles/clang.profile",
+        "CONAN_BUILD_PROFILE": "${sourceDir}/conan/profiles/clang.profile"
+      }
+    },
+    {
+      "name": "gcc",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc-15",
+        "CMAKE_CXX_COMPILER": "g++-15",
+        "CONAN_HOST_PROFILE": "${sourceDir}/conan/profiles/gcc.profile",
+        "CONAN_BUILD_PROFILE": "${sourceDir}/conan/profiles/gcc.profile"
+      }
+    },
+
+    {
+      "name": "clang-debug",
+      "displayName": "Clang Debug",
+      "inherits": "clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "none"
+      }
+    },
+    {
+      "name": "clang-debug-asan",
+      "displayName": "Clang Debug + ASan/UBSan",
+      "inherits": "clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "address"
+      }
+    },
+    {
+      "name": "clang-debug-tsan",
+      "displayName": "Clang Debug + TSan",
+      "inherits": "clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "thread"
+      }
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release",
+      "inherits": "clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SANITIZER": "none"
+      }
+    },
+
+    {
+      "name": "gcc-debug",
+      "displayName": "GCC Debug",
+      "inherits": "gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "none"
+      }
+    },
+    {
+      "name": "gcc-debug-asan",
+      "displayName": "GCC Debug + ASan/UBSan",
+      "inherits": "gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "address"
+      }
+    },
+    {
+      "name": "gcc-debug-tsan",
+      "displayName": "GCC Debug + TSan",
+      "inherits": "gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "thread"
+      }
+    },
+    {
+      "name": "gcc-release",
+      "displayName": "GCC Release",
+      "inherits": "gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SANITIZER": "none"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "clang-debug",
+      "configurePreset": "clang-debug"
+    },
+    {
+      "name": "clang-debug-asan",
+      "configurePreset": "clang-debug-asan"
+    },
+    {
+      "name": "clang-debug-tsan",
+      "configurePreset": "clang-debug-tsan"
+    },
+    {
+      "name": "clang-release",
+      "configurePreset": "clang-release"
+    },
+    {
+      "name": "gcc-debug",
+      "configurePreset": "gcc-debug"
+    },
+    {
+      "name": "gcc-debug-asan",
+      "configurePreset": "gcc-debug-asan"
+    },
+    {
+      "name": "gcc-debug-tsan",
+      "configurePreset": "gcc-debug-tsan"
+    },
+    {
+      "name": "gcc-release",
+      "configurePreset": "gcc-release"
+    }
+  ]
+}
