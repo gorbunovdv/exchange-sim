@@ -16,6 +16,10 @@ const LoggingBackend::LoggingConfig LoggingBackend::constDefaultConfig = {
     .format = quill::PatternFormatterOptions(),
 };
 
+quill::Logger* get_logger() {
+  return LoggingBackend::instance().get_logger();
+}
+
 LoggingBackend& LoggingBackend::get_or_create(const LoggingConfig* config) {
   static std::unique_ptr<LoggingBackend> logging_backend = nullptr;
   if (logging_backend == nullptr) {

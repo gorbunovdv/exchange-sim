@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base/logging/logging_backend.h"
-#include <quill/Frontend.h>
+#include <quill/Logger.h>
 #include <string>
 
 namespace exchange_sim {

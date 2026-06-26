@@ -45,9 +45,7 @@ private:
   quill::Logger* root_logger_;
 };
 
-inline quill::Logger* get_logger() {
-  return LoggingBackend::instance().get_logger();
-}
+quill::Logger* get_logger();
 
 #define INFO(...) LOG_INFO(get_logger(), __VA_ARGS__)
 #define DEBUG(...) LOG_DEBUG(get_logger(), __VA_ARGS__)
