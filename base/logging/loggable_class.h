@@ -1,4 +1,5 @@
 #pragma once
+
 #include "base/logging/logging_backend.h"
 #include <quill/Frontend.h>
 #include <string>
@@ -9,16 +10,13 @@ class LoggableClass {
 public:
   LoggableClass(const std::string& name);
 
-  ~LoggableClass() {
-    logger_->flush_log();
-  }
+  void flush_log() { logger_->flush_log(); }
 
-  quill::Logger* get_logger() {
-    return logger_;
-  }
+protected:
+  quill::Logger* get_logger() { return logger_; }
 
 private:
   quill::Logger* logger_;
 };
 
-}
+}  // namespace exchange_sim

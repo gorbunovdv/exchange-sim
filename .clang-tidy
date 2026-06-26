@@ -6,6 +6,7 @@ Checks: >
   concurrency-*,
   performance-*,
   portability-*,
+  -portability-avoid-pragma-once,
   modernize-use-nullptr,
   modernize-use-override,
   modernize-use-equals-default,

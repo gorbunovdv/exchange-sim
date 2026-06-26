@@ -16,4 +16,4 @@ struct NonMoveable {
   NonMoveable& operator=(const NonMoveable&&) = delete;
 };
 
-}
+}  // namespace exchange_sim

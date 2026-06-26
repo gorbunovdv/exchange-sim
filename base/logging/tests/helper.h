@@ -12,4 +12,4 @@ inline std::string read_file(const std::filesystem::path& path) {
   return (std::ostringstream() << file.rdbuf()).str();
 }
 
-}
+}  // namespace exchange_sim

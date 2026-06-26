@@ -1,8 +1,8 @@
 #pragma once
 
 #include "base/noncopyable.h"
-#include <filesystem>
 #include <unistd.h>
+#include <filesystem>
 
 namespace exchange_sim {
 
@@ -51,4 +51,4 @@ private:
   std::filesystem::path path_;
 };
 
-}
+}  // namespace exchange_sim

@@ -1,4 +1,3 @@
 #include <gtest/gtest.h>
 
-TEST(EmptyTest, Empty) {
-}
+TEST(EmptyTest, Empty) {}

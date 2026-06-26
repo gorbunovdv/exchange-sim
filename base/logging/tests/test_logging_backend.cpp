@@ -1,8 +1,8 @@
-#include "helper.h"
-#include "base/logging/logging_backend.h"
-#include "base/temporary.h"
 #include <gtest/gtest.h>
 #include <numeric>
+#include "base/logging/logging_backend.h"
+#include "base/temporary.h"
+#include "helper.h"
 
 TEST(LoggingBackendTests, BasicLoggingBackendTest) {
   using namespace exchange_sim;
@@ -13,11 +13,11 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
       .type = LoggingBackend::LoggingConfig::Type::FILE,
       .path = file.path(),
       .log_level = quill::LogLevel::Info,
-      .format = quill::PatternFormatterOptions("{{%(logger)}} %(message)")
+      .format = quill::PatternFormatterOptions("{{%(logger)}} %(message)"),
   });
 
   std::array lines = {"ababc", "fdhsdfhs", "dsjfsdjhfj", "dkfkjsdf"};
-  std::string expected_logs = "";
+  std::string expected_logs;
   for (auto i : lines) {
     INFO("{}", i);
     expected_logs += std::format("{{root}} {}\n", i);

@@ -15,14 +15,19 @@ glz::generic read_config_and_initialize_logging(std::span<char*> args) {
   };
 
   if (args.size() != 2) {
-    std::cout << "usage: " << args[0] << " <config_file>" << std::endl;
-    std::exit(1);
+    std::cout << "usage: " << args[0] << " <config_file>" << '\n';
+    throw std::runtime_error("wrong number of arguments");
   }
   glz::generic config = load_config_from_file(args[1]);
   LoggingBackend::LoggingConfig logging_config{
-      .type = value_or_raise("logging.type", magic_enum::enum_cast<LoggingBackend::LoggingConfig::Type>(config["logging"]["type"].as<std::string_view>(), magic_enum::case_insensitive)),
-      .path = config["logging"].contains("path") ? std::optional{config["logging"]["path"].as<std::string>()} : std::nullopt,
-      .log_level = value_or_raise("logging.log_level", magic_enum::enum_cast<quill::LogLevel>(config["logging"]["log_level"].as<std::string>(), magic_enum::case_insensitive)),
+      .type = value_or_raise("logging.type",
+          magic_enum::enum_cast<LoggingBackend::LoggingConfig::Type>(
+              config["logging"]["type"].as<std::string_view>(), magic_enum::case_insensitive)),
+      .path = config["logging"].contains("path") ? std::optional{config["logging"]["path"].as<std::string>()} :
+                                                   std::nullopt,
+      .log_level = value_or_raise("logging.log_level",
+          magic_enum::enum_cast<quill::LogLevel>(
+              config["logging"]["log_level"].as<std::string>(), magic_enum::case_insensitive)),
       .format = quill::PatternFormatterOptions(config["logging"]["format"].as<std::string>()),
   };
   LoggingBackend::init(logging_config);
@@ -31,4 +36,4 @@ glz::generic read_config_and_initialize_logging(std::span<char*> args) {
   return config;
 }
 
-}
+}  // namespace exchange_sim

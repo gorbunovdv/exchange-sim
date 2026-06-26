@@ -1,3 +1,4 @@
+find_package(GTest REQUIRED)
 find_package(glaze REQUIRED)
 
 add_library(config INTERFACE config.h)

@@ -21,5 +21,6 @@ TEST(ConfigTest, BasicConfigTest) {
   auto config = load_config_from_file(file.path());
   EXPECT_EQ(config["logging"]["type"].as<std::string>(), "console");
   EXPECT_EQ(config["logging"]["log_level"].as<std::string>(), "info");
-  EXPECT_EQ(config["logging"]["format"].as<std::string>(), "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)");
+  EXPECT_EQ(config["logging"]["format"].as<std::string>(),
+      "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)");
 }

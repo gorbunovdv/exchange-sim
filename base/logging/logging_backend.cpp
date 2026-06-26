@@ -4,20 +4,16 @@
 namespace exchange_sim {
 
 quill::Logger* LoggingBackend::create_logger(const std::string& name) {
-  quill::Logger* logger = quill::Frontend::create_or_get_logger(
-    name,
-    sink_,
-    config_.format
-  );
+  quill::Logger* logger = quill::Frontend::create_or_get_logger(name, sink_, config_.format);
   logger->set_log_level(config_.log_level);
   return logger;
 }
 
 const LoggingBackend::LoggingConfig LoggingBackend::constDefaultConfig = {
-  .type = LoggingConfig::Type::CONSOLE,
-  .path = std::nullopt,
-  .log_level = quill::LogLevel::Info,
-  .format = quill::PatternFormatterOptions()
+    .type = LoggingConfig::Type::CONSOLE,
+    .path = std::nullopt,
+    .log_level = quill::LogLevel::Info,
+    .format = quill::PatternFormatterOptions(),
 };
 
 LoggingBackend& LoggingBackend::get_or_create(const LoggingConfig* config) {
@@ -31,12 +27,11 @@ LoggingBackend& LoggingBackend::get_or_create(const LoggingConfig* config) {
       if (config->type == LoggingConfig::Type::CONSOLE) {
         return quill::Frontend::create_or_get_sink<quill::ConsoleSink>("console");
       }
-      std::cerr << "Unknown log type: " << magic_enum::enum_name(config->type) << std::endl;
-      std::exit(1);
+      throw std::runtime_error(std::format("unknown log type, type={}", magic_enum::enum_name(config->type)));
     }(config);
     logging_backend = std::unique_ptr<LoggingBackend>{new LoggingBackend(*config, std::move(sink_))};
   }
   return *logging_backend;
 }
 
-}
+}  // namespace exchange_sim
