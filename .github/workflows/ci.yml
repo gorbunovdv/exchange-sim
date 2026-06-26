@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+
+    steps:
+      - name: Update apt
+        run: apt update
+
+      - name: Install just and git
+        run: apt install just git -y
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Mark repo as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Bootstrap requirements
+        run: |
+          DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC just bootstrap
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Check clang-format
+        run: |
+          just format-check
+
+      - name: Run tests from scratch
+        run: |
+          just test-from-scratch clang-debug-asan
+          just test-from-scratch clang-debug
+          just test-from-scratch gcc-debug-asan
+
+      - name: Run linter
+        run: |
+          just lint-from-scratch
