@@ -4,6 +4,7 @@ set export
 ROOT_DIR := justfile_directory()
 CLANG_FORMAT := "clang-format-21"
 CLANG_TIDY := "clang-tidy-21"
+CPU_COUNT := num_cpus()
 
 default:
     @just --list
@@ -40,7 +41,7 @@ configure preset='clang-release':
 
 build preset='clang-release':
     @just configure "{{ preset }}"
-    cmake --build --preset "{{ preset }}"
+    cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}"
 
 test-from-scratch preset='clang-debug-asan':
     @just clean "{{ preset }}"
