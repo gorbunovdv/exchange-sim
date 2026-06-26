@@ -34,7 +34,9 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
 TEST(LoggingBackendTests, CriticalTest) {
   using namespace exchange_sim;
 
-  auto log_critical = [](){ CRITICAL("Critical message"); };
+  auto log_critical = []() {
+    CRITICAL("Critical message");
+  };
 
   EXPECT_THROW(log_critical(), std::runtime_error);
 }

@@ -16,5 +16,5 @@ TEST(TemporaryTest, BasicTemporaryTest) {
   }
 
   EXPECT_FALSE(std::filesystem::exists(directory_path));
-  EXPECT_FALSE(std::filesystem::exists(file_path)); 
+  EXPECT_FALSE(std::filesystem::exists(file_path));
 }
