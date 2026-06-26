@@ -30,3 +30,11 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
 
   EXPECT_EQ(logs, expected_logs);
 }
+
+TEST(LoggingBackendTests, CriticalTest) {
+  using namespace exchange_sim;
+
+  auto log_critical = [](){ CRITICAL("Critical message"); };
+
+  EXPECT_THROW(log_critical(), std::runtime_error);
+}

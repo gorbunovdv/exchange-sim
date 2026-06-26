@@ -7,6 +7,75 @@
 #include <fstream>
 #include <span>
 
+TEST(Run, MissingConfigFile) {
+  using namespace exchange_sim;
+
+  TemporaryDirectory directory("run");
+  std::string path = TemporaryFile(directory, "config").path().string();
+
+  char* argv[] = {nullptr, path.data()};
+
+  EXPECT_THROW(read_config_and_initialize_logging(std::span{argv, argv + 2}), std::runtime_error);
+}
+
+TEST(Run, MissingLoggingType) {
+  using namespace exchange_sim;
+
+  TemporaryDirectory directory("run");
+  TemporaryFile logs_file(directory, "logs");
+  TemporaryFile config_file(directory, "config");
+
+  auto config_file_path_string = config_file.path().string();
+  auto log_file_path_string = logs_file.path().string();
+
+  static constexpr std::string_view constJsonConfigFormat = R"custom_delimiter(
+    {{
+      "logging": {{
+        "log_level": "info",
+        "path": "{}",
+        "format": "%(log_level) %(logger) %(message)"
+      }}
+    }}
+  )custom_delimiter";
+
+  std::string jsonConfig = std::vformat(constJsonConfigFormat, std::make_format_args(log_file_path_string));
+  std::ofstream(config_file.path()) << jsonConfig;
+
+  char* argv[] = {nullptr, config_file_path_string.data()};
+
+  EXPECT_ANY_THROW(read_config_and_initialize_logging(std::span(argv, argv + 2)));
+}
+
+TEST(Run, IncorrectLogLevel) {
+  using namespace exchange_sim;
+
+  TemporaryDirectory directory("run");
+  TemporaryFile logs_file(directory, "logs");
+  TemporaryFile config_file(directory, "config");
+
+  auto config_file_path_string = config_file.path().string();
+  auto log_file_path_string = logs_file.path().string();
+
+  static constexpr std::string_view constJsonConfigFormat = R"custom_delimiter(
+    {{
+      "logging": {{
+        "type": "file",
+        "log_level": "info1",
+        "path": "{}",
+        "format": "%(log_level) %(logger) %(message)"
+      }}
+    }}
+  )custom_delimiter";
+
+  std::string jsonConfig = std::vformat(constJsonConfigFormat, std::make_format_args(log_file_path_string));
+  std::ofstream(config_file.path()) << jsonConfig;
+
+  char* argv[] = {nullptr, config_file_path_string.data()};
+
+  EXPECT_ANY_THROW(read_config_and_initialize_logging(std::span(argv, argv + 2)));
+}
+
+
 TEST(Run, BasicTest) {
   using namespace exchange_sim;
 

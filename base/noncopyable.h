@@ -12,8 +12,8 @@ struct NonCopyable {
 struct NonMoveable {
   NonMoveable() = default;
 
-  NonMoveable(const NonMoveable&&) = delete;
-  NonMoveable& operator=(const NonMoveable&&) = delete;
+  NonMoveable(NonMoveable&&) = delete;
+  NonMoveable& operator=(NonMoveable&&) = delete;
 };
 
 }  // namespace exchange_sim
