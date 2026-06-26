@@ -10,14 +10,14 @@ jobs:
     container: ubuntu:26.04
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Update apt
         run: apt update
 
       - name: Install just
-        run: apt install just -y
+        run: apt install just git -y
+
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Bootstrap requirements
         run: |
