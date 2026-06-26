@@ -2,6 +2,7 @@
 
 #include "base/config/config.h"
 #include "base/logging/logging_backend.h"
+#include <magic_enum/magic_enum.hpp>
 #include <iostream>
 
 namespace exchange_sim {

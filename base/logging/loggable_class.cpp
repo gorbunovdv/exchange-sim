@@ -1,4 +1,5 @@
 #include "loggable_class.h"
+#include <string>
 
 namespace exchange_sim {
 

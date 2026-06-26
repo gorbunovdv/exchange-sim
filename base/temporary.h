@@ -21,7 +21,7 @@ public:
     std::filesystem::remove_all(path_, ec);
   }
 
-  const auto& path() { return path_; }
+  const std::filesystem::path& path() const { return path_; }
 
 private:
   std::filesystem::path path_;
@@ -29,8 +29,8 @@ private:
 
 class TemporaryFile : NonCopyable, NonMoveable {
 public:
-  explicit TemporaryFile(const std::string& prefix): dir_(prefix) {
-    auto path_string = (dir_.path() / "XXXXXX").string();
+  explicit TemporaryFile(const TemporaryDirectory& dir, const std::string& prefix) {
+    auto path_string = (dir.path() / std::format("{}_XXXXXX", prefix)).string();
     if (int fd = mkstemp(path_string.data()); fd != -1) {
       ::close(fd);
     } else {
@@ -44,10 +44,9 @@ public:
     std::filesystem::remove(path_, ec);
   }
 
-  const auto& path() { return path_; }
+  const std::filesystem::path& path() const { return path_; }
 
 private:
-  TemporaryDirectory dir_;
   std::filesystem::path path_;
 };
 

@@ -2,12 +2,13 @@
 #include <numeric>
 #include "base/logging/logging_backend.h"
 #include "base/temporary.h"
-#include "helper.h"
+#include "base/read_file.h"
 
 TEST(LoggingBackendTests, BasicLoggingBackendTest) {
   using namespace exchange_sim;
 
-  TemporaryFile file("logs");
+  TemporaryDirectory directory("logs");
+  TemporaryFile file(directory, "logs");
 
   LoggingBackend::init(LoggingBackend::LoggingConfig{
       .type = LoggingBackend::LoggingConfig::Type::FILE,

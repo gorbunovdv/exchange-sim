@@ -1,16 +1,18 @@
 #include "base/logging/logging_backend.h"
-#include "base/logging/tests/helper.h"
+#include "base/read_file.h"
 #include "base/run.h"
 #include "base/temporary.h"
 
 #include <gtest/gtest.h>
 #include <fstream>
+#include <span>
 
 TEST(Run, BasicTest) {
   using namespace exchange_sim;
 
-  TemporaryFile logs_file("logs");
-  TemporaryFile config_file("config");
+  TemporaryDirectory directory("run");
+  TemporaryFile logs_file(directory, "logs");
+  TemporaryFile config_file(directory, "config");
 
   auto config_file_path_string = config_file.path().string();
   auto log_file_path_string = logs_file.path().string();

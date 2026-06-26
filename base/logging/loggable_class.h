@@ -8,12 +8,12 @@ namespace exchange_sim {
 
 class LoggableClass {
 public:
-  LoggableClass(const std::string& name);
-
-  void flush_log() { logger_->flush_log(); }
+  void flush_log() const { logger_->flush_log(); }
 
 protected:
-  quill::Logger* get_logger() { return logger_; }
+  explicit LoggableClass(const std::string& name);
+
+  quill::Logger* get_logger() const { return logger_; }
 
 private:
   quill::Logger* logger_;

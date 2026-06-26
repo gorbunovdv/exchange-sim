@@ -1,8 +1,10 @@
 #include "base/logging/loggable_class.h"
+#include "base/logging/logging_backend.h"
 #include "base/temporary.h"
-#include "helper.h"
+#include "base/read_file.h"
 
 #include <gtest/gtest.h>
+#include <string_view>
 
 TEST(LoggableClass, BasicLoggableClassTest) {
   using namespace exchange_sim;
@@ -10,10 +12,11 @@ TEST(LoggableClass, BasicLoggableClassTest) {
   struct Structure : LoggableClass {
     Structure(): LoggableClass("Structure") {}
 
-    void log_from_structure(std::string string) { INFO("{}", string); }
+    void log_from_structure(std::string_view view) { INFO("{}", view); }
   };
 
-  TemporaryFile file("logs");
+  TemporaryDirectory directory("logs");
+  TemporaryFile file(directory, "logs");
 
   LoggingBackend::init(LoggingBackend::LoggingConfig{
       .type = LoggingBackend::LoggingConfig::Type::FILE,
