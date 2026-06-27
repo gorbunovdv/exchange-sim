@@ -4,9 +4,9 @@
 #include <string_view>
 #include <fstream>
 
-TEST(ConfigTest, MissingConfigFile) {
-  using namespace exchange_sim;
+using namespace exchange_sim;
 
+TEST(ConfigTest, MissingConfigFile) {
   TemporaryDirectory directory("config");
   std::filesystem::path path = TemporaryFile(directory, "config").path();
 
@@ -14,14 +14,12 @@ TEST(ConfigTest, MissingConfigFile) {
 }
 
 TEST(ConfigTest, InvalidJson) {
-  using namespace exchange_sim;
-
   static constexpr std::string_view constDefaultConfig = R"custom_delimiter(
     {
       "logging": {
         "type": "console",
         "log_level": "info",
-        "format: "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)"
+        "format /* here's no closing quote */ : "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)"
       }
     }
   )custom_delimiter";
@@ -39,13 +37,10 @@ TEST(ConfigTest, BasicConfigTest) {
       "logging": {
         "type": "console",
         "log_level": "info",
-        "format": "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)"
+        "format" /* there's quote in correct location */: "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)"
       }
     }
   )custom_delimiter";
-
-  using namespace exchange_sim;
-
   TemporaryDirectory directory("config");
   TemporaryFile file(directory, "config");
   std::ofstream(file.path()) << constDefaultConfig;

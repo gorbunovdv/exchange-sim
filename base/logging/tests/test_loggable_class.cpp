@@ -6,9 +6,9 @@
 #include <gtest/gtest.h>
 #include <string_view>
 
-TEST(LoggableClass, BasicLoggableClassTest) {
-  using namespace exchange_sim;
+using namespace exchange_sim;
 
+TEST(LoggableClass, BasicLoggableClassTest) {
   struct Structure : LoggableClass {
     Structure(): LoggableClass("Structure") {}
 

@@ -7,9 +7,9 @@
 #include <fstream>
 #include <span>
 
-TEST(Run, MissingConfigFile) {
-  using namespace exchange_sim;
+using namespace exchange_sim;
 
+TEST(Run, MissingConfigFile) {
   TemporaryDirectory directory("run");
   std::string path = TemporaryFile(directory, "config").path().string();
 
@@ -19,8 +19,6 @@ TEST(Run, MissingConfigFile) {
 }
 
 TEST(Run, MissingLoggingType) {
-  using namespace exchange_sim;
-
   TemporaryDirectory directory("run");
   TemporaryFile logs_file(directory, "logs");
   TemporaryFile config_file(directory, "config");
@@ -47,8 +45,6 @@ TEST(Run, MissingLoggingType) {
 }
 
 TEST(Run, IncorrectLogLevel) {
-  using namespace exchange_sim;
-
   TemporaryDirectory directory("run");
   TemporaryFile logs_file(directory, "logs");
   TemporaryFile config_file(directory, "config");
@@ -77,8 +73,6 @@ TEST(Run, IncorrectLogLevel) {
 
 
 TEST(Run, BasicTest) {
-  using namespace exchange_sim;
-
   TemporaryDirectory directory("run");
   TemporaryFile logs_file(directory, "logs");
   TemporaryFile config_file(directory, "config");

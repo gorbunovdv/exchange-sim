@@ -4,9 +4,9 @@
 #include "base/temporary.h"
 #include "base/read_file.h"
 
-TEST(LoggingBackendTests, BasicLoggingBackendTest) {
-  using namespace exchange_sim;
+using namespace exchange_sim;
 
+TEST(LoggingBackendTests, BasicLoggingBackendTest) {
   TemporaryDirectory directory("logs");
   TemporaryFile file(directory, "logs");
 
@@ -32,8 +32,6 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
 }
 
 TEST(LoggingBackendTests, CriticalTest) {
-  using namespace exchange_sim;
-
   auto log_critical = []() {
     CRITICAL("Critical message");
   };
