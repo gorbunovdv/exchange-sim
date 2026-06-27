@@ -46,8 +46,23 @@ TEST(ConfigTest, BasicConfigTest) {
   std::ofstream(file.path()) << constDefaultConfig;
 
   auto config = load_config_from_file(file.path());
+  ASSERT_TRUE(config.contains("logging"));
   EXPECT_EQ(config["logging"]["type"].as<std::string>(), "console");
   EXPECT_EQ(config["logging"]["log_level"].as<std::string>(), "info");
   EXPECT_EQ(config["logging"]["format"].as<std::string>(),
       "%(time) [%(thread_id)] %(short_source_location:) %(log_level) %(logger) %(message)");
+}
+
+TEST(ConfigTest, DefaultConfigTest) {
+  std::filesystem::path default_config_path = EXCHANGE_SIM_DEFAULT_CONFIG_PATH;
+
+  ASSERT_TRUE(std::filesystem::exists(default_config_path)) << default_config_path;
+
+  auto config = load_config_from_file(default_config_path);
+
+  ASSERT_TRUE(config.contains("logging"));
+  EXPECT_EQ(config["logging"]["type"].as<std::string>(), "console");
+  EXPECT_EQ(config["logging"]["log_level"].as<std::string>(), "info");
+  EXPECT_EQ(config["logging"]["format"].as<std::string>(),
+      "%(time) [%(thread_id)] %(short_source_location) %(log_level) %(logger) %(message)");
 }
