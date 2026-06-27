@@ -36,4 +36,6 @@ elseif(NOT SANITIZER STREQUAL "none")
     message(FATAL_ERROR "Unknown sanitizer type: ${SANITIZER}")
 endif ()
 
+include_directories(${PROJECT_SOURCE_DIR})
+
 add_subdirectory(base)

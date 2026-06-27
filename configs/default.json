@@ -1,0 +1,7 @@
+{
+  "logging": {
+    "type": "console",
+    "log_level": "info",
+    "format": "%(time) [%(thread_id)] %(short_source_location) %(log_level) %(logger) %(message)"
+  }
+}
