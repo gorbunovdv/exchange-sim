@@ -62,3 +62,6 @@ lint-from-scratch preset='clang-debug':
     @just clean {{ preset }}
     @just build {{ preset }}
     @just lint {{ preset }}
+
+run *args:
+    systemd-run --scope --slice=hft.slice -p AllowedCPUs=2-7 {{ args }}

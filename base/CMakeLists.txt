@@ -3,9 +3,10 @@ include(GoogleTest)
 
 add_subdirectory(logging)
 add_subdirectory(config)
+add_subdirectory(time)
 
 add_library(base run.cpp)
-target_link_libraries(base PUBLIC config logging)
+target_link_libraries(base PUBLIC config logging time)
 
 add_executable(empty_app empty_app.cpp)
 target_link_libraries(empty_app PUBLIC base)

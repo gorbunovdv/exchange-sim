@@ -3,7 +3,11 @@ gtest/1.17.0
 magic_enum/0.9.7
 quill/11.1.0
 glaze/7.7.1
+boost/1.91.0
 
 [generators]
 CMakeConfigDeps
 CMakeToolchain
+
+[options]
+boost/*:header_only=True

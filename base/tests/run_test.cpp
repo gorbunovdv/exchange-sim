@@ -104,9 +104,20 @@ TEST(Run, BasicTest) {
   EXPECT_EQ(config["logging"]["path"].as<std::string>(), log_file_path_string);
   LoggingBackend::instance().get_logger()->flush_log();
 
-  EXPECT_EQ(read_file(logs_file.path()),
-      std::format(R"custom_delimiter(INFO root Initialized logging backend
-INFO root config={{"logging":{{"type":"file","log_level":"info","path":"{}","format":"%(log_level) %(logger) %(message)"}}}}
-)custom_delimiter",
-          log_file_path_string));
+  std::istringstream stream(read_file(logs_file.path()));
+  std::vector<std::string> lines;
+  for (std::string line; std::getline(stream, line);) {
+    lines.emplace_back(std::move(line));
+  }
+
+  EXPECT_EQ(lines.size(), 3);
+  EXPECT_EQ(lines[0], "INFO root Initialized logging backend");
+
+  static constexpr std::string_view constLine1Format =
+      R"custom_delimiter(INFO root config={{"logging":{{"type":"file","log_level":"info","path":"{}","format":"%(log_level) %(logger) %(message)"}}}})custom_delimiter";
+
+  EXPECT_EQ(lines[1], std::vformat(constLine1Format, std::make_format_args(log_file_path_string)));
+
+  static constexpr std::string_view constLine2Prefix = "INFO root Initialized time backend, tsc_hw: ";
+  ASSERT_TRUE(lines[2].starts_with(constLine2Prefix));
 }

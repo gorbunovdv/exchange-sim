@@ -5,6 +5,8 @@
 #include <magic_enum/magic_enum.hpp>
 #include <iostream>
 
+#include "time/rdtsc.h"
+
 namespace exchange_sim {
 
 glz::generic read_config_and_initialize_logging(std::span<char*> args) {
@@ -34,6 +36,7 @@ glz::generic read_config_and_initialize_logging(std::span<char*> args) {
   LoggingBackend::init(logging_config);
   INFO("Initialized logging backend");
   INFO("config={}", glz::write_json(config).value());
+  INFO("Initialized time backend, tsc_hw: {}", rdtsc_frequency());
   return config;
 }
 
