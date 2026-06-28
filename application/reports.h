@@ -23,7 +23,7 @@ struct OrderTradeReport {
   ExchangeOrderID order_id;
   ClientID client_order_id;
   Price price;
-  Quantity quantity;
+  Amount quantity;
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ExchangeOrderID recipient_order_id;

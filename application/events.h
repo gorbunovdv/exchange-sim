@@ -8,27 +8,27 @@ namespace exchange_sim {
 struct OrderAddRequest {
   ClientID client_id;
   ClientOrderID client_order_id;
-  SecurityID symbol_id;
+  SecurityID security_id;
   OrderTimeInForce time_in_force;
   OrderType order_type;
   Direction direction;
   Price price;
-  Quantity quantity;
+  Amount quantity;
 };
 
 struct OrderModifyRequest {
   ClientID client_id;
   ClientOrderID client_order_id;
-  SecurityID symbol_id;
+  SecurityID security_id;
   Direction direction;
   Price price;
-  Quantity quantity;
+  Amount quantity;
 };
 
 struct OrderCancelRequest {
   ClientID client_id;
   ClientOrderID client_order_id;
-  SecurityID symbol_id;
+  SecurityID security_id;
 };
 
 using RequestType = std::variant<OrderAddRequest, OrderModifyRequest, OrderCancelRequest>;

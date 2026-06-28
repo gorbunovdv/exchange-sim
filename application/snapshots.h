@@ -7,23 +7,23 @@ namespace exchange_sim {
 
 struct OrderEntrySnapshot {
   ExchangeOrderID order_id;
-  SecurityID symbol_id;
+  SecurityID security_id;
   OrderTimeInForce time_in_force;
   OrderType order_type;
   Direction direction;
   Price price;
-  Quantity quantity;
+  Amount quantity;
 };
 
 struct OrderCancellationSnapshot {
   ExchangeOrderID order_id;
-  SecurityID symbol_id;
+  SecurityID security_id;
 };
 
 struct TradeSnapshot {
-  SecurityID symbol_id;
+  SecurityID security_id;
   Price price;
-  Quantity quantity;
+  Amount quantity;
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ExchangeOrderID recipient_order_id;

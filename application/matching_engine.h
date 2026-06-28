@@ -19,7 +19,28 @@ public:
     UNUSED(report_generator_sink_);
   }
 
-  void process(RequestType) {}
+  void process(RequestType request) {
+    std::visit(
+        boost::hof::match(
+            [this](const OrderAddRequest& request) {
+              INFO("OrderAddRequest received, client_id={} security_id={} quantity={} price={}",
+                  request.client_id,
+                  request.security_id,
+                  static_cast<double>(request.quantity),
+                  static_cast<double>(request.price));
+            },
+            [this](const OrderCancelRequest& request) {
+              INFO("OrderCancelRequest received, client_id={} security_id={}", request.client_id, request.security_id);
+            },
+            [this](const OrderModifyRequest& request) {
+              INFO("OrderModifyRequest received, client_id={} security_id={} quantity={} price={}",
+                  request.client_id,
+                  request.security_id,
+                  static_cast<double>(request.quantity),
+                  static_cast<double>(request.price));
+            }),
+        request);
+  }
 
 private:
   MDSinkType<MarketDataSnapshotType>& market_data_sink_;

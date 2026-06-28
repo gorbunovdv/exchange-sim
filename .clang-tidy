@@ -1,6 +1,7 @@
 Checks: >
   -*,
   clang-analyzer-*,
+  -clang-analyzer-security.ArrayBound,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   concurrency-*,

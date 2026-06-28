@@ -11,7 +11,7 @@ using ExchangeOrderID = uint32_t;
 using ExchangeTradeID = uint32_t;
 using SecurityID = uint32_t;
 using Price = boost::decimal::decimal32_t;
-using Quantity = boost::decimal::decimal32_t;
+using Amount = boost::decimal::decimal32_t;
 
 enum class OrderType : std::uint8_t { LIMIT };
 enum class OrderTimeInForce : std::uint8_t { LIMIT, IOC };

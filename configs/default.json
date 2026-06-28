@@ -1,7 +1,36 @@
 {
+  "securities": [
+    {
+      "symbol": "EURUSD",
+      "tick_size": 1,
+      "lot_size": 100,
+      "low_price": 1.0,
+      "high_price": 1000.0,
+      "max_amount": 1000
+    },
+    {
+      "symbol": "USDJPY",
+      "tick_size": 0.01,
+      "lot_size": 1000,
+      "low_price": 100,
+      "high_price": 100000,
+      "max_amount": 10000
+    }
+  ],
   "logging": {
     "type": "console",
     "log_level": "info",
     "format": "%(time) [%(thread_id)] %(short_source_location) %(log_level) %(logger) %(message)"
+  },
+  "order_generator": {
+    "seed": 0,
+    "min_active_orders_by_security": 1,
+    "max_active_orders_by_security": 5
+  },
+  "matching_engine": {
+  },
+  "market_data_generator": {
+  },
+  "report_generator": {
   }
 }
