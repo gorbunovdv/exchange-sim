@@ -49,4 +49,11 @@ quill::Logger* get_logger();
     throw std::runtime_error("Critical error occured"); \
   } while (false)
 
+#define CHECK(condition, ...) \
+  do { \
+    if (!(condition)) { \
+      CRITICAL(__VA_ARGS__); \
+    } \
+  } while (false)
+
 }  // namespace exchange_sim

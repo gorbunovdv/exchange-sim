@@ -3,7 +3,7 @@
 #include "application/types.h"
 #include <variant>
 
-namespace exchange_sim {
+namespace exchange_sim::market_data {
 
 struct OrderEntrySnapshot {
   ExchangeOrderID order_id;
@@ -29,6 +29,6 @@ struct TradeSnapshot {
   ExchangeOrderID recipient_order_id;
 };
 
-using MarketDataSnapshotType = std::variant<OrderEntrySnapshot, OrderCancellationSnapshot, TradeSnapshot>;
+using SnapshotType = std::variant<OrderEntrySnapshot, OrderCancellationSnapshot, TradeSnapshot>;
 
-}  // namespace exchange_sim
+}  // namespace exchange_sim::market_data

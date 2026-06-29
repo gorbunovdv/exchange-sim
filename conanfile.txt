@@ -4,6 +4,7 @@ magic_enum/0.9.7
 quill/11.1.0
 glaze/7.7.1
 boost/1.91.0
+cpptrace/1.0.4
 
 [generators]
 CMakeConfigDeps

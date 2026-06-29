@@ -3,7 +3,7 @@
 #include "application/types.h"
 #include <variant>
 
-namespace exchange_sim {
+namespace exchange_sim::request {
 
 struct OrderAddRequest {
   ClientID client_id;
@@ -19,6 +19,7 @@ struct OrderAddRequest {
 struct OrderModifyRequest {
   ClientID client_id;
   ClientOrderID client_order_id;
+  ClientOrderID client_modification_id;
   SecurityID security_id;
   Direction direction;
   Price price;
@@ -28,9 +29,10 @@ struct OrderModifyRequest {
 struct OrderCancelRequest {
   ClientID client_id;
   ClientOrderID client_order_id;
+  ClientOrderID client_cancellation_id;
   SecurityID security_id;
 };
 
 using RequestType = std::variant<OrderAddRequest, OrderModifyRequest, OrderCancelRequest>;
 
-}  // namespace exchange_sim
+}  // namespace exchange_sim::request

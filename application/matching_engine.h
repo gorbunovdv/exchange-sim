@@ -1,50 +1,44 @@
 #pragma once
 
-#include "base/macros.h"
-#include "market_data_generator.h"
-#include "report_generator.h"
+#include "application/exchange_snapshots.h"
+#include "application/simple_l3book.h"
+#include "application/events.h"
 
 namespace exchange_sim {
 
-template<template<typename> class MDSinkType, template<typename> class ORSinkType>
+template<template<typename> class SinkType>
 class MatchingEngine : public LoggableClass {
 public:
-  explicit MatchingEngine(const glz::generic&,
-      MDSinkType<MarketDataSnapshotType>& market_data_sink,
-      ORSinkType<OrderReportType>& report_generator_sink):
-      LoggableClass("MatchingEngine"),
-      market_data_sink_(market_data_sink),
-      report_generator_sink_(report_generator_sink) {
-    UNUSED(market_data_sink_);
-    UNUSED(report_generator_sink_);
+  explicit MatchingEngine(
+      const glz::generic&, SecurityStorage& security_storage, SinkType<exchange_snapshot::SnapshotType>& sink):
+      LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
+    books_.reserve(security_storage_.size());
+    for (auto& security : security_storage_.securities()) {
+      books_.emplace_back(security, order_id_counter_, trade_id_counter_);
+    }
   }
 
-  void process(RequestType request) {
-    std::visit(
-        boost::hof::match(
-            [this](const OrderAddRequest& request) {
-              INFO("OrderAddRequest received, client_id={} security_id={} quantity={} price={}",
-                  request.client_id,
-                  request.security_id,
-                  static_cast<double>(request.quantity),
-                  static_cast<double>(request.price));
-            },
-            [this](const OrderCancelRequest& request) {
-              INFO("OrderCancelRequest received, client_id={} security_id={}", request.client_id, request.security_id);
-            },
-            [this](const OrderModifyRequest& request) {
-              INFO("OrderModifyRequest received, client_id={} security_id={} quantity={} price={}",
-                  request.client_id,
-                  request.security_id,
-                  static_cast<double>(request.quantity),
-                  static_cast<double>(request.price));
-            }),
-        request);
+  void process(request::RequestType request) {
+    std::visit([this](auto request) { this->process_object(std::move(request)); }, request);
   }
 
 private:
-  MDSinkType<MarketDataSnapshotType>& market_data_sink_;
-  ORSinkType<OrderReportType>& report_generator_sink_;
+  void process_object(request::OrderAddRequest request) { books_[request.security_id].add(std::move(request), sink_); }
+
+  void process_object(request::OrderModifyRequest request) {
+    books_[request.security_id].modify(std::move(request), sink_);
+  }
+
+  void process_object(request::OrderCancelRequest request) {
+    books_[request.security_id].cancel(std::move(request), sink_);
+  }
+
+  SecurityStorage& security_storage_;
+  SinkType<exchange_snapshot::SnapshotType>& sink_;
+  std::vector<SimpleL3Book> books_;
+
+  Counter<ExchangeOrderID> order_id_counter_;
+  Counter<ExchangeTradeID> trade_id_counter_;
 };
 
 }  // namespace exchange_sim

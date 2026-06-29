@@ -1,7 +1,8 @@
 #pragma once
 
+#include "base/logging/logging_backend.h"
 #include "application/types.h"
-#include "application/snapshots.h"
+#include "application/market_data_snapshots.h"
 #include <boost/hof/match.hpp>
 
 namespace exchange_sim {
@@ -10,12 +11,13 @@ class MarketDataGenerator {
 public:
   explicit MarketDataGenerator(const glz::generic&) {}
 
-  void process(MarketDataSnapshotType snapshot) {
+  void process(market_data::SnapshotType snapshot) {
     std::visit(boost::hof::match(
-                   [](const OrderEntrySnapshot& snapshot) {
+                   [](const market_data::OrderEntrySnapshot& snapshot) {
                      INFO(
-                         "Received snapshot, type=OrderEntrySnapshot order_id={} security_id={} time_in_force={} "
-                         "order_type={} direction={} price={} quantity={}",
+                         "Received snapshot, type=OrderEntrySnapshot"
+                         " order_id={} security_id={} time_in_force={}"
+                         " order_type={} direction={} price={} quantity={}",
                          snapshot.order_id,
                          snapshot.security_id,
                          format_as(snapshot.time_in_force),
@@ -24,15 +26,18 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity));
                    },
-                   [](const OrderCancellationSnapshot& snapshot) {
-                     INFO("Received snapshot, type=OrderCancellationSnapshot order_id={} security_id={}",
+                   [](const market_data::OrderCancellationSnapshot& snapshot) {
+                     INFO(
+                         "Received snapshot, type=OrderCancellationSnapshot"
+                         " order_id={} security_id={}",
                          snapshot.order_id,
                          snapshot.security_id);
                    },
-                   [](const TradeSnapshot& snapshot) {
+                   [](const market_data::TradeSnapshot& snapshot) {
                      INFO(
-                         "Received snapshot, type=TradeSnapshot security_id={} price={} quantity={} trade_id={} "
-                         "aggressor_order_id={} recipient_order_id={}",
+                         "Received snapshot, type=TradeSnapshot"
+                         " security_id={} price={} quantity={} trade_id={}"
+                         " aggressor_order_id={} recipient_order_id={}",
                          snapshot.security_id,
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity),
