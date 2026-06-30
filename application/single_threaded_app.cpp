@@ -1,9 +1,9 @@
 #include "base/run.h"
 #include "base/simple_receiver.h"
-#include "application/simple_order_generator.h"
-#include "application/exchange_dispatcher.h"
-#include "application/market_data_generator.h"
-#include "application/report_generator.h"
+#include "input/simple_order_generator.h"
+#include "output/exchange_dispatcher.h"
+#include "output/market_data_generator.h"
+#include "output/report_generator.h"
 #include "domain/exchange_snapshots.h"
 #include "domain/security.h"
 #include "matching/matching_engine.h"
@@ -18,12 +18,14 @@ std::vector<SecurityConfig> generate_securities(const glz::generic& config) {
   std::vector<SecurityConfig> securities;
   securities.reserve(config["securities"].size());
   for (const auto& security_config : config["securities"].get_array()) {
-    securities.emplace_back(SecurityConfig{.symbol = Symbol(security_config["symbol"].as<std::string>()),
+    securities.emplace_back(SecurityConfig{
+        .symbol = Symbol(security_config["symbol"].as<std::string>()),
         .tick_size = Price(security_config["tick_size"].as<double>()),
         .lot_size = Amount(security_config["lot_size"].as<double>()),
         .low_price = Price(security_config["low_price"].as<double>()),
         .high_price = Price(security_config["high_price"].as<double>()),
-        .max_amount = security_config["max_amount"].as<uint32_t>()});
+        .max_amount = security_config["max_amount"].as<uint32_t>(),
+    });
   }
   return securities;
 }
