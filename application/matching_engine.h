@@ -1,8 +1,8 @@
 #pragma once
 
-#include "application/exchange_snapshots.h"
+#include "domain/requests.h"
+#include "domain/exchange_snapshots.h"
 #include "application/simple_l3book.h"
-#include "application/events.h"
 
 namespace exchange_sim {
 

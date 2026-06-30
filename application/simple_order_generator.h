@@ -1,10 +1,11 @@
 #pragma once
 
-#include <random>
-
 #include "base/logging/loggable_class.h"
-#include "application/events.h"
-#include "application/security.h"
+#include "domain/requests.h"
+#include "domain/security.h"
+#include "domain/security_storage.h"
+
+#include <random>
 
 namespace exchange_sim {
 

@@ -1,8 +1,10 @@
 #pragma once
 
-#include "application/exchange_snapshots.h"
-#include "application/market_data_snapshots.h"
-#include "application/reports.h"
+#include "domain/exchange_snapshots.h"
+#include "domain/market_data_snapshots.h"
+#include "domain/reports.h"
+
+#include <glaze/glaze.hpp>
 
 namespace exchange_sim {
 

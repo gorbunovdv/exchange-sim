@@ -1,6 +1,6 @@
 #pragma once
 
-#include "application/types.h"
+#include "domain/types.h"
 #include <variant>
 
 namespace exchange_sim::request {

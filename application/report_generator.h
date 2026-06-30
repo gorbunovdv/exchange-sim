@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base/logging/loggable_class.h"
-#include "application/reports.h"
+#include "domain/reports.h"
 
 #include <boost/hof/match.hpp>
 #include <glaze/json/generic_fwd.hpp>

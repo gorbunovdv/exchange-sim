@@ -1,6 +1,6 @@
 #pragma once
 
-#include "application/types.h"
+#include "domain/types.h"
 
 namespace exchange_sim::exchange_snapshot {
 

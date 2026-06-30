@@ -1,8 +1,8 @@
 #pragma once
 
 #include "base/logging/logging_backend.h"
-#include "application/types.h"
-#include "application/market_data_snapshots.h"
+#include "domain/types.h"
+#include "domain/market_data_snapshots.h"
 #include <boost/hof/match.hpp>
 
 namespace exchange_sim {

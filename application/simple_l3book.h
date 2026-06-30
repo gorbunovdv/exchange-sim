@@ -1,8 +1,8 @@
 #pragma once
 
 #include "base/counter.h"
-#include "application/security.h"
-#include "application/events.h"
+#include "domain/security.h"
+#include "domain/requests.h"
 #include "application/risk_checker.h"
 #include <list>
 
