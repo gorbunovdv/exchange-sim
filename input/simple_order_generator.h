@@ -5,6 +5,7 @@
 #include "domain/security.h"
 #include "domain/security_storage.h"
 
+#include <glaze/glaze.hpp>
 #include <random>
 
 namespace exchange_sim {

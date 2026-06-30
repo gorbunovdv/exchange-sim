@@ -1,66 +1,45 @@
 #pragma once
 
+#include "domain/engine_snapshots.h"
 #include "domain/types.h"
+#include <variant>
 
 namespace exchange_sim::report {
 
-enum class ReportOutcome : std::uint8_t { SUCCESS, FAILURE };
+using OrderAccepted = engine_snapshot::OrderAccepted;
 
-constexpr std::string_view format_as(ReportOutcome outcome) {
-  return magic_enum::enum_name(outcome);
-}
-
-struct OrderEntryReport {
-  ClientID client_id;
+struct Trade {
   SecurityID security_id;
-  ExchangeOrderID order_id;
-  ClientOrderID client_order_id;
-  Amount quantity;
-};
-
-struct OrderCancellationReport {
-  ClientID client_id;
-  SecurityID security_id;
-  ExchangeOrderID order_id;
-  ClientOrderID client_order_id;
-  ClientOrderID client_cancellation_id;
-};
-
-struct OrderTradeReport {
-  ExchangeOrderID order_id;
-  SecurityID security_id;
-  ClientID client_id;
-  ClientOrderID client_order_id;
+  Direction aggressor_direction;
   Price price;
   Amount quantity;
+  ClientID client_id;
+  ClientOrderID client_order_id;
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ExchangeOrderID recipient_order_id;
 };
 
-enum class OrderRejectedReason : std::uint8_t { INSUFFICIENT_FUNDS, PRICE_OUT_OF_RANGE };
+using OrderBookEntry = engine_snapshot::OrderBookEntry;
+using OrderExpired = engine_snapshot::OrderExpired;
+using OrderCancelled = engine_snapshot::OrderCancelled;
+using OrderRejected = engine_snapshot::OrderRejected;
+using CancellationRejected = engine_snapshot::CancellationRejected;
+using ModificationAccepted = engine_snapshot::ModificationAccepted;
+using ModificationRejected = engine_snapshot::ModificationRejected;
 
-struct OrderRejectedReport {
-  SecurityID security_id;
-  ClientID client_id;
-  ClientOrderID client_order_id;
-  OrderRejectedReason reason;
-};
+using OrderRejectedReason = engine_snapshot::OrderRejectedReason;
+using CancellationRejectedReason = engine_snapshot::CancellationRejectedReason;
+using ModificationRejectedReason = engine_snapshot::ModificationRejectedReason;
 
-enum class CancellationRejectedReason : std::uint8_t { ORDER_NOT_FOUND, INSUFFICIENT_FUNDS, PRICE_OUT_OF_RANGE };
-
-struct CancellationRejectedReport {
-  SecurityID security_id;
-  ClientID client_id;
-  ClientOrderID client_order_id;
-  ClientOrderID client_cancellation_id;
-  CancellationRejectedReason reason;
-};
-
-using ReportType = std::variant<OrderEntryReport,
-    OrderCancellationReport,
-    OrderTradeReport,
-    OrderRejectedReport,
-    CancellationRejectedReport>;
+using ReportType = std::variant<OrderAccepted,
+    Trade,
+    OrderBookEntry,
+    OrderExpired,
+    OrderCancelled,
+    OrderRejected,
+    CancellationRejected,
+    ModificationAccepted,
+    ModificationRejected>;
 
 }  // namespace exchange_sim::report

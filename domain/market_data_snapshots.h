@@ -8,8 +8,6 @@ namespace exchange_sim::market_data {
 struct OrderEntrySnapshot {
   ExchangeOrderID order_id;
   SecurityID security_id;
-  OrderTimeInForce time_in_force;
-  OrderType order_type;
   Direction direction;
   Price price;
   Amount quantity;

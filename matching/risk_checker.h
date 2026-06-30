@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/exchange_snapshots.h"
+#include "domain/engine_snapshots.h"
 #include "domain/security.h"
 #include "domain/requests.h"
 #include <optional>
@@ -11,9 +11,9 @@ class RiskChecker {
 public:
   explicit RiskChecker(const Security& security): security_(security) {}
 
-  std::optional<exchange_snapshot::OrderRejectedReason> reject_request(const request::OrderAddRequest& request) const;
+  std::optional<engine_snapshot::OrderRejectedReason> reject_request(const request::OrderAddRequest& request) const;
 
-  std::optional<exchange_snapshot::CancellationRejectedReason> reject_request(
+  std::optional<engine_snapshot::ModificationRejectedReason> reject_request(
       const request::OrderModifyRequest& request) const;
 
 private:

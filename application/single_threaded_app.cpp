@@ -4,7 +4,7 @@
 #include "output/exchange_dispatcher.h"
 #include "output/market_data_generator.h"
 #include "output/report_generator.h"
-#include "domain/exchange_snapshots.h"
+#include "domain/engine_snapshots.h"
 #include "domain/security.h"
 #include "matching/matching_engine.h"
 
@@ -43,7 +43,7 @@ void run_single_threaded_app(const glz::generic& config) {
   }
   SimpleReceiver<market_data::SnapshotType, MarketDataGenerator> market_data_generator(config["market_data_generator"]);
   SimpleReceiver<report::ReportType, ReportGenerator> report_generator(config["report_generator"]);
-  SimpleReceiver<exchange_snapshot::SnapshotType, ExchangeDispatcher<CallbackSink, CallbackSink>> exchange_dispatcher(
+  SimpleReceiver<engine_snapshot::SnapshotType, ExchangeDispatcher<CallbackSink, CallbackSink>> exchange_dispatcher(
       config["exchange_dispatcher"], market_data_generator.get_sink(), report_generator.get_sink());
   SimpleReceiver<request::RequestType, MatchingEngine<CallbackSink>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());

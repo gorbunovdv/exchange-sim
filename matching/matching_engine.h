@@ -1,8 +1,13 @@
 #pragma once
 
+#include "base/counter.h"
+#include "base/logging/loggable_class.h"
 #include "domain/requests.h"
-#include "domain/exchange_snapshots.h"
+#include "domain/engine_snapshots.h"
+#include "domain/security_storage.h"
 #include "matching/simple_l3book.h"
+
+#include <glaze/glaze.hpp>
 
 namespace exchange_sim {
 
@@ -10,7 +15,7 @@ template<template<typename> class SinkType>
 class MatchingEngine : public LoggableClass {
 public:
   explicit MatchingEngine(
-      const glz::generic&, SecurityStorage& security_storage, SinkType<exchange_snapshot::SnapshotType>& sink):
+      const glz::generic&, SecurityStorage& security_storage, SinkType<engine_snapshot::SnapshotType>& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     books_.reserve(security_storage_.size());
     for (auto& security : security_storage_.securities()) {
@@ -34,7 +39,7 @@ private:
   }
 
   SecurityStorage& security_storage_;
-  SinkType<exchange_snapshot::SnapshotType>& sink_;
+  SinkType<engine_snapshot::SnapshotType>& sink_;
   std::vector<SimpleL3Book> books_;
 
   Counter<ExchangeOrderID> order_id_counter_;

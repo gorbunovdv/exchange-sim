@@ -2,6 +2,13 @@
 
 namespace exchange_sim {
 
+SimpleL3Book::SimpleL3Book(
+    const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter):
+    security_(security),
+    risk_checker_(security),
+    order_id_counter_(order_id_counter),
+    trade_id_counter_(trade_id_counter) {}
+
 std::optional<SimpleL3Book::ActiveOrder> SimpleL3Book::extract_order(
     ClientID client_id, ClientOrderID client_order_id) {
   if (auto active_order_map_iterator = active_orders_.find(std::make_pair(client_id, client_order_id));

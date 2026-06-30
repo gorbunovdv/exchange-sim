@@ -12,19 +12,24 @@ namespace exchange_sim {
 class SimpleL3Book {
 public:
   explicit SimpleL3Book(
-      const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter):
-      security_(security),
-      risk_checker_(security),
-      order_id_counter_(order_id_counter),
-      trade_id_counter_(trade_id_counter) {}
+      const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter);
 
   void add(request::OrderAddRequest request, auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
-      sink.push(exchange_snapshot::OrderRejectedSnapshot{
+      sink.push(engine_snapshot::OrderRejected{
           .security_id = security_.security_id,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .reason = outcome.value(),
+      });
+      return;
+    }
+    if (active_orders_.contains(std::make_pair(request.client_id, request.client_order_id))) {
+      sink.push(engine_snapshot::OrderRejected{
+          .security_id = security_.security_id,
+          .client_id = request.client_id,
+          .client_order_id = request.client_order_id,
+          .reason = engine_snapshot::OrderRejectedReason::DUPLICATE_CLIENT_ORDER_ID,
       });
       return;
     }
@@ -36,88 +41,107 @@ public:
         .price = request.price,
         .quantity = request.quantity,
     };
+    sink.push(engine_snapshot::OrderAccepted{
+        .order_id = current_order.order_id,
+        .client_id = current_order.client_id,
+        .client_order_id = current_order.client_order_id,
+        .security_id = security_.security_id,
+        .time_in_force = request.time_in_force,
+        .direction = current_order.direction,
+        .price = current_order.price,
+        .quantity = current_order.quantity,
+    });
     current_order = fill_order_and_place_in_book(current_order, request.time_in_force, sink);
-    if (current_order.quantity != 0) {
-      sink.push(exchange_snapshot::OrderEntrySnapshot{
+    if (current_order.quantity != 0 && request.time_in_force != OrderTimeInForce::IOC) {
+      sink.push(engine_snapshot::OrderBookEntry{
           .order_id = current_order.order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
           .security_id = security_.security_id,
-          .time_in_force = request.time_in_force,
-          .order_type = request.order_type,
           .direction = request.direction,
           .price = request.price,
           .quantity = current_order.quantity,
       });
-    }
-    if (current_order.quantity == 0 || request.time_in_force == OrderTimeInForce::IOC) {
-      sink.push(exchange_snapshot::OrderCancellationSnapshot{
-          .order_id = current_order.order_id,
+    } else {
+      sink.push(engine_snapshot::OrderExpired{.order_id = current_order.order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
-          .client_cancellation_id = 0,
           .security_id = security_.security_id,
-      });
+          .reason = (current_order.quantity == 0 ? engine_snapshot::ExpirationReason::AGGRESSIVE_FILL :
+                                                   engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED)});
     }
   }
 
   void modify(request::OrderModifyRequest request, auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
-      sink.push(exchange_snapshot::CancellationRejectedSnapshot{
-          .order_id = 0,
+      sink.push(engine_snapshot::ModificationRejected{
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_cancellation_id = request.client_modification_id,
+          .client_modification_id = request.client_modification_id,
           .security_id = security_.security_id,
           .reason = outcome.value(),
       });
       return;
     }
+    if (request.client_order_id != request.client_modification_id &&
+        active_orders_.contains(std::make_pair(request.client_id, request.client_modification_id))) {
+      sink.push(engine_snapshot::ModificationRejected{.client_id = request.client_id,
+          .client_order_id = request.client_order_id,
+          .client_modification_id = request.client_modification_id,
+          .security_id = security_.security_id,
+          .reason = engine_snapshot::ModificationRejectedReason::DUPLICATE_CLIENT_ORDER_ID});
+      return;
+    }
     if (auto current_order_opt = extract_order(request.client_id, request.client_order_id);
         current_order_opt.has_value()) {
       auto current_order = current_order_opt.value();
-      sink.push(exchange_snapshot::OrderCancellationSnapshot{
+      ExchangeOrderID new_order_id = generate_order_id();
+      sink.push(engine_snapshot::ModificationAccepted{
           .order_id = current_order.order_id,
-          .client_id = request.client_id,
-          .client_order_id = request.client_order_id,
-          .client_cancellation_id = request.client_modification_id,
+          .new_order_id = new_order_id,
+          .client_id = current_order.client_id,
+          .client_order_id = current_order.client_order_id,
+          .client_modification_id = request.client_modification_id,
           .security_id = security_.security_id,
+          .direction = request.direction,
+          .price = request.price,
+          .quantity = request.quantity,
       });
+      sink.push(engine_snapshot::OrderExpired{.order_id = current_order.order_id,
+          .client_id = current_order.client_id,
+          .client_order_id = current_order.client_order_id,
+          .security_id = security_.security_id,
+          .reason = engine_snapshot::ExpirationReason::MODIFIED_EXPIRED});
+      current_order.order_id = new_order_id;
       current_order.direction = request.direction;
       current_order.price = request.price;
       current_order.quantity = request.quantity;
       current_order.client_order_id = request.client_modification_id;
       current_order = fill_order_and_place_in_book(current_order, OrderTimeInForce::LIMIT, sink);
       if (current_order.quantity != 0) {
-        sink.push(exchange_snapshot::OrderEntrySnapshot{
+        sink.push(engine_snapshot::OrderBookEntry{
             .order_id = current_order.order_id,
             .client_id = current_order.client_id,
             .client_order_id = current_order.client_order_id,
             .security_id = security_.security_id,
-            .time_in_force = OrderTimeInForce::LIMIT,
-            .order_type = OrderType::LIMIT,
             .direction = request.direction,
             .price = request.price,
             .quantity = current_order.quantity,
         });
-      }
-      if (current_order.quantity == 0) {
-        sink.push(exchange_snapshot::OrderCancellationSnapshot{
-            .order_id = current_order.order_id,
-            .client_id = current_order.client_id,
+      } else {
+        sink.push(engine_snapshot::OrderExpired{.order_id = current_order.order_id,
+            .client_id = request.client_id,
             .client_order_id = current_order.client_order_id,
-            .client_cancellation_id = 0,
             .security_id = security_.security_id,
-        });
+            .reason = engine_snapshot::ExpirationReason::AGGRESSIVE_FILL});
       }
     } else {
-      sink.push(exchange_snapshot::CancellationRejectedSnapshot{
-          .order_id = 0,
+      sink.push(engine_snapshot::ModificationRejected{
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_cancellation_id = request.client_modification_id,
+          .client_modification_id = request.client_modification_id,
           .security_id = security_.security_id,
-          .reason = exchange_snapshot::CancellationRejectedReason::ORDER_NOT_FOUND,
+          .reason = engine_snapshot::ModificationRejectedReason::ORDER_NOT_FOUND,
       });
     }
   }
@@ -125,7 +149,7 @@ public:
   void cancel(request::OrderCancelRequest request, auto& sink) {
     if (auto order_opt = extract_order(request.client_id, request.client_order_id); order_opt.has_value()) {
       auto order = order_opt.value();
-      sink.push(exchange_snapshot::OrderCancellationSnapshot{
+      sink.push(engine_snapshot::OrderCancelled{
           .order_id = order.order_id,
           .client_id = request.client_id,
           .client_order_id = order.client_order_id,
@@ -133,13 +157,12 @@ public:
           .security_id = security_.security_id,
       });
     } else {
-      sink.push(exchange_snapshot::CancellationRejectedSnapshot{
-          .order_id = 0,
+      sink.push(engine_snapshot::CancellationRejected{
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_cancellation_id = request.client_cancellation_id,
           .security_id = security_.security_id,
-          .reason = exchange_snapshot::CancellationRejectedReason::ORDER_NOT_FOUND,
+          .reason = engine_snapshot::CancellationRejectedReason::ORDER_NOT_FOUND,
       });
     }
   }
@@ -192,8 +215,9 @@ private:
       Amount quantity_to_fill = std::min(current_order.quantity, opposite_direction_book_level.front().quantity);
       current_order.quantity -= quantity_to_fill;
       opposite_direction_book_level.front().quantity -= quantity_to_fill;
-      sink.push(exchange_snapshot::TradeSnapshot{
+      sink.push(engine_snapshot::Trade{
           .security_id = security_.security_id,
+          .aggressor_direction = current_order.direction,
           .price = opposite_direction_book_level.front().price,
           .quantity = quantity_to_fill,
           .trade_id = generate_trade_id(),
@@ -205,13 +229,11 @@ private:
           .recipient_client_order_id = opposite_direction_book_level.front().client_order_id,
       });
       if (opposite_direction_book_level.front().quantity == 0) {
-        sink.push(exchange_snapshot::OrderCancellationSnapshot{
-            .order_id = opposite_direction_book_level.front().order_id,
+        sink.push(engine_snapshot::OrderExpired{.order_id = opposite_direction_book_level.front().order_id,
             .client_id = opposite_direction_book_level.front().client_id,
             .client_order_id = opposite_direction_book_level.front().client_order_id,
-            .client_cancellation_id = 0,
             .security_id = security_.security_id,
-        });
+            .reason = engine_snapshot::ExpirationReason::PASSIVE_FILL});
         active_orders_.erase(std::make_pair(
             opposite_direction_book_level.front().client_id, opposite_direction_book_level.front().client_order_id));
         opposite_direction_book_level.pop_front();
@@ -234,8 +256,8 @@ private:
       })>
       active_orders_;
 
-  Counter<ExchangeOrderID> order_id_counter_;
-  Counter<ExchangeTradeID> trade_id_counter_;
+  Counter<ExchangeOrderID>& order_id_counter_;
+  Counter<ExchangeTradeID>& trade_id_counter_;
 };
 
 }  // namespace exchange_sim
