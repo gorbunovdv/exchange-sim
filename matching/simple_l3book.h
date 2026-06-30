@@ -3,7 +3,8 @@
 #include "base/counter.h"
 #include "domain/security.h"
 #include "domain/requests.h"
-#include "application/risk_checker.h"
+#include "matching/risk_checker.h"
+#include <map>
 #include <list>
 
 namespace exchange_sim {
@@ -153,20 +154,7 @@ private:
     Amount quantity;
   };
 
-  std::optional<ActiveOrder> extract_order(ClientID client_id, ClientOrderID client_order_id) {
-    if (auto active_order_map_iterator = active_orders_.find(std::make_pair(client_id, client_order_id));
-        active_order_map_iterator != active_orders_.end()) {
-      auto active_order_iterator = active_order_map_iterator->second;
-      active_orders_.erase(active_order_map_iterator);
-      ActiveOrder order = *active_order_iterator;
-      book_[magic_enum::enum_integer(order.direction)][order.price].erase(active_order_iterator);
-      if (book_[magic_enum::enum_integer(order.direction)][order.price].empty()) {
-        book_[magic_enum::enum_integer(order.direction)].erase(order.price);
-      }
-      return order;
-    }
-    return std::nullopt;
-  }
+  std::optional<ActiveOrder> extract_order(ClientID client_id, ClientOrderID client_order_id);
 
   ActiveOrder fill_order_and_place_in_book(ActiveOrder current_order, OrderTimeInForce time_in_force, auto& sink) {
     Direction opposite_direction = current_order.direction == Direction::BUY ? Direction::SELL : Direction::BUY;

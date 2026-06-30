@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/types.h"
+#include <variant>
 
 namespace exchange_sim::exchange_snapshot {
 

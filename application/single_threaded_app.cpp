@@ -1,12 +1,12 @@
 #include "base/run.h"
 #include "base/simple_receiver.h"
 #include "application/simple_order_generator.h"
-#include "application/matching_engine.h"
 #include "application/exchange_dispatcher.h"
 #include "application/market_data_generator.h"
 #include "application/report_generator.h"
 #include "domain/exchange_snapshots.h"
 #include "domain/security.h"
+#include "matching/matching_engine.h"
 
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>

@@ -40,4 +40,5 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(base)
 add_subdirectory(domain)
+add_subdirectory(matching)
 add_subdirectory(application)
