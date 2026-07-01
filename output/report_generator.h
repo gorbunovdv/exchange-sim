@@ -57,6 +57,21 @@ public:
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
             },
+            [this](report::OrderFilled report) {
+              INFO(
+                  "Received report, type=OrderFilled"
+                  " order_id={} client_id={} client_order_id={} security_id={}"
+                  " direction={} price={} remaining_quantity={} type={} fully_filled={}",
+                  report.order_id,
+                  report.client_id,
+                  report.client_order_id,
+                  report.security_id,
+                  format_as(report.direction),
+                  static_cast<double>(report.price),
+                  static_cast<double>(report.remaining_quantity),
+                  magic_enum::enum_name(report.type),
+                  report.fully_filled);
+            },
             [this](report::OrderExpired report) {
               INFO(
                   "Received report, type=OrderExpired"

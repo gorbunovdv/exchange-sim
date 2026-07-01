@@ -40,7 +40,21 @@ struct OrderBookEntry {
   Amount quantity;
 };
 
-enum class ExpirationReason : std::uint8_t { PASSIVE_FILL, AGGRESSIVE_FILL, IOC_REMAINDER_EXPIRED, MODIFIED_EXPIRED };
+enum class FilledType : std::uint8_t { PASSIVE_FILL, AGGRESSIVE_FILL };
+
+struct OrderFilled {
+  ExchangeOrderID order_id;
+  ClientID client_id;
+  ClientOrderID client_order_id;
+  SecurityID security_id;
+  Direction direction;
+  Price price;
+  Amount remaining_quantity;
+  FilledType type;
+  bool fully_filled;
+};
+
+enum class ExpirationReason : std::uint8_t { IOC_REMAINDER_EXPIRED };
 
 struct OrderExpired {
   ExchangeOrderID order_id;
@@ -107,6 +121,7 @@ struct ModificationRejected {
 using SnapshotType = std::variant<OrderAccepted,
     Trade,
     OrderBookEntry,
+    OrderFilled,
     OrderExpired,
     OrderCancelled,
     OrderRejected,

@@ -25,6 +25,16 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity));
                    },
+                   [](market_data::OrderChangeSnapshot snapshot) {
+                     INFO(
+                         "Received market data snapshot, type=OrderChangeSnapshot"
+                         " order_id={} security_id={} direction={} price={} new_quantity={}",
+                         snapshot.order_id,
+                         snapshot.security_id,
+                         format_as(snapshot.direction),
+                         static_cast<double>(snapshot.price),
+                         static_cast<double>(snapshot.new_quantity));
+                   },
                    [](market_data::OrderCancellationSnapshot snapshot) {
                      INFO(
                          "Received market data snapshot, type=OrderCancellationSnapshot"

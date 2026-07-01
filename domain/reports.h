@@ -21,6 +21,7 @@ struct Trade {
 };
 
 using OrderBookEntry = engine_snapshot::OrderBookEntry;
+using OrderFilled = engine_snapshot::OrderFilled;
 using OrderExpired = engine_snapshot::OrderExpired;
 using OrderCancelled = engine_snapshot::OrderCancelled;
 using OrderRejected = engine_snapshot::OrderRejected;
@@ -35,6 +36,7 @@ using ModificationRejectedReason = engine_snapshot::ModificationRejectedReason;
 using ReportType = std::variant<OrderAccepted,
     Trade,
     OrderBookEntry,
+    OrderFilled,
     OrderExpired,
     OrderCancelled,
     OrderRejected,

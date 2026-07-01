@@ -62,13 +62,26 @@ public:
           .price = request.price,
           .quantity = current_order.quantity,
       });
-    } else {
-      sink.push(engine_snapshot::OrderExpired{.order_id = current_order.order_id,
+    } else if (current_order.quantity == 0) {
+      sink.push(engine_snapshot::OrderFilled{
+          .order_id = current_order.order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
           .security_id = security_.security_id,
-          .reason = (current_order.quantity == 0 ? engine_snapshot::ExpirationReason::AGGRESSIVE_FILL :
-                                                   engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED)});
+          .direction = current_order.direction,
+          .price = current_order.price,
+          .remaining_quantity = current_order.quantity,
+          .type = engine_snapshot::FilledType::AGGRESSIVE_FILL,
+          .fully_filled = true,
+      });
+    } else {
+      sink.push(engine_snapshot::OrderExpired{
+          .order_id = current_order.order_id,
+          .client_id = current_order.client_id,
+          .client_order_id = current_order.client_order_id,
+          .security_id = security_.security_id,
+          .reason = engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED,
+      });
     }
   }
 
@@ -107,11 +120,6 @@ public:
           .price = request.price,
           .quantity = request.quantity,
       });
-      sink.push(engine_snapshot::OrderExpired{.order_id = current_order.order_id,
-          .client_id = current_order.client_id,
-          .client_order_id = current_order.client_order_id,
-          .security_id = security_.security_id,
-          .reason = engine_snapshot::ExpirationReason::MODIFIED_EXPIRED});
       current_order.order_id = new_order_id;
       current_order.direction = request.direction;
       current_order.price = request.price;
@@ -129,11 +137,15 @@ public:
             .quantity = current_order.quantity,
         });
       } else {
-        sink.push(engine_snapshot::OrderExpired{.order_id = current_order.order_id,
+        sink.push(engine_snapshot::OrderFilled{.order_id = current_order.order_id,
             .client_id = request.client_id,
             .client_order_id = current_order.client_order_id,
             .security_id = security_.security_id,
-            .reason = engine_snapshot::ExpirationReason::AGGRESSIVE_FILL});
+            .direction = current_order.direction,
+            .price = current_order.price,
+            .remaining_quantity = current_order.quantity,
+            .type = engine_snapshot::FilledType::AGGRESSIVE_FILL,
+            .fully_filled = true});
       }
     } else {
       sink.push(engine_snapshot::ModificationRejected{
@@ -228,12 +240,18 @@ private:
           .recipient_client_id = opposite_direction_book_level.front().client_id,
           .recipient_client_order_id = opposite_direction_book_level.front().client_order_id,
       });
+      sink.push(engine_snapshot::OrderFilled{
+          .order_id = opposite_direction_book_level.front().order_id,
+          .client_id = opposite_direction_book_level.front().client_id,
+          .client_order_id = opposite_direction_book_level.front().client_order_id,
+          .security_id = security_.security_id,
+          .direction = opposite_direction_book_level.front().direction,
+          .price = opposite_direction_book_level.front().price,
+          .remaining_quantity = opposite_direction_book_level.front().quantity,
+          .type = engine_snapshot::FilledType::PASSIVE_FILL,
+          .fully_filled = opposite_direction_book_level.front().quantity == 0,
+      });
       if (opposite_direction_book_level.front().quantity == 0) {
-        sink.push(engine_snapshot::OrderExpired{.order_id = opposite_direction_book_level.front().order_id,
-            .client_id = opposite_direction_book_level.front().client_id,
-            .client_order_id = opposite_direction_book_level.front().client_order_id,
-            .security_id = security_.security_id,
-            .reason = engine_snapshot::ExpirationReason::PASSIVE_FILL});
         active_orders_.erase(std::make_pair(
             opposite_direction_book_level.front().client_id, opposite_direction_book_level.front().client_order_id));
         opposite_direction_book_level.pop_front();

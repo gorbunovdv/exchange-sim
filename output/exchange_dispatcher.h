@@ -67,16 +67,29 @@ private:
     report_generator_sink_.push(snapshot);
   }
 
-  void process_object(engine_snapshot::OrderExpired snapshot) {
-    if (snapshot.reason == engine_snapshot::ExpirationReason::PASSIVE_FILL ||
-        snapshot.reason == engine_snapshot::ExpirationReason::MODIFIED_EXPIRED) {
-      market_data_sink_.push(market_data::OrderCancellationSnapshot{
-          .order_id = snapshot.order_id,
-          .security_id = snapshot.security_id,
-      });
+  void process_object(engine_snapshot::OrderFilled snapshot) {
+    if (snapshot.type == engine_snapshot::FilledType::PASSIVE_FILL) {
+      if (snapshot.fully_filled) {
+        market_data_sink_.push(market_data::OrderCancellationSnapshot{
+            .order_id = snapshot.order_id,
+            .security_id = snapshot.security_id,
+        });
+      } else {
+        market_data_sink_.push(market_data::OrderChangeSnapshot{
+            .order_id = snapshot.order_id,
+            .security_id = snapshot.security_id,
+            .direction = snapshot.direction,
+            .price = snapshot.price,
+            .new_quantity = snapshot.remaining_quantity,
+        });
+      }
     }
-    report_generator_sink_.push(snapshot);
+    if (snapshot.fully_filled) {
+      report_generator_sink_.push(snapshot);
+    }
   }
+
+  void process_object(engine_snapshot::OrderExpired snapshot) { report_generator_sink_.push(snapshot); }
 
   void process_object(engine_snapshot::OrderCancelled snapshot) {
     market_data_sink_.push(market_data::OrderCancellationSnapshot{
@@ -90,7 +103,13 @@ private:
 
   void process_object(engine_snapshot::CancellationRejected snapshot) { report_generator_sink_.push(snapshot); }
 
-  void process_object(engine_snapshot::ModificationAccepted snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::ModificationAccepted snapshot) {
+    market_data_sink_.push(market_data::OrderCancellationSnapshot{
+        .order_id = snapshot.order_id,
+        .security_id = snapshot.security_id,
+    });
+    report_generator_sink_.push(snapshot);
+  }
 
   void process_object(engine_snapshot::ModificationRejected snapshot) { report_generator_sink_.push(snapshot); }
 
