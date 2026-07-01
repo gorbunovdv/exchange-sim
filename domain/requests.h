@@ -16,10 +16,10 @@ struct OrderAddRequest {
   Amount quantity;
 };
 
-struct OrderModifyRequest {
+struct OrderReplaceRequest {
   ClientID client_id;
   ClientOrderID client_order_id;
-  ClientOrderID client_modification_id;
+  ClientOrderID client_replacement_id;
   SecurityID security_id;
   Direction direction;
   Price price;
@@ -33,6 +33,6 @@ struct OrderCancelRequest {
   SecurityID security_id;
 };
 
-using RequestType = std::variant<OrderAddRequest, OrderModifyRequest, OrderCancelRequest>;
+using RequestType = std::variant<OrderAddRequest, OrderReplaceRequest, OrderCancelRequest>;
 
 }  // namespace exchange_sim::request

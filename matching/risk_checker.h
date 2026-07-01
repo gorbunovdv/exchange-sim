@@ -13,8 +13,8 @@ public:
 
   std::optional<engine_snapshot::OrderRejectedReason> reject_request(const request::OrderAddRequest& request) const;
 
-  std::optional<engine_snapshot::ModificationRejectedReason> reject_request(
-      const request::OrderModifyRequest& request) const;
+  std::optional<engine_snapshot::ReplacementRejectedReason> reject_request(
+      const request::OrderReplaceRequest& request) const;
 
 private:
   const Security& security_;

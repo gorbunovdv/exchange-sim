@@ -91,31 +91,31 @@ struct CancellationRejected {
   CancellationRejectedReason reason;
 };
 
-enum class ModificationRejectedReason : std::uint8_t {
+enum class ReplacementRejectedReason : std::uint8_t {
   ORDER_NOT_FOUND,
   DUPLICATE_CLIENT_ORDER_ID,
   INSUFFICIENT_FUNDS,
   PRICE_OUT_OF_RANGE
 };
 
-struct ModificationAccepted {
+struct ReplacementAccepted {
   ExchangeOrderID order_id;
   ExchangeOrderID new_order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
-  ClientOrderID client_modification_id;
+  ClientOrderID client_replacement_id;
   SecurityID security_id;
   Direction direction;
   Price price;
   Amount quantity;
 };
 
-struct ModificationRejected {
+struct ReplacementRejected {
   ClientID client_id;
   ClientOrderID client_order_id;
-  ClientOrderID client_modification_id;
+  ClientOrderID client_replacement_id;
   SecurityID security_id;
-  ModificationRejectedReason reason;
+  ReplacementRejectedReason reason;
 };
 
 using SnapshotType = std::variant<OrderAccepted,
@@ -126,7 +126,7 @@ using SnapshotType = std::variant<OrderAccepted,
     OrderCancelled,
     OrderRejected,
     CancellationRejected,
-    ModificationAccepted,
-    ModificationRejected>;
+    ReplacementAccepted,
+    ReplacementRejected>;
 
 }  // namespace exchange_sim::engine_snapshot

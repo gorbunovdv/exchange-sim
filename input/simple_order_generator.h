@@ -47,16 +47,16 @@ public:
                     const ActiveOrder& active_order) { return active_order.order_id == order_id; }),
             active_orders_[security_id].end());
       }
-      if (std::holds_alternative<request::OrderModifyRequest>(order)) {
-        SecurityID security_id = std::get<request::OrderModifyRequest>(order).security_id;
+      if (std::holds_alternative<request::OrderReplaceRequest>(order)) {
+        SecurityID security_id = std::get<request::OrderReplaceRequest>(order).security_id;
         active_orders_[security_id].erase(
             std::remove_if(active_orders_[security_id].begin(),
                 active_orders_[security_id].end(),
-                [order_id = std::get<request::OrderModifyRequest>(order).client_order_id](
+                [order_id = std::get<request::OrderReplaceRequest>(order).client_order_id](
                     const ActiveOrder& active_order) { return active_order.order_id == order_id; }),
             active_orders_[security_id].end());
         active_orders_[security_id].emplace_back(
-            ActiveOrder{std::get<request::OrderModifyRequest>(order).client_modification_id});
+            ActiveOrder{std::get<request::OrderReplaceRequest>(order).client_replacement_id});
       }
       matching_engine_sink_.push(order);
     }
@@ -87,7 +87,7 @@ private:
     if (type == 2 && std::ranges::any_of(active_orders_, [](auto& pair) { return pair.size() == 0; })) {
       return generate_new_order_request(security_id_distribution_(generator_));
     }
-    return generate_modify_order_request(security_id_distribution_(generator_));
+    return generate_replace_order_request(security_id_distribution_(generator_));
   }
 
   request::OrderAddRequest generate_new_order_request(SecurityID security_id) {
@@ -131,10 +131,10 @@ private:
     };
   }
 
-  request::OrderModifyRequest generate_modify_order_request(SecurityID security_id) {
-    CHECK(!active_orders_[security_id].empty(), "Active orders must not be empty for modification query");
+  request::OrderReplaceRequest generate_replace_order_request(SecurityID security_id) {
+    CHECK(!active_orders_[security_id].empty(), "Active orders must not be empty for replacement query");
     const auto& active_orders = active_orders_.at(security_id);
-    size_t order_to_modify_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
+    size_t order_to_replace_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
 
     const Security& security = security_storage_.get_security(security_id);
     Price price_interval = security.high_price - security.low_price;
@@ -150,10 +150,10 @@ private:
     Direction direction = magic_enum::enum_value<Direction>(
         std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<Direction>() - 1)(generator_));
 
-    return request::OrderModifyRequest{
+    return request::OrderReplaceRequest{
         .client_id = 0,
-        .client_order_id = active_orders[order_to_modify_index].order_id,
-        .client_modification_id = generate_order_id(),
+        .client_order_id = active_orders[order_to_replace_index].order_id,
+        .client_replacement_id = generate_order_id(),
         .security_id = security_id,
         .direction = direction,
         .price = resulting_price,

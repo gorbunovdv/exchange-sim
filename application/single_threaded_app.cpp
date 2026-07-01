@@ -41,7 +41,8 @@ void run_single_threaded_app(const glz::generic& config) {
         static_cast<double>(security.high_price),
         static_cast<double>(security.max_amount));
   }
-  SimpleReceiver<market_data::SnapshotType, MarketDataGenerator> market_data_generator(config["market_data_generator"]);
+  SimpleReceiver<market_data_snapshot::SnapshotType, MarketDataGenerator> market_data_generator(
+      config["market_data_generator"]);
   SimpleReceiver<report::ReportType, ReportGenerator> report_generator(config["report_generator"]);
   SimpleReceiver<engine_snapshot::SnapshotType, ExchangeDispatcher<CallbackSink, CallbackSink>> exchange_dispatcher(
       config["exchange_dispatcher"], market_data_generator.get_sink(), report_generator.get_sink());

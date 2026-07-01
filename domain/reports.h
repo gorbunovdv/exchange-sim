@@ -26,12 +26,12 @@ using OrderExpired = engine_snapshot::OrderExpired;
 using OrderCancelled = engine_snapshot::OrderCancelled;
 using OrderRejected = engine_snapshot::OrderRejected;
 using CancellationRejected = engine_snapshot::CancellationRejected;
-using ModificationAccepted = engine_snapshot::ModificationAccepted;
-using ModificationRejected = engine_snapshot::ModificationRejected;
+using ReplacementAccepted = engine_snapshot::ReplacementAccepted;
+using ReplacementRejected = engine_snapshot::ReplacementRejected;
 
 using OrderRejectedReason = engine_snapshot::OrderRejectedReason;
 using CancellationRejectedReason = engine_snapshot::CancellationRejectedReason;
-using ModificationRejectedReason = engine_snapshot::ModificationRejectedReason;
+using ReplacementRejectedReason = engine_snapshot::ReplacementRejectedReason;
 
 using ReportType = std::variant<OrderAccepted,
     Trade,
@@ -41,7 +41,7 @@ using ReportType = std::variant<OrderAccepted,
     OrderCancelled,
     OrderRejected,
     CancellationRejected,
-    ModificationAccepted,
-    ModificationRejected>;
+    ReplacementAccepted,
+    ReplacementRejected>;
 
 }  // namespace exchange_sim::report

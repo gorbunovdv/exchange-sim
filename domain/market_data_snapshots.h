@@ -3,9 +3,9 @@
 #include "domain/types.h"
 #include <variant>
 
-namespace exchange_sim::market_data {
+namespace exchange_sim::market_data_snapshot {
 
-struct OrderEntrySnapshot {
+struct BookOrderEntry {
   ExchangeOrderID order_id;
   SecurityID security_id;
   Direction direction;
@@ -13,7 +13,7 @@ struct OrderEntrySnapshot {
   Amount quantity;
 };
 
-struct OrderChangeSnapshot {
+struct BookOrderChange {
   ExchangeOrderID order_id;
   SecurityID security_id;
   Direction direction;
@@ -21,12 +21,12 @@ struct OrderChangeSnapshot {
   Amount new_quantity;
 };
 
-struct OrderCancellationSnapshot {
+struct BookOrderDeletion {
   ExchangeOrderID order_id;
   SecurityID security_id;
 };
 
-struct TradeSnapshot {
+struct Trade {
   SecurityID security_id;
   Price price;
   Amount quantity;
@@ -35,6 +35,6 @@ struct TradeSnapshot {
   ExchangeOrderID recipient_order_id;
 };
 
-using SnapshotType = std::variant<OrderEntrySnapshot, OrderChangeSnapshot, OrderCancellationSnapshot, TradeSnapshot>;
+using SnapshotType = std::variant<BookOrderEntry, BookOrderChange, BookOrderDeletion, Trade>;
 
-}  // namespace exchange_sim::market_data
+}  // namespace exchange_sim::market_data_snapshot

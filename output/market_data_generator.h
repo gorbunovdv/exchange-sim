@@ -12,11 +12,11 @@ class MarketDataGenerator {
 public:
   explicit MarketDataGenerator(const glz::generic&) {}
 
-  void process(market_data::SnapshotType snapshot) {
+  void process(market_data_snapshot::SnapshotType snapshot) {
     std::visit(boost::hof::match(
-                   [](market_data::OrderEntrySnapshot snapshot) {
+                   [](market_data_snapshot::BookOrderEntry snapshot) {
                      INFO(
-                         "Received market data snapshot, type=OrderEntrySnapshot"
+                         "Received market data snapshot, type=BookOrderEntry"
                          " order_id={} security_id={}"
                          " direction={} price={} quantity={}",
                          snapshot.order_id,
@@ -25,9 +25,9 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity));
                    },
-                   [](market_data::OrderChangeSnapshot snapshot) {
+                   [](market_data_snapshot::BookOrderChange snapshot) {
                      INFO(
-                         "Received market data snapshot, type=OrderChangeSnapshot"
+                         "Received market data snapshot, type=BookOrderChange"
                          " order_id={} security_id={} direction={} price={} new_quantity={}",
                          snapshot.order_id,
                          snapshot.security_id,
@@ -35,16 +35,16 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.new_quantity));
                    },
-                   [](market_data::OrderCancellationSnapshot snapshot) {
+                   [](market_data_snapshot::BookOrderDeletion snapshot) {
                      INFO(
-                         "Received market data snapshot, type=OrderCancellationSnapshot"
+                         "Received market data snapshot, type=BookOrderDeletion"
                          " order_id={} security_id={}",
                          snapshot.order_id,
                          snapshot.security_id);
                    },
-                   [](market_data::TradeSnapshot snapshot) {
+                   [](market_data_snapshot::Trade snapshot) {
                      INFO(
-                         "Received market data snapshot, type=TradeSnapshot"
+                         "Received market data snapshot, type=Trade"
                          " security_id={} price={} quantity={}"
                          " trade_id={} aggressor_order_id={} recipient_order_id={}",
                          snapshot.security_id,

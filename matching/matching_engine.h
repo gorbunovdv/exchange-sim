@@ -30,8 +30,8 @@ public:
 private:
   void process_object(request::OrderAddRequest request) { books_[request.security_id].add(std::move(request), sink_); }
 
-  void process_object(request::OrderModifyRequest request) {
-    books_[request.security_id].modify(std::move(request), sink_);
+  void process_object(request::OrderReplaceRequest request) {
+    books_[request.security_id].replace(std::move(request), sink_);
   }
 
   void process_object(request::OrderCancelRequest request) {

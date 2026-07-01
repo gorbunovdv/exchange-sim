@@ -12,7 +12,7 @@ template<template<typename> class MDSinkType, template<typename> class ORSinkTyp
 class ExchangeDispatcher {
 public:
   explicit ExchangeDispatcher(const glz::generic&,
-      MDSinkType<market_data::SnapshotType>& market_data_sink,
+      MDSinkType<market_data_snapshot::SnapshotType>& market_data_sink,
       ORSinkType<report::ReportType>& report_generator_sink):
       market_data_sink_(market_data_sink), report_generator_sink_(report_generator_sink) {}
 
@@ -24,7 +24,7 @@ private:
   void process_object(engine_snapshot::OrderAccepted snapshot) { report_generator_sink_.push(snapshot); }
 
   void process_object(engine_snapshot::Trade snapshot) {
-    market_data_sink_.push(market_data::TradeSnapshot{
+    market_data_sink_.push(market_data_snapshot::Trade{
         .security_id = snapshot.security_id,
         .price = snapshot.price,
         .quantity = snapshot.quantity,
@@ -57,7 +57,7 @@ private:
   }
 
   void process_object(engine_snapshot::OrderBookEntry snapshot) {
-    market_data_sink_.push(market_data::OrderEntrySnapshot{
+    market_data_sink_.push(market_data_snapshot::BookOrderEntry{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
         .direction = snapshot.direction,
@@ -70,12 +70,12 @@ private:
   void process_object(engine_snapshot::OrderFilled snapshot) {
     if (snapshot.type == engine_snapshot::FilledType::PASSIVE_FILL) {
       if (snapshot.fully_filled) {
-        market_data_sink_.push(market_data::OrderCancellationSnapshot{
+        market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
             .order_id = snapshot.order_id,
             .security_id = snapshot.security_id,
         });
       } else {
-        market_data_sink_.push(market_data::OrderChangeSnapshot{
+        market_data_sink_.push(market_data_snapshot::BookOrderChange{
             .order_id = snapshot.order_id,
             .security_id = snapshot.security_id,
             .direction = snapshot.direction,
@@ -92,7 +92,7 @@ private:
   void process_object(engine_snapshot::OrderExpired snapshot) { report_generator_sink_.push(snapshot); }
 
   void process_object(engine_snapshot::OrderCancelled snapshot) {
-    market_data_sink_.push(market_data::OrderCancellationSnapshot{
+    market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
     });
@@ -103,17 +103,17 @@ private:
 
   void process_object(engine_snapshot::CancellationRejected snapshot) { report_generator_sink_.push(snapshot); }
 
-  void process_object(engine_snapshot::ModificationAccepted snapshot) {
-    market_data_sink_.push(market_data::OrderCancellationSnapshot{
+  void process_object(engine_snapshot::ReplacementAccepted snapshot) {
+    market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
     });
     report_generator_sink_.push(snapshot);
   }
 
-  void process_object(engine_snapshot::ModificationRejected snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::ReplacementRejected snapshot) { report_generator_sink_.push(snapshot); }
 
-  MDSinkType<market_data::SnapshotType>& market_data_sink_;
+  MDSinkType<market_data_snapshot::SnapshotType>& market_data_sink_;
   ORSinkType<report::ReportType>& report_generator_sink_;
 };
 

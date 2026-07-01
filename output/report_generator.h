@@ -112,29 +112,29 @@ public:
                   report.security_id,
                   magic_enum::enum_name(report.reason));
             },
-            [this](report::ModificationAccepted report) {
+            [this](report::ReplacementAccepted report) {
               INFO(
-                  "Received report, type=ModificationAccepted"
-                  " order_id={} new_order_id={} client_id={} client_order_id={} client_modification_id={} "
+                  "Received report, type=ReplacementAccepted"
+                  " order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={} "
                   "security_id={}"
                   " direction={} price={} quantity={}",
                   report.order_id,
                   report.new_order_id,
                   report.client_id,
                   report.client_order_id,
-                  report.client_modification_id,
+                  report.client_replacement_id,
                   report.security_id,
                   format_as(report.direction),
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
             },
-            [this](report::ModificationRejected report) {
+            [this](report::ReplacementRejected report) {
               INFO(
-                  "Received report, type=ModificationRejected"
-                  " client_id={} client_order_id={} client_modification_id={} security_id={} reason={}",
+                  "Received report, type=ReplacementRejected"
+                  " client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
                   report.client_id,
                   report.client_order_id,
-                  report.client_modification_id,
+                  report.client_replacement_id,
                   report.security_id,
                   magic_enum::enum_name(report.reason));
             }),

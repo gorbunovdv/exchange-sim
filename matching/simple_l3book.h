@@ -85,36 +85,36 @@ public:
     }
   }
 
-  void modify(request::OrderModifyRequest request, auto& sink) {
+  void replace(request::OrderReplaceRequest request, auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
-      sink.push(engine_snapshot::ModificationRejected{
+      sink.push(engine_snapshot::ReplacementRejected{
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_modification_id = request.client_modification_id,
+          .client_replacement_id = request.client_replacement_id,
           .security_id = security_.security_id,
           .reason = outcome.value(),
       });
       return;
     }
-    if (request.client_order_id != request.client_modification_id &&
-        active_orders_.contains(std::make_pair(request.client_id, request.client_modification_id))) {
-      sink.push(engine_snapshot::ModificationRejected{.client_id = request.client_id,
+    if (request.client_order_id != request.client_replacement_id &&
+        active_orders_.contains(std::make_pair(request.client_id, request.client_replacement_id))) {
+      sink.push(engine_snapshot::ReplacementRejected{.client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_modification_id = request.client_modification_id,
+          .client_replacement_id = request.client_replacement_id,
           .security_id = security_.security_id,
-          .reason = engine_snapshot::ModificationRejectedReason::DUPLICATE_CLIENT_ORDER_ID});
+          .reason = engine_snapshot::ReplacementRejectedReason::DUPLICATE_CLIENT_ORDER_ID});
       return;
     }
     if (auto current_order_opt = extract_order(request.client_id, request.client_order_id);
         current_order_opt.has_value()) {
       auto current_order = current_order_opt.value();
       ExchangeOrderID new_order_id = generate_order_id();
-      sink.push(engine_snapshot::ModificationAccepted{
+      sink.push(engine_snapshot::ReplacementAccepted{
           .order_id = current_order.order_id,
           .new_order_id = new_order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
-          .client_modification_id = request.client_modification_id,
+          .client_replacement_id = request.client_replacement_id,
           .security_id = security_.security_id,
           .direction = request.direction,
           .price = request.price,
@@ -124,7 +124,7 @@ public:
       current_order.direction = request.direction;
       current_order.price = request.price;
       current_order.quantity = request.quantity;
-      current_order.client_order_id = request.client_modification_id;
+      current_order.client_order_id = request.client_replacement_id;
       current_order = fill_order_and_place_in_book(current_order, OrderTimeInForce::LIMIT, sink);
       if (current_order.quantity != 0) {
         sink.push(engine_snapshot::OrderBookEntry{
@@ -148,12 +148,12 @@ public:
             .fully_filled = true});
       }
     } else {
-      sink.push(engine_snapshot::ModificationRejected{
+      sink.push(engine_snapshot::ReplacementRejected{
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_modification_id = request.client_modification_id,
+          .client_replacement_id = request.client_replacement_id,
           .security_id = security_.security_id,
-          .reason = engine_snapshot::ModificationRejectedReason::ORDER_NOT_FOUND,
+          .reason = engine_snapshot::ReplacementRejectedReason::ORDER_NOT_FOUND,
       });
     }
   }

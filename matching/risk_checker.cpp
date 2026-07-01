@@ -13,13 +13,13 @@ std::optional<engine_snapshot::OrderRejectedReason> RiskChecker::reject_request(
   return std::nullopt;
 }
 
-std::optional<engine_snapshot::ModificationRejectedReason> RiskChecker::reject_request(
-    const request::OrderModifyRequest& request) const {
+std::optional<engine_snapshot::ReplacementRejectedReason> RiskChecker::reject_request(
+    const request::OrderReplaceRequest& request) const {
   if (request.quantity <= 0 || request.quantity > security_.max_amount) {
-    return engine_snapshot::ModificationRejectedReason::INSUFFICIENT_FUNDS;
+    return engine_snapshot::ReplacementRejectedReason::INSUFFICIENT_FUNDS;
   }
   if (request.price < security_.low_price || request.price > security_.high_price) {
-    return engine_snapshot::ModificationRejectedReason::PRICE_OUT_OF_RANGE;
+    return engine_snapshot::ReplacementRejectedReason::PRICE_OUT_OF_RANGE;
   }
   return std::nullopt;
 }
