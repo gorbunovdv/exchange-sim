@@ -10,6 +10,8 @@ class SecurityStorage {
 public:
   explicit SecurityStorage(const std::vector<SecurityConfig>& securities);
 
+  bool has_security(SecurityID id) const { return id < securities_.size(); }
+
   std::optional<SecurityID> get_id_by_symbol_or_null(Symbol symbol) const;
 
   const Security& get_security(SecurityID id) const { return securities_[id]; }

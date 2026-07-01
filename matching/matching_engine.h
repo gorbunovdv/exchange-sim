@@ -30,14 +30,42 @@ public:
 
 private:
   void process_object(request::OrderAddRequest&& request) {
+    if (!security_storage_.has_security(request.security_id)) {
+      sink_.push(engine_snapshot::OrderRejected{
+          .security_id = request.security_id,
+          .client_id = request.client_id,
+          .client_order_id = request.client_order_id,
+          .reason = engine_snapshot::OrderRejectedReason::SECURITY_NOT_FOUND,
+      });
+    }
     books_[request.security_id].add(std::move(request), sink_);
   }
 
   void process_object(request::OrderReplaceRequest&& request) {
+    if (!security_storage_.has_security(request.security_id)) {
+      sink_.push(engine_snapshot::ReplacementRejected{
+          .client_id = request.client_id,
+          .client_order_id = request.client_order_id,
+          .client_replacement_id = request.client_replacement_id,
+          .security_id = request.security_id,
+          .reason = engine_snapshot::ReplacementRejectedReason::SECURITY_NOT_FOUND,
+      });
+      return;
+    }
     books_[request.security_id].replace(std::move(request), sink_);
   }
 
   void process_object(request::OrderCancelRequest&& request) {
+    if (!security_storage_.has_security(request.security_id)) {
+      sink_.push(engine_snapshot::CancellationRejected{
+          .client_id = request.client_id,
+          .client_order_id = request.client_order_id,
+          .client_cancellation_id = request.client_cancellation_id,
+          .security_id = request.security_id,
+          .reason = engine_snapshot::CancellationRejectedReason::SECURITY_NOT_FOUND,
+      });
+      return;
+    }
     books_[request.security_id].cancel(std::move(request), sink_);
   }
 

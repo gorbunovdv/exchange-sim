@@ -16,9 +16,9 @@ std::optional<SimpleL3Book::ActiveOrder> SimpleL3Book::extract_order(
     auto active_order_iterator = active_order_map_iterator->second;
     active_orders_.erase(active_order_map_iterator);
     ActiveOrder order = *active_order_iterator;
-    book_[magic_enum::enum_integer(order.direction)][order.price].erase(active_order_iterator);
-    if (book_[magic_enum::enum_integer(order.direction)][order.price].empty()) {
-      book_[magic_enum::enum_integer(order.direction)].erase(order.price);
+    book_[order.direction][order.price].erase(active_order_iterator);
+    if (book_[order.direction][order.price].empty()) {
+      book_[order.direction].erase(order.price);
     }
     return order;
   }

@@ -80,7 +80,13 @@ struct OrderCancelled {
   SecurityID security_id;
 };
 
-enum class OrderRejectedReason : std::uint8_t { INSUFFICIENT_FUNDS, PRICE_OUT_OF_RANGE, DUPLICATE_CLIENT_ORDER_ID };
+enum class OrderRejectedReason : std::uint8_t {
+  SECURITY_NOT_FOUND,
+  INSUFFICIENT_FUNDS,
+  INVALID_QUANTITY,
+  PRICE_OUT_OF_RANGE,
+  DUPLICATE_CLIENT_ORDER_ID
+};
 
 struct OrderRejected {
   SecurityID security_id;
@@ -89,7 +95,7 @@ struct OrderRejected {
   OrderRejectedReason reason;
 };
 
-enum class CancellationRejectedReason : std::uint8_t { ORDER_NOT_FOUND };
+enum class CancellationRejectedReason : std::uint8_t { SECURITY_NOT_FOUND, ORDER_NOT_FOUND };
 
 struct CancellationRejected {
   ClientID client_id;
@@ -100,9 +106,11 @@ struct CancellationRejected {
 };
 
 enum class ReplacementRejectedReason : std::uint8_t {
+  SECURITY_NOT_FOUND,
   ORDER_NOT_FOUND,
   DUPLICATE_CLIENT_ORDER_ID,
   INSUFFICIENT_FUNDS,
+  INVALID_QUANTITY,
   PRICE_OUT_OF_RANGE
 };
 

@@ -4,6 +4,7 @@
 #include "domain/security.h"
 #include "domain/requests.h"
 #include "matching/risk_checker.h"
+#include <magic_enum/magic_enum_containers.hpp>
 #include <map>
 #include <list>
 
@@ -191,8 +192,8 @@ private:
 
   ActiveOrder fill_order_and_place_in_book(ActiveOrder current_order, OrderTimeInForce time_in_force, auto& sink) {
     Direction opposite_direction = current_order.direction == Direction::BUY ? Direction::SELL : Direction::BUY;
-    auto& direction_book = book_[magic_enum::enum_integer(current_order.direction)];
-    auto& opposite_direction_book = book_[magic_enum::enum_integer(opposite_direction)];
+    auto& direction_book = book_[current_order.direction];
+    auto& opposite_direction_book = book_[opposite_direction];
     if (current_order.direction == Direction::BUY) {
       while (current_order.quantity > 0 && !opposite_direction_book.empty() &&
           opposite_direction_book.begin()->first <= current_order.price) {
@@ -274,7 +275,7 @@ private:
 
   const Security& security_;
   RiskChecker risk_checker_;
-  std::array<std::map<Price, std::list<ActiveOrder>>, magic_enum::enum_count<Direction>()> book_;
+  magic_enum::containers::array<Direction, std::map<Price, std::list<ActiveOrder>>> book_;
   std::unordered_map<std::pair<ClientID, ClientOrderID>,
       std::list<ActiveOrder>::iterator,
       decltype([](const std::pair<ClientID, ClientOrderID>& key) {
