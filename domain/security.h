@@ -14,7 +14,7 @@ struct SecurityConfig {
   Amount lot_size;
   Price low_price;
   Price high_price;
-  uint32_t max_amount;
+  Amount max_amount;
 };
 
 struct Security {
@@ -24,7 +24,7 @@ struct Security {
   Amount lot_size;
   Price low_price;
   Price high_price;
-  uint32_t max_amount;
+  Amount max_amount;
 };
 
 }  // namespace exchange_sim

@@ -24,7 +24,7 @@ std::vector<SecurityConfig> generate_securities(const glz::generic& config) {
         .lot_size = Amount(security_config["lot_size"].as<double>()),
         .low_price = Price(security_config["low_price"].as<double>()),
         .high_price = Price(security_config["high_price"].as<double>()),
-        .max_amount = security_config["max_amount"].as<uint32_t>(),
+        .max_amount = Amount(security_config["max_amount"].as<double>()),
     });
   }
   return securities;
