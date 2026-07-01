@@ -15,10 +15,10 @@ public:
   CallbackSink(CallbackSink&&) = default;
   CallbackSink& operator=(CallbackSink&&) = default;
 
-  void push(ObjectType object) { callback_(std::move(object)); }
+  void push(ObjectType&& object) { callback_(std::move(object)); }
 
 private:
-  std::function<void(ObjectType)> callback_;
+  std::function<void(ObjectType&&)> callback_;
 };
 
 }  // namespace exchange_sim

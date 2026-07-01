@@ -58,7 +58,7 @@ public:
         active_orders_[security_id].emplace_back(
             ActiveOrder{std::get<request::OrderReplaceRequest>(order).client_replacement_id});
       }
-      matching_engine_sink_.push(order);
+      matching_engine_sink_.push(std::move(order));
     }
   }
 

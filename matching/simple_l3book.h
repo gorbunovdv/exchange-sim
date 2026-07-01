@@ -14,7 +14,7 @@ public:
   explicit SimpleL3Book(
       const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter);
 
-  void add(request::OrderAddRequest request, auto& sink) {
+  void add(request::OrderAddRequest&& request, auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_snapshot::OrderRejected{
           .security_id = security_.security_id,
@@ -83,7 +83,7 @@ public:
     }
   }
 
-  void replace(request::OrderReplaceRequest request, auto& sink) {
+  void replace(request::OrderReplaceRequest&& request, auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_snapshot::ReplacementRejected{
           .client_id = request.client_id,
@@ -156,7 +156,7 @@ public:
     }
   }
 
-  void cancel(request::OrderCancelRequest request, auto& sink) {
+  void cancel(request::OrderCancelRequest&& request, auto& sink) {
     if (auto order_opt = extract_order(request.client_id, request.client_order_id); order_opt.has_value()) {
       auto order = order_opt.value();
       sink.push(engine_snapshot::OrderCancelled{

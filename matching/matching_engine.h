@@ -23,18 +23,21 @@ public:
     }
   }
 
-  void process(request::RequestType request) {
-    std::visit([this](auto request) { this->process_object(std::move(request)); }, request);
+  void process(request::RequestType&& request) {
+    std::visit(
+        [this](auto&& request) { this->process_object(std::forward<decltype(request)>(request)); }, std::move(request));
   }
 
 private:
-  void process_object(request::OrderAddRequest request) { books_[request.security_id].add(std::move(request), sink_); }
+  void process_object(request::OrderAddRequest&& request) {
+    books_[request.security_id].add(std::move(request), sink_);
+  }
 
-  void process_object(request::OrderReplaceRequest request) {
+  void process_object(request::OrderReplaceRequest&& request) {
     books_[request.security_id].replace(std::move(request), sink_);
   }
 
-  void process_object(request::OrderCancelRequest request) {
+  void process_object(request::OrderCancelRequest&& request) {
     books_[request.security_id].cancel(std::move(request), sink_);
   }
 

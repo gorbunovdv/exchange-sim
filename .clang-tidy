@@ -6,6 +6,7 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   concurrency-*,
   performance-*,
+  -performance-move-const-arg,
   portability-*,
   -portability-avoid-pragma-once,
   modernize-use-nullptr,

@@ -16,14 +16,15 @@ public:
       ORSinkType<report::ReportType>& report_generator_sink):
       market_data_sink_(market_data_sink), report_generator_sink_(report_generator_sink) {}
 
-  void process(engine_snapshot::SnapshotType snapshot) {
-    std::visit([this](auto snapshot) { this->process_object(std::move(snapshot)); }, snapshot);
+  void process(engine_snapshot::SnapshotType&& snapshot) {
+    std::visit([this](auto&& snapshot) { this->process_object(std::forward<decltype(snapshot)>(snapshot)); },
+        std::move(snapshot));
   }
 
 private:
-  void process_object(engine_snapshot::OrderAccepted snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::OrderAccepted&& snapshot) { report_generator_sink_.push(std::move(snapshot)); }
 
-  void process_object(engine_snapshot::Trade snapshot) {
+  void process_object(engine_snapshot::Trade&& snapshot) {
     market_data_sink_.push(market_data_snapshot::Trade{
         .security_id = snapshot.security_id,
         .price = snapshot.price,
@@ -56,7 +57,7 @@ private:
     });
   }
 
-  void process_object(engine_snapshot::OrderBookEntry snapshot) {
+  void process_object(engine_snapshot::OrderBookEntry&& snapshot) {
     market_data_sink_.push(market_data_snapshot::BookOrderEntry{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
@@ -64,20 +65,20 @@ private:
         .price = snapshot.price,
         .quantity = snapshot.quantity,
     });
-    report_generator_sink_.push(snapshot);
+    report_generator_sink_.push(std::move(snapshot));
   }
 
-  void process_object(engine_snapshot::OrderFilled snapshot) {
+  void process_object(engine_snapshot::OrderFilled&& snapshot) {
     if (snapshot.type == engine_snapshot::FilledType::PASSIVE_FILL) {
       market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
           .order_id = snapshot.order_id,
           .security_id = snapshot.security_id,
       });
     }
-    report_generator_sink_.push(snapshot);
+    report_generator_sink_.push(std::move(snapshot));
   }
 
-  void process_object(engine_snapshot::OrderReduced snapshot) {
+  void process_object(engine_snapshot::OrderReduced&& snapshot) {
     market_data_sink_.push(market_data_snapshot::BookOrderChange{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
@@ -87,29 +88,33 @@ private:
     });
   }
 
-  void process_object(engine_snapshot::OrderExpired snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::OrderExpired&& snapshot) { report_generator_sink_.push(std::move(snapshot)); }
 
-  void process_object(engine_snapshot::OrderCancelled snapshot) {
+  void process_object(engine_snapshot::OrderCancelled&& snapshot) {
     market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
     });
-    report_generator_sink_.push(snapshot);
+    report_generator_sink_.push(std::move(snapshot));
   }
 
-  void process_object(engine_snapshot::OrderRejected snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::OrderRejected&& snapshot) { report_generator_sink_.push(std::move(snapshot)); }
 
-  void process_object(engine_snapshot::CancellationRejected snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::CancellationRejected&& snapshot) {
+    report_generator_sink_.push(std::move(snapshot));
+  }
 
-  void process_object(engine_snapshot::ReplacementAccepted snapshot) {
+  void process_object(engine_snapshot::ReplacementAccepted&& snapshot) {
     market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
         .order_id = snapshot.order_id,
         .security_id = snapshot.security_id,
     });
-    report_generator_sink_.push(snapshot);
+    report_generator_sink_.push(std::move(snapshot));
   }
 
-  void process_object(engine_snapshot::ReplacementRejected snapshot) { report_generator_sink_.push(snapshot); }
+  void process_object(engine_snapshot::ReplacementRejected&& snapshot) {
+    report_generator_sink_.push(std::move(snapshot));
+  }
 
   MDSinkType<market_data_snapshot::SnapshotType>& market_data_sink_;
   ORSinkType<report::ReportType>& report_generator_sink_;
