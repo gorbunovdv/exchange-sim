@@ -100,10 +100,8 @@ private:
     Amount resulting_amount = std::uniform_int_distribution<uint64_t>(
                                   1, static_cast<uint64_t>(security.max_amount / security.lot_size))(generator_) *
         security.lot_size;
-    OrderTimeInForce time_in_force = magic_enum::enum_value<OrderTimeInForce>(
-        std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<OrderTimeInForce>() - 1)(generator_));
-    Direction direction = magic_enum::enum_value<Direction>(
-        std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<Direction>() - 1)(generator_));
+    OrderTimeInForce time_in_force = random_enum_value<OrderTimeInForce>(generator_);
+    Direction direction = random_enum_value<Direction>(generator_);
 
     return request::OrderAddRequest{
         .client_id = 0,
@@ -146,8 +144,7 @@ private:
                                   1, static_cast<uint64_t>(security.max_amount / security.lot_size))(generator_) *
         security.lot_size;
 
-    Direction direction = magic_enum::enum_value<Direction>(
-        std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<Direction>() - 1)(generator_));
+    Direction direction = random_enum_value<Direction>(generator_);
 
     return request::OrderReplaceRequest{
         .client_id = 0,
@@ -158,6 +155,15 @@ private:
         .price = resulting_price,
         .quantity = resulting_amount,
     };
+  }
+
+  template<typename Enum>
+  static Enum random_enum_value(std::mt19937& generator) {
+    static_assert(std::is_enum_v<Enum>);
+    static_assert(magic_enum::enum_count<Enum>() > 0);
+
+    static constexpr auto values = magic_enum::enum_values<Enum>();
+    return values[std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<Enum>() - 1)(generator)];
   }
 
   ClientOrderID generate_order_id() { return ++current_client_order_id_; }
