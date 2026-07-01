@@ -11,7 +11,9 @@ namespace exchange_sim {
 
 class ReportGenerator : public LoggableClass {
 public:
-  explicit ReportGenerator(const glz::generic&): LoggableClass("report_generator") {}
+  explicit ReportGenerator(const glz::generic&): LoggableClass("report_generator") {
+    static_assert(report::Processor<ReportGenerator>);
+  }
 
   void process(report::ReportType report) {
     std::visit(

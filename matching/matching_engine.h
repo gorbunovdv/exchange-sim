@@ -11,12 +11,13 @@
 
 namespace exchange_sim {
 
-template<template<typename> class SinkType>
+template<engine_snapshot::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
-  explicit MatchingEngine(
-      const glz::generic&, SecurityStorage& security_storage, SinkType<engine_snapshot::SnapshotType>& sink):
+  explicit MatchingEngine(const glz::generic&, SecurityStorage& security_storage, SinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
+    static_assert(request::Processor<MatchingEngine>);
+
     books_.reserve(security_storage_.size());
     for (auto& security : security_storage_.securities()) {
       books_.emplace_back(security, order_id_counter_, trade_id_counter_);
@@ -70,7 +71,7 @@ private:
   }
 
   SecurityStorage& security_storage_;
-  SinkType<engine_snapshot::SnapshotType>& sink_;
+  SinkType& sink_;
   std::vector<SimpleL3Book> books_;
 
   Counter<ExchangeOrderID> order_id_counter_;

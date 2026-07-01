@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/sink.h"
 #include "domain/types.h"
 #include <variant>
 
@@ -36,5 +37,11 @@ struct Trade {
 };
 
 using SnapshotType = std::variant<BookOrderEntry, BookOrderChange, BookOrderDeletion, Trade>;
+
+template<typename SinkType>
+concept Sink = SinkOf<SinkType, SnapshotType>;
+
+template<typename ProcessorType>
+concept Processor = ProcessorOf<ProcessorType, SnapshotType>;
 
 }  // namespace exchange_sim::market_data_snapshot

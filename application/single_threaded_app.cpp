@@ -44,9 +44,10 @@ void run_single_threaded_app(const glz::generic& config) {
   SimpleReceiver<market_data_snapshot::SnapshotType, MarketDataGenerator> market_data_generator(
       config["market_data_generator"]);
   SimpleReceiver<report::ReportType, ReportGenerator> report_generator(config["report_generator"]);
-  SimpleReceiver<engine_snapshot::SnapshotType, ExchangeDispatcher<CallbackSink, CallbackSink>> exchange_dispatcher(
-      config["exchange_dispatcher"], market_data_generator.get_sink(), report_generator.get_sink());
-  SimpleReceiver<request::RequestType, MatchingEngine<CallbackSink>> matching_engine(
+  SimpleReceiver<engine_snapshot::SnapshotType,
+      ExchangeDispatcher<CallbackSink<market_data_snapshot::SnapshotType>, CallbackSink<report::ReportType>>>
+      exchange_dispatcher(config["exchange_dispatcher"], market_data_generator.get_sink(), report_generator.get_sink());
+  SimpleReceiver<request::RequestType, MatchingEngine<CallbackSink<engine_snapshot::SnapshotType>>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
   SimpleOrderGenerator order_generator(security_storage, config["order_generator"], matching_engine.get_sink());
   order_generator.run();

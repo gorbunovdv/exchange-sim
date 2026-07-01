@@ -10,7 +10,9 @@ namespace exchange_sim {
 
 class MarketDataGenerator {
 public:
-  explicit MarketDataGenerator(const glz::generic&) {}
+  explicit MarketDataGenerator(const glz::generic&) {
+    static_assert(market_data_snapshot::Processor<MarketDataGenerator>);
+  }
 
   void process(market_data_snapshot::SnapshotType&& snapshot) {
     std::visit(boost::hof::match(

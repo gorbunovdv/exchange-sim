@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/sink.h"
 #include "domain/engine_snapshots.h"
 #include "domain/types.h"
 #include <variant>
@@ -43,5 +44,11 @@ using ReportType = std::variant<OrderAccepted,
     CancellationRejected,
     ReplacementAccepted,
     ReplacementRejected>;
+
+template<typename SinkType>
+concept Sink = SinkOf<SinkType, ReportType>;
+
+template<typename ProcessorType>
+concept Processor = ProcessorOf<ProcessorType, ReportType>;
 
 }  // namespace exchange_sim::report

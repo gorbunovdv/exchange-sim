@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/processor.h"
+#include "base/sink.h"
 #include "domain/types.h"
 #include <variant>
 
@@ -145,5 +147,11 @@ using SnapshotType = std::variant<OrderAccepted,
     CancellationRejected,
     ReplacementAccepted,
     ReplacementRejected>;
+
+template<typename SinkType>
+concept Sink = SinkOf<SinkType, SnapshotType>;
+
+template<typename ProcessorType>
+concept Processor = ProcessorOf<ProcessorType, SnapshotType>;
 
 }  // namespace exchange_sim::engine_snapshot

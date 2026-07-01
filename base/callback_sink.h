@@ -9,7 +9,8 @@ template<typename ObjectType>
 class CallbackSink : NonCopyable {
 public:
   template<typename CallbackType>
-    requires(!std::same_as<std::remove_cvref_t<CallbackType>, CallbackSink>)
+    requires(
+        !std::same_as<std::remove_cvref_t<CallbackType>, CallbackSink> && std::invocable<CallbackType, ObjectType &&>)
   explicit CallbackSink(CallbackType&& callback): callback_(std::forward<CallbackType>(callback)) {}
 
   CallbackSink(CallbackSink&&) = default;

@@ -10,12 +10,11 @@
 
 namespace exchange_sim {
 
-template<template<typename> class SinkType>
+template<request::Sink SinkType>
 class SimpleOrderGenerator : public LoggableClass {
 public:
-  explicit SimpleOrderGenerator(SecurityStorage& security_storage,
-      const glz::generic& config,
-      SinkType<request::RequestType>& matching_engine_sink):
+  explicit SimpleOrderGenerator(
+      SecurityStorage& security_storage, const glz::generic& config, SinkType& matching_engine_sink):
       LoggableClass("SimpleOrderGenerator"),
       matching_engine_sink_(matching_engine_sink),
       min_active_orders_by_security_(config["min_active_orders_by_security"].as<std::uint32_t>()),
@@ -167,7 +166,7 @@ private:
     ClientOrderID order_id;
   };
 
-  SinkType<request::RequestType>& matching_engine_sink_;
+  SinkType& matching_engine_sink_;
 
   const uint32_t min_active_orders_by_security_;
   const uint32_t max_active_orders_by_security_;

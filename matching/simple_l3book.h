@@ -15,7 +15,7 @@ public:
   explicit SimpleL3Book(
       const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter);
 
-  void add(request::OrderAddRequest&& request, auto& sink) {
+  void add(request::OrderAddRequest&& request, engine_snapshot::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_snapshot::OrderRejected{
           .security_id = security_.security_id,
@@ -84,7 +84,7 @@ public:
     }
   }
 
-  void replace(request::OrderReplaceRequest&& request, auto& sink) {
+  void replace(request::OrderReplaceRequest&& request, engine_snapshot::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_snapshot::ReplacementRejected{
           .client_id = request.client_id,
@@ -157,7 +157,7 @@ public:
     }
   }
 
-  void cancel(request::OrderCancelRequest&& request, auto& sink) {
+  void cancel(request::OrderCancelRequest&& request, engine_snapshot::Sink auto& sink) {
     if (auto order_opt = extract_order(request.client_id, request.client_order_id); order_opt.has_value()) {
       auto order = order_opt.value();
       sink.push(engine_snapshot::OrderCancelled{
@@ -190,7 +190,8 @@ private:
 
   std::optional<ActiveOrder> extract_order(ClientID client_id, ClientOrderID client_order_id);
 
-  ActiveOrder fill_order_and_place_in_book(ActiveOrder current_order, OrderTimeInForce time_in_force, auto& sink) {
+  ActiveOrder fill_order_and_place_in_book(
+      ActiveOrder current_order, OrderTimeInForce time_in_force, engine_snapshot::Sink auto& sink) {
     Direction opposite_direction = current_order.direction == Direction::BUY ? Direction::SELL : Direction::BUY;
     auto& direction_book = book_[current_order.direction];
     auto& opposite_direction_book = book_[opposite_direction];
@@ -220,8 +221,9 @@ private:
   }
 
   [[nodiscard]]
-  ActiveOrder fill_order_with_level(
-      ActiveOrder current_order, std::list<ActiveOrder>& opposite_direction_book_level, auto& sink) {
+  ActiveOrder fill_order_with_level(ActiveOrder current_order,
+      std::list<ActiveOrder>& opposite_direction_book_level,
+      engine_snapshot::Sink auto& sink) {
     while (current_order.quantity > 0 && !opposite_direction_book_level.empty()) {
       auto& opposite_order = opposite_direction_book_level.front();
       Amount quantity_to_fill = std::min(current_order.quantity, opposite_order.quantity);

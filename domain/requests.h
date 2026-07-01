@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/sink.h"
+#include "base/processor.h"
 #include "domain/types.h"
 #include <variant>
 
@@ -34,5 +36,11 @@ struct OrderCancelRequest {
 };
 
 using RequestType = std::variant<OrderAddRequest, OrderReplaceRequest, OrderCancelRequest>;
+
+template<typename SinkType>
+concept Sink = SinkOf<SinkType, RequestType>;
+
+template<typename ProcessorType>
+concept Processor = ProcessorOf<ProcessorType, RequestType>;
 
 }  // namespace exchange_sim::request

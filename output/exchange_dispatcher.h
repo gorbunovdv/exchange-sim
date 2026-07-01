@@ -8,13 +8,13 @@
 
 namespace exchange_sim {
 
-template<template<typename> class MDSinkType, template<typename> class ORSinkType>
+template<market_data_snapshot::Sink MDSinkType, report::Sink ORSinkType>
 class ExchangeDispatcher {
 public:
-  explicit ExchangeDispatcher(const glz::generic&,
-      MDSinkType<market_data_snapshot::SnapshotType>& market_data_sink,
-      ORSinkType<report::ReportType>& report_generator_sink):
-      market_data_sink_(market_data_sink), report_generator_sink_(report_generator_sink) {}
+  explicit ExchangeDispatcher(const glz::generic&, MDSinkType& market_data_sink, ORSinkType& report_generator_sink):
+      market_data_sink_(market_data_sink), report_generator_sink_(report_generator_sink) {
+    static_assert(engine_snapshot::Processor<ExchangeDispatcher>);
+  }
 
   void process(engine_snapshot::SnapshotType&& snapshot) {
     std::visit([this](auto&& snapshot) { this->process_object(std::forward<decltype(snapshot)>(snapshot)); },
@@ -116,8 +116,8 @@ private:
     report_generator_sink_.push(std::move(snapshot));
   }
 
-  MDSinkType<market_data_snapshot::SnapshotType>& market_data_sink_;
-  ORSinkType<report::ReportType>& report_generator_sink_;
+  MDSinkType& market_data_sink_;
+  ORSinkType& report_generator_sink_;
 };
 
 }  // namespace exchange_sim
