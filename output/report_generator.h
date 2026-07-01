@@ -61,16 +61,14 @@ public:
               INFO(
                   "Received report, type=OrderFilled"
                   " order_id={} client_id={} client_order_id={} security_id={}"
-                  " direction={} price={} remaining_quantity={} type={} fully_filled={}",
+                  " direction={} price={} type={}",
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
                   report.security_id,
                   format_as(report.direction),
                   static_cast<double>(report.price),
-                  static_cast<double>(report.remaining_quantity),
-                  magic_enum::enum_name(report.type),
-                  report.fully_filled);
+                  magic_enum::enum_name(report.type));
             },
             [this](report::OrderExpired report) {
               INFO(

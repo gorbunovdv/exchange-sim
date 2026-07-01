@@ -49,9 +49,17 @@ struct OrderFilled {
   SecurityID security_id;
   Direction direction;
   Price price;
-  Amount remaining_quantity;
   FilledType type;
-  bool fully_filled;
+};
+
+struct OrderReduced {
+  ExchangeOrderID order_id;
+  ClientID client_id;
+  ClientOrderID client_order_id;
+  SecurityID security_id;
+  Direction direction;
+  Price price;
+  Amount remaining_quantity;
 };
 
 enum class ExpirationReason : std::uint8_t { IOC_REMAINDER_EXPIRED };
@@ -122,6 +130,7 @@ using SnapshotType = std::variant<OrderAccepted,
     Trade,
     OrderBookEntry,
     OrderFilled,
+    OrderReduced,
     OrderExpired,
     OrderCancelled,
     OrderRejected,

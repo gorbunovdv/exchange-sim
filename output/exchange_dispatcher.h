@@ -69,24 +69,22 @@ private:
 
   void process_object(engine_snapshot::OrderFilled snapshot) {
     if (snapshot.type == engine_snapshot::FilledType::PASSIVE_FILL) {
-      if (snapshot.fully_filled) {
-        market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
-            .order_id = snapshot.order_id,
-            .security_id = snapshot.security_id,
-        });
-      } else {
-        market_data_sink_.push(market_data_snapshot::BookOrderChange{
-            .order_id = snapshot.order_id,
-            .security_id = snapshot.security_id,
-            .direction = snapshot.direction,
-            .price = snapshot.price,
-            .new_quantity = snapshot.remaining_quantity,
-        });
-      }
+      market_data_sink_.push(market_data_snapshot::BookOrderDeletion{
+          .order_id = snapshot.order_id,
+          .security_id = snapshot.security_id,
+      });
     }
-    if (snapshot.fully_filled) {
-      report_generator_sink_.push(snapshot);
-    }
+    report_generator_sink_.push(snapshot);
+  }
+
+  void process_object(engine_snapshot::OrderReduced snapshot) {
+    market_data_sink_.push(market_data_snapshot::BookOrderChange{
+        .order_id = snapshot.order_id,
+        .security_id = snapshot.security_id,
+        .direction = snapshot.direction,
+        .price = snapshot.price,
+        .new_quantity = snapshot.remaining_quantity,
+    });
   }
 
   void process_object(engine_snapshot::OrderExpired snapshot) { report_generator_sink_.push(snapshot); }
