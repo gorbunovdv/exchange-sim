@@ -5,10 +5,6 @@
 
 namespace exchange_sim {
 
-using ClientID = uint32_t;
-using ClientOrderID = uint32_t;
-using ExchangeOrderID = uint32_t;
-using ExchangeTradeID = uint32_t;
 using SecurityID = uint32_t;
 using Price = boost::decimal::decimal32_t;
 using Amount = boost::decimal::decimal32_t;

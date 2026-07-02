@@ -2,8 +2,8 @@
 
 #include "base/counter.h"
 #include "domain/security.h"
-#include "domain/requests.h"
-#include "matching/risk_checker.h"
+#include "exchange/domain/requests.h"
+#include "exchange/matching/risk_checker.h"
 #include <magic_enum/magic_enum_containers.hpp>
 #include <map>
 #include <list>

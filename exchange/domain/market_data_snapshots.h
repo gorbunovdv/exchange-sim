@@ -2,6 +2,7 @@
 
 #include "base/sink.h"
 #include "domain/types.h"
+#include "exchange/domain/types.h"
 #include <variant>
 
 namespace exchange_sim::market_data_snapshot {

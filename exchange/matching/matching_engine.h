@@ -2,10 +2,10 @@
 
 #include "base/counter.h"
 #include "base/logging/loggable_class.h"
-#include "domain/requests.h"
-#include "domain/engine_snapshots.h"
+#include "exchange/domain/requests.h"
+#include "exchange/domain/engine_snapshots.h"
+#include "exchange/matching/simple_l3book.h"
 #include "domain/security_storage.h"
-#include "matching/simple_l3book.h"
 
 #include <glaze/glaze.hpp>
 

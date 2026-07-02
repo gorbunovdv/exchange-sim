@@ -1,7 +1,5 @@
 #include "risk_checker.h"
 
-#include "base/logging/logging_backend.h"
-
 namespace exchange_sim {
 
 std::optional<engine_snapshot::OrderRejectedReason> RiskChecker::reject_request(

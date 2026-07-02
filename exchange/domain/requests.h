@@ -3,6 +3,7 @@
 #include "base/sink.h"
 #include "base/processor.h"
 #include "domain/types.h"
+#include "exchange/domain/types.h"
 #include <variant>
 
 namespace exchange_sim::request {

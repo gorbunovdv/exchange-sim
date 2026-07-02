@@ -1,7 +1,8 @@
 #pragma once
 
 #include "base/sink.h"
-#include "domain/engine_snapshots.h"
+#include "exchange/domain/engine_snapshots.h"
+#include "exchange/domain/types.h"
 #include "domain/types.h"
 #include <variant>
 

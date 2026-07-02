@@ -3,6 +3,7 @@
 #include "base/processor.h"
 #include "base/sink.h"
 #include "domain/types.h"
+#include "exchange/domain/types.h"
 #include <variant>
 
 namespace exchange_sim::engine_snapshot {

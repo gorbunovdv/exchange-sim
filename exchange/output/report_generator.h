@@ -2,7 +2,7 @@
 
 #include "base/macros.h"
 #include "base/logging/loggable_class.h"
-#include "domain/reports.h"
+#include "exchange/domain/reports.h"
 
 #include <boost/hof/match.hpp>
 #include <glaze/json/generic_fwd.hpp>
