@@ -17,6 +17,8 @@ struct OrderAccepted {
   Direction direction;
   Price price;
   Amount quantity;
+
+  bool operator==(const OrderAccepted& other) const = default;
 };
 
 struct Trade {
@@ -31,6 +33,8 @@ struct Trade {
   ExchangeOrderID recipient_order_id;
   ClientID recipient_client_id;
   ClientOrderID recipient_client_order_id;
+
+  bool operator==(const Trade& other) const = default;
 };
 
 struct OrderBookEntry {
@@ -41,6 +45,8 @@ struct OrderBookEntry {
   Direction direction;
   Price price;
   Amount quantity;
+
+  bool operator==(const OrderBookEntry& other) const = default;
 };
 
 enum class FilledType : std::uint8_t { PASSIVE_FILL, AGGRESSIVE_FILL };
@@ -53,6 +59,8 @@ struct OrderFilled {
   Direction direction;
   Price price;
   FilledType type;
+
+  bool operator==(const OrderFilled& other) const = default;
 };
 
 struct OrderReduced {
@@ -63,6 +71,8 @@ struct OrderReduced {
   Direction direction;
   Price price;
   Amount remaining_quantity;
+
+  bool operator==(const OrderReduced& other) const = default;
 };
 
 enum class ExpirationReason : std::uint8_t { IOC_REMAINDER_EXPIRED };
@@ -73,6 +83,8 @@ struct OrderExpired {
   ClientOrderID client_order_id;
   SecurityID security_id;
   ExpirationReason reason;
+
+  bool operator==(const OrderExpired& other) const = default;
 };
 
 struct OrderCancelled {
@@ -81,6 +93,8 @@ struct OrderCancelled {
   ClientOrderID client_order_id;
   ClientOrderID client_cancellation_id;
   SecurityID security_id;
+
+  bool operator==(const OrderCancelled& other) const = default;
 };
 
 enum class OrderRejectedReason : std::uint8_t {
@@ -97,6 +111,8 @@ struct OrderRejected {
   ClientID client_id;
   ClientOrderID client_order_id;
   OrderRejectedReason reason;
+
+  bool operator==(const OrderRejected& other) const = default;
 };
 
 enum class CancellationRejectedReason : std::uint8_t { SECURITY_NOT_FOUND, ORDER_NOT_FOUND };
@@ -107,6 +123,8 @@ struct CancellationRejected {
   ClientOrderID client_cancellation_id;
   SecurityID security_id;
   CancellationRejectedReason reason;
+
+  bool operator==(const CancellationRejected& other) const = default;
 };
 
 enum class ReplacementRejectedReason : std::uint8_t {
@@ -129,6 +147,8 @@ struct ReplacementAccepted {
   Direction direction;
   Price price;
   Amount quantity;
+
+  bool operator==(const ReplacementAccepted& other) const = default;
 };
 
 struct ReplacementRejected {
@@ -137,6 +157,8 @@ struct ReplacementRejected {
   ClientOrderID client_replacement_id;
   SecurityID security_id;
   ReplacementRejectedReason reason;
+
+  bool operator==(const ReplacementRejected& other) const = default;
 };
 
 using SnapshotType = std::variant<OrderAccepted,

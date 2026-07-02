@@ -27,6 +27,9 @@ public:
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security_,
         max_active_orders_by_security_);
+    CHECK(min_active_orders_by_security_ > 0,
+        "Min active orders must be greater than 0, min_active_orders_by_security={}",
+        min_active_orders_by_security_);
   }
 
   void run() {

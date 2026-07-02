@@ -13,6 +13,8 @@ struct BookOrderEntry {
   Direction direction;
   Price price;
   Amount quantity;
+
+  bool operator==(const BookOrderEntry& other) const = default;
 };
 
 struct BookOrderChange {
@@ -21,11 +23,15 @@ struct BookOrderChange {
   Direction direction;
   Price price;
   Amount new_quantity;
+
+  bool operator==(const BookOrderChange& other) const = default;
 };
 
 struct BookOrderDeletion {
   ExchangeOrderID order_id;
   SecurityID security_id;
+
+  bool operator==(const BookOrderDeletion& other) const = default;
 };
 
 struct Trade {
@@ -35,6 +41,8 @@ struct Trade {
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ExchangeOrderID recipient_order_id;
+
+  bool operator==(const Trade& other) const = default;
 };
 
 using SnapshotType = std::variant<BookOrderEntry, BookOrderChange, BookOrderDeletion, Trade>;

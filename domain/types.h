@@ -1,17 +1,18 @@
 #pragma once
 
 #include <boost/decimal/decimal32_t.hpp>
+#include <boost/decimal/decimal64_t.hpp>
 #include <magic_enum/magic_enum.hpp>
 
 namespace exchange_sim {
 
 using SecurityID = uint32_t;
-using Price = boost::decimal::decimal32_t;
+using Price = boost::decimal::decimal64_t;
 using Amount = boost::decimal::decimal32_t;
 
 enum class OrderType : std::uint8_t { LIMIT };
 enum class OrderTimeInForce : std::uint8_t { LIMIT, IOC };
-enum class Direction : std::uint8_t { BUY, SELL, BID = BUY, ASK = SELL };
+enum class Direction : std::uint8_t { BUY, SELL };
 
 constexpr std::string_view format_as(OrderType type) {
   return magic_enum::enum_name(type);

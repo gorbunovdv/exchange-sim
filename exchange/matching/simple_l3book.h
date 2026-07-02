@@ -281,7 +281,7 @@ private:
   std::unordered_map<std::pair<ClientID, ClientOrderID>,
       std::list<ActiveOrder>::iterator,
       decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-        return std::hash<ClientID>()(key.first) ^ std::hash<ClientOrderID>()(key.second);
+        return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
       })>
       active_orders_;
 

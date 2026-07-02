@@ -38,6 +38,7 @@ private:
           .client_order_id = request.client_order_id,
           .reason = engine_snapshot::OrderRejectedReason::SECURITY_NOT_FOUND,
       });
+      return;
     }
     books_[request.security_id].add(std::move(request), sink_);
   }

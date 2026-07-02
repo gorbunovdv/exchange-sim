@@ -20,6 +20,8 @@ struct Trade {
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ExchangeOrderID recipient_order_id;
+
+  bool operator==(const Trade& other) const = default;
 };
 
 using OrderBookEntry = engine_snapshot::OrderBookEntry;
