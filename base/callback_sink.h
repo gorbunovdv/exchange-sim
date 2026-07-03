@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/noncopyable.h"
+
 #include <functional>
 
 namespace exchange_sim {

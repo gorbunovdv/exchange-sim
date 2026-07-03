@@ -1,15 +1,18 @@
 #include "base/run.h"
 #include "base/simple_receiver.h"
+
+#include "domain/security.h"
+
+#include "exchange/domain/engine_snapshots.h"
 #include "exchange/input/simple_order_generator.h"
+#include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
 #include "exchange/output/market_data_generator.h"
 #include "exchange/output/report_generator.h"
-#include "exchange/matching/matching_engine.h"
-#include "exchange/domain/engine_snapshots.h"
-#include "domain/security.h"
 
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
+
 #include <iostream>
 
 namespace exchange_sim {

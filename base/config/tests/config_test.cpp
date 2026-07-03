@@ -1,8 +1,10 @@
 #include "base/config/config.h"
 #include "base/temporary.h"
+
 #include <gtest/gtest.h>
-#include <string_view>
+
 #include <fstream>
+#include <string_view>
 
 using namespace exchange_sim;
 

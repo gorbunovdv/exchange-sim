@@ -17,7 +17,29 @@ BreakConstructorInitializers: AfterColon
 ColumnLimit: 120
 DeriveLineEnding: false
 FixNamespaceComments: true
-IncludeBlocks: Preserve
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"base/'
+    Priority: 1
+    SortPriority: 1
+    CaseSensitive: true
+  - Regex: '^"domain/'
+    Priority: 2
+    SortPriority: 2
+    CaseSensitive: true
+  - Regex: '^"'
+    Priority: 3
+    SortPriority: 3
+    CaseSensitive: true
+  - Regex: '^<(boost|cpptrace|glaze|gtest|magic_enum|quill)/'
+    Priority: 4
+    SortPriority: 4
+    CaseSensitive: true
+  - Regex: '^<'
+    Priority: 5
+    SortPriority: 5
+    CaseSensitive: true
+IncludeIsMainRegex: '$'
 IndentCaseBlocks: false
 IndentExternBlock: AfterExternBlock
 InsertTrailingCommas: Wrapped
@@ -25,7 +47,9 @@ MaxEmptyLinesToKeep: 2
 PenaltyBreakFirstLessLess: 0
 PenaltyExcessCharacter: 4000
 ShortNamespaceLines: 0
-SortIncludes: Never
+SortIncludes:
+  Enabled: true
+  IgnoreCase: false
 SpaceAfterCStyleCast: true
 SpaceAfterTemplateKeyword: false
 SpaceBeforeCtorInitializerColon: false

@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "base/time/rdtsc.h"
+
+#include <gtest/gtest.h>
 
 using namespace exchange_sim;
 

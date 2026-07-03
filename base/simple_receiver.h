@@ -1,7 +1,8 @@
 #pragma once
 
-#include "base/processor.h"
 #include "base/callback_sink.h"
+#include "base/processor.h"
+
 #include <functional>
 
 namespace exchange_sim {

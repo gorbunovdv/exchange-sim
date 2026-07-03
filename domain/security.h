@@ -1,7 +1,9 @@
 #pragma once
 
 #include "base/strong_type.h"
+
 #include "domain/types.h"
+
 #include <boost/static_string.hpp>
 
 namespace exchange_sim {

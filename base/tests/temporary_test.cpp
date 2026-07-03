@@ -1,4 +1,5 @@
 #include "base/temporary.h"
+
 #include <gtest/gtest.h>
 
 TEST(TemporaryTest, BasicTemporaryTest) {

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "base/macros.h"
 #include "base/logging/loggable_class.h"
+#include "base/macros.h"
+
 #include "exchange/domain/reports.h"
 
 #include <boost/hof/match.hpp>

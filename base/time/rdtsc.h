@@ -1,7 +1,7 @@
 #pragma once
-#include <x86intrin.h>
-#include <cstdint>
 #include <chrono>
+#include <cstdint>
+#include <x86intrin.h>
 
 namespace exchange_sim {
 

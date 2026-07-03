@@ -1,8 +1,9 @@
 #pragma once
 
 #include "domain/security.h"
-#include <vector>
+
 #include <unordered_map>
+#include <vector>
 
 namespace exchange_sim {
 

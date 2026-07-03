@@ -1,9 +1,16 @@
 #pragma once
 
 #include "base/noncopyable.h"
+
 #include <quill/LogMacros.h>
 #include <quill/Logger.h>
+
+#include <cstdint>
 #include <filesystem>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
 
 namespace exchange_sim {
 

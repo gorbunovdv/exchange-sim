@@ -1,8 +1,11 @@
 #pragma once
 
 #include "base/logging/logging_backend.h"
+
 #include "domain/types.h"
+
 #include "exchange/domain/market_data_snapshots.h"
+
 #include <boost/hof/match.hpp>
 #include <glaze/glaze.hpp>
 
