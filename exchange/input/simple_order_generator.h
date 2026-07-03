@@ -81,15 +81,15 @@ private:
 
     auto type = type_distribution_(generator_);
     if (type == 0) {
-      return generate_new_order_request(security_id_distribution_(generator_));
+      return generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
     }
     if (type == 1) {
-      return generate_cancel_order_request(security_id_distribution_(generator_));
+      return generate_cancel_order_request(SecurityID{security_id_distribution_(generator_)});
     }
     if (type == 2 && std::ranges::any_of(active_orders_, [](auto& pair) { return pair.size() == 0; })) {
-      return generate_new_order_request(security_id_distribution_(generator_));
+      return generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
     }
-    return generate_replace_order_request(security_id_distribution_(generator_));
+    return generate_replace_order_request(SecurityID{security_id_distribution_(generator_)});
   }
 
   request::OrderAddRequest generate_new_order_request(SecurityID security_id) {
@@ -181,11 +181,11 @@ private:
   const uint32_t max_active_orders_by_security_;
 
   SecurityStorage& security_storage_;
-  std::vector<std::vector<ActiveOrder>> active_orders_;
+  StrongTypeIndexedVector<SecurityID, std::vector<ActiveOrder>> active_orders_;
 
   std::mt19937 generator_;
   std::uniform_int_distribution<std::uint32_t> type_distribution_{0, 2};
-  std::uniform_int_distribution<SecurityID> security_id_distribution_;
+  std::uniform_int_distribution<SecurityID::UnderlyingType> security_id_distribution_;
 
   ClientOrderID current_client_order_id_ = 0;
 };

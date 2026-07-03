@@ -22,7 +22,7 @@ public:
                          " order_id={} security_id={}"
                          " direction={} price={} quantity={}",
                          snapshot.order_id,
-                         snapshot.security_id,
+                         snapshot.security_id.value(),
                          format_as(snapshot.direction),
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity));
@@ -32,7 +32,7 @@ public:
                          "Received market data snapshot, type=BookOrderChange"
                          " order_id={} security_id={} direction={} price={} new_quantity={}",
                          snapshot.order_id,
-                         snapshot.security_id,
+                         snapshot.security_id.value(),
                          format_as(snapshot.direction),
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.new_quantity));
@@ -42,14 +42,14 @@ public:
                          "Received market data snapshot, type=BookOrderDeletion"
                          " order_id={} security_id={}",
                          snapshot.order_id,
-                         snapshot.security_id);
+                         snapshot.security_id.value());
                    },
                    [](market_data_snapshot::Trade&& snapshot) {
                      INFO(
                          "Received market data snapshot, type=Trade"
                          " security_id={} price={} quantity={}"
                          " trade_id={} aggressor_order_id={} recipient_order_id={}",
-                         snapshot.security_id,
+                         snapshot.security_id.value(),
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity),
                          snapshot.trade_id,

@@ -26,7 +26,7 @@ public:
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
-                  report.security_id,
+                  report.security_id.value(),
                   format_as(report.time_in_force),
                   format_as(report.direction),
                   static_cast<double>(report.price),
@@ -37,7 +37,7 @@ public:
                   "Received report, type=Trade"
                   " security_id={} aggressor_direction={} price={} quantity={}"
                   " client_id={} client_order_id={} trade_id={} aggressor_order_id={} recipient_order_id={}",
-                  report.security_id,
+                  report.security_id.value(),
                   format_as(report.aggressor_direction),
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity),
@@ -54,7 +54,7 @@ public:
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
-                  report.security_id,
+                  report.security_id.value(),
                   format_as(report.direction),
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
@@ -66,7 +66,7 @@ public:
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
-                  report.security_id,
+                  report.security_id.value(),
                   format_as(report.direction),
                   static_cast<double>(report.price),
                   magic_enum::enum_name(report.type));
@@ -78,7 +78,7 @@ public:
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
-                  report.security_id,
+                  report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             },
             [this](report::OrderCancelled&& report) {
@@ -89,13 +89,13 @@ public:
                   report.client_id,
                   report.client_order_id,
                   report.client_cancellation_id,
-                  report.security_id);
+                  report.security_id.value());
             },
             [this](report::OrderRejected&& report) {
               INFO(
                   "Received report, type=OrderRejected"
                   " security_id={} client_id={} client_order_id={} reason={}",
-                  report.security_id,
+                  report.security_id.value(),
                   report.client_id,
                   report.client_order_id,
                   magic_enum::enum_name(report.reason));
@@ -107,7 +107,7 @@ public:
                   report.client_id,
                   report.client_order_id,
                   report.client_cancellation_id,
-                  report.security_id,
+                  report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             },
             [this](report::ReplacementAccepted&& report) {
@@ -120,7 +120,7 @@ public:
                   report.client_id,
                   report.client_order_id,
                   report.client_replacement_id,
-                  report.security_id,
+                  report.security_id.value(),
                   format_as(report.direction),
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
@@ -132,7 +132,7 @@ public:
                   report.client_id,
                   report.client_order_id,
                   report.client_replacement_id,
-                  report.security_id,
+                  report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             }),
         std::move(report));

@@ -73,7 +73,7 @@ private:
 
   SecurityStorage& security_storage_;
   SinkType& sink_;
-  std::vector<SimpleL3Book> books_;
+  StrongTypeIndexedVector<SecurityID, SimpleL3Book> books_;
 
   Counter<ExchangeOrderID> order_id_counter_;
   Counter<ExchangeTradeID> trade_id_counter_;

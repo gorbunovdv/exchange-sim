@@ -1,12 +1,13 @@
 #pragma once
 
+#include "base/strong_type.h"
 #include "domain/types.h"
 #include <boost/static_string.hpp>
 
 namespace exchange_sim {
 
+using SecurityID = StrongType<uint32_t, struct SecurityIDTag, skills::EqualTo>;
 using Symbol = boost::static_string<8>;
-using SecurityID = uint32_t;
 
 struct SecurityConfig {
   Symbol symbol;

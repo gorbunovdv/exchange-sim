@@ -24,14 +24,14 @@ TEST(SecurityStorage, BasicSecurityStorageTest) {
       },
   }};
   EXPECT_EQ(storage.size(), 2);
-  EXPECT_EQ(storage.get_id_by_symbol_or_null("A"), 0);
-  EXPECT_EQ(storage.get_id_by_symbol_or_null("B"), 1);
+  EXPECT_EQ(storage.get_id_by_symbol_or_null("A"), SecurityID{0});
+  EXPECT_EQ(storage.get_id_by_symbol_or_null("B"), SecurityID{1});
   EXPECT_EQ(storage.get_id_by_symbol_or_null("C"), std::nullopt);
-  EXPECT_TRUE(storage.has_security(0));
-  EXPECT_TRUE(storage.has_security(1));
-  EXPECT_FALSE(storage.has_security(2));
-  EXPECT_EQ(storage.get_security(0).symbol, "A");
-  EXPECT_EQ(storage.get_security(1).symbol, "B");
+  EXPECT_TRUE(storage.has_security(SecurityID{0}));
+  EXPECT_TRUE(storage.has_security(SecurityID{1}));
+  EXPECT_FALSE(storage.has_security(SecurityID{2}));
+  EXPECT_EQ(storage.get_security(SecurityID{0}).symbol, "A");
+  EXPECT_EQ(storage.get_security(SecurityID{1}).symbol, "B");
 }
 
 TEST(SecurityStorage, EmptySecurityTest) {

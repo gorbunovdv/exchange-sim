@@ -6,7 +6,6 @@
 
 namespace exchange_sim {
 
-using SecurityID = uint32_t;
 using Price = boost::decimal::decimal64_t;
 using Amount = boost::decimal::decimal32_t;
 
