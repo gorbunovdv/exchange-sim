@@ -1,4 +1,6 @@
 #pragma once
+#include "base/logging/logging_backend.h"
+
 #include "domain/types.h"
 
 #include "exchange/domain/types.h"
@@ -40,7 +42,7 @@ public:
         request.client_order_id);
   }
 
-  void handle_order_replace_sent(const request::OrderReplaceRequest& request) {
+  void handle_replace_sent(const request::OrderReplaceRequest& request) {
     CHECK(std::exchange(find_order(request.client_id, request.client_order_id)->state, Order::State::REPLACE_SENT) ==
             Order::State::ACTIVE,
         "Order must be active to be replaced, client_id={} client_order_id={}",

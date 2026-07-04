@@ -18,19 +18,16 @@
 
 namespace exchange_sim {
 
-template<request::Sink SinkType>
+template<typename GeneratorInterface>
 class SimpleOrderGenerator : public LoggableClass {
 public:
-  explicit SimpleOrderGenerator(
-      SecurityStorage& security_storage, const glz::generic& config, SinkType& matching_engine_sink):
+  explicit SimpleOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
       LoggableClass("SimpleOrderGenerator"),
-      matching_engine_sink_(matching_engine_sink),
+      interface_(interface),
       min_active_orders_by_security_(config["min_active_orders_by_security"].as<std::uint32_t>()),
       max_active_orders_by_security_(config["max_active_orders_by_security"].as<std::uint32_t>()),
-      security_storage_(security_storage),
-      active_orders_(security_storage_.size()),
       generator_(config["seed"].as<std::uint32_t>()),
-      security_id_distribution_(0, security_storage_.size() - 1) {
+      security_id_distribution_(0, interface_.security_storage().size() - 1) {
     CHECK(min_active_orders_by_security_ <= max_active_orders_by_security_,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security_,
@@ -41,25 +38,10 @@ public:
   }
 
   void run() {
-    while (!asked_to_stop()) {
-      auto order = generate_event();
-      if (std::holds_alternative<request::OrderAddRequest>(order)) {
-        auto& request = std::get<request::OrderAddRequest>(order);
-        active_orders_[request.security_id].handle_order_sent(request);
-      }
-      if (std::holds_alternative<request::OrderCancelRequest>(order)) {
-        auto& request = std::get<request::OrderCancelRequest>(order);
-        active_orders_[request.security_id].handle_cancel_sent(request);
-      }
-      if (std::holds_alternative<request::OrderReplaceRequest>(order)) {
-        auto& request = std::get<request::OrderReplaceRequest>(order);
-        active_orders_[request.security_id].handle_order_replace_sent(request);
-      }
-      matching_engine_sink_.push(std::move(order));
+    while (!interface_.asked_to_stop()) {
+      generate_event();
     }
   }
-
-  bool asked_to_stop() const { return false; }
 
   void process(market_data_snapshot::SnapshotType&& snapshot) {
     std::visit(boost::hof::match(
@@ -110,7 +92,6 @@ public:
     std::visit(
         boost::hof::match(
             [this](report::OrderAccepted&& report) {
-              active_orders_[report.security_id].handle_order_accepted(report);
               INFO(
                   "Received report, type=OrderAccepted"
                   " order_id={} client_id={} client_order_id={} security_id={} time_in_force={}"
@@ -140,7 +121,6 @@ public:
                   report.recipient_order_id);
             },
             [this](report::OrderBookEntry&& report) {
-              active_orders_[report.security_id].handle_order_book_entry(report);
               INFO(
                   "Received report, type=OrderBookEntry"
                   " order_id={} client_id={} client_order_id={} security_id={} direction={} price={} quantity={}",
@@ -153,7 +133,6 @@ public:
                   static_cast<double>(report.quantity));
             },
             [this](report::OrderFilled&& report) {
-              active_orders_[report.security_id].handle_order_filled(report);
               INFO(
                   "Received report, type=OrderFilled"
                   " order_id={} client_id={} client_order_id={} security_id={} direction={} price={} type={}",
@@ -166,7 +145,6 @@ public:
                   magic_enum::enum_name(report.type));
             },
             [this](report::OrderExpired&& report) {
-              active_orders_[report.security_id].handle_order_expired(report);
               INFO(
                   "Received report, type=OrderExpired"
                   " order_id={} client_id={} client_order_id={} security_id={} reason={}",
@@ -177,7 +155,6 @@ public:
                   magic_enum::enum_name(report.reason));
             },
             [this](report::OrderCancelled&& report) {
-              active_orders_[report.security_id].handle_order_canceled(report);
               INFO(
                   "Received report, type=OrderCancelled"
                   " order_id={} client_id={} client_order_id={} client_cancellation_id={} security_id={}",
@@ -188,7 +165,6 @@ public:
                   report.security_id.value());
             },
             [this](report::OrderRejected&& report) {
-              active_orders_[report.security_id].handle_order_rejected(report);
               INFO(
                   "Received report, type=OrderRejected"
                   " security_id={} client_id={} client_order_id={} reason={}",
@@ -198,7 +174,6 @@ public:
                   magic_enum::enum_name(report.reason));
             },
             [this](report::CancellationRejected&& report) {
-              active_orders_[report.security_id].handle_cancel_rejected(report);
               INFO(
                   "Received report, type=CancellationRejected"
                   " client_id={} client_order_id={} client_cancellation_id={} security_id={} reason={}",
@@ -209,7 +184,6 @@ public:
                   magic_enum::enum_name(report.reason));
             },
             [this](report::ReplacementAccepted&& report) {
-              active_orders_[report.security_id].handle_replace_accepted(report);
               INFO(
                   "Received report, type=ReplacementAccepted"
                   " order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={}"
@@ -225,7 +199,6 @@ public:
                   static_cast<double>(report.quantity));
             },
             [this](report::ReplacementRejected&& report) {
-              active_orders_[report.security_id].handle_replace_rejected(report);
               INFO(
                   "Received report, type=ReplacementRejected"
                   " client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
@@ -239,33 +212,38 @@ public:
   }
 
 private:
-  request::RequestType generate_event() {
-    if (auto it = std::ranges::find_if(
-            active_orders_, [this](const auto& pair) { return pair.size() >= max_active_orders_by_security_; });
-        it != active_orders_.end()) {
-      return generate_cancel_order_request(static_cast<SecurityID>(it - active_orders_.begin()));
+  void generate_event() {
+    if (auto it = std::ranges::find_if(interface_.active_orders(),
+            [this](const auto& pair) { return pair.size() >= max_active_orders_by_security_; });
+        it != interface_.active_orders().end()) {
+      generate_cancel_order_request(static_cast<SecurityID>(it - interface_.active_orders().begin()));
+      return;
     }
     if (auto it = std::ranges::find_if(
-            active_orders_, [this](auto& pair) { return pair.size() < min_active_orders_by_security_; });
-        it != active_orders_.end()) {
-      return generate_new_order_request(static_cast<SecurityID>(it - active_orders_.begin()));
+            interface_.active_orders(), [this](auto& pair) { return pair.size() < min_active_orders_by_security_; });
+        it != interface_.active_orders().end()) {
+      generate_new_order_request(static_cast<SecurityID>(it - interface_.active_orders().begin()));
+      return;
     }
 
     auto type = type_distribution_(generator_);
     if (type == 0) {
-      return generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
+      generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
+      return;
     }
     if (type == 1) {
-      return generate_cancel_order_request(SecurityID{security_id_distribution_(generator_)});
+      generate_cancel_order_request(SecurityID{security_id_distribution_(generator_)});
+      return;
     }
-    if (type == 2 && std::ranges::any_of(active_orders_, [](auto& pair) { return pair.size() == 0; })) {
-      return generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
+    if (type == 2 && std::ranges::any_of(interface_.active_orders(), [](auto& pair) { return pair.size() == 0; })) {
+      generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
+      return;
     }
-    return generate_replace_order_request(SecurityID{security_id_distribution_(generator_)});
+    generate_replace_order_request(SecurityID{security_id_distribution_(generator_)});
   }
 
-  request::OrderAddRequest generate_new_order_request(SecurityID security_id) {
-    const Security& security = security_storage_.get_security(security_id);
+  void generate_new_order_request(SecurityID security_id) {
+    const Security& security = interface_.security_storage().get_security(security_id);
     Price price_interval = security.high_price - security.low_price;
     int64_t price_max_multiplied_value = static_cast<uint64_t>(price_interval / security.tick_size);
 
@@ -278,41 +256,28 @@ private:
     OrderTimeInForce time_in_force = random_enum_value<OrderTimeInForce>(generator_);
     Direction direction = random_enum_value<Direction>(generator_);
 
-    return request::OrderAddRequest{
-        .client_id = 0,
-        .client_order_id = generate_order_id(),
-        .security_id = security_id,
-        .time_in_force = time_in_force,
-        .order_type = OrderType::LIMIT,
-        .direction = direction,
-        .price = resulting_price,
-        .quantity = resulting_amount,
-    };
+    interface_.send_order_add_request(
+        0, security_id, time_in_force, OrderType::LIMIT, direction, resulting_price, resulting_amount);
   }
 
-  request::OrderCancelRequest generate_cancel_order_request(SecurityID security_id) {
-    CHECK(!active_orders_[security_id].empty(),
+  void generate_cancel_order_request(SecurityID security_id) {
+    CHECK(!interface_.active_orders()[security_id].empty(),
         "Active orders must not be empty for cancellation query, security_id={}",
         security_id.value());
-    const auto& active_orders = active_orders_.at(security_id);
+    const auto& active_orders = interface_.active_orders().at(security_id);
     size_t order_to_cancel_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
 
-    return request::OrderCancelRequest{
-        .client_id = 0,
-        .client_order_id = active_orders[order_to_cancel_index].client_order_id,
-        .client_cancellation_id = generate_order_id(),
-        .security_id = security_id,
-    };
+    interface_.send_order_cancel_request(0, active_orders[order_to_cancel_index].client_order_id, security_id);
   }
 
-  request::OrderReplaceRequest generate_replace_order_request(SecurityID security_id) {
-    CHECK(!active_orders_[security_id].empty(),
+  void generate_replace_order_request(SecurityID security_id) {
+    CHECK(!interface_.active_orders()[security_id].empty(),
         "Active orders must not be empty for replacement query, security_id={}",
         security_id.value());
-    const auto& active_orders = active_orders_.at(security_id);
+    const auto& active_orders = interface_.active_orders().at(security_id);
     size_t order_to_replace_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
 
-    const Security& security = security_storage_.get_security(security_id);
+    const Security& security = interface_.security_storage().get_security(security_id);
     Price price_interval = security.high_price - security.low_price;
     int64_t price_max_multiplied_value = static_cast<uint64_t>(price_interval / security.tick_size);
 
@@ -325,15 +290,12 @@ private:
 
     Direction direction = random_enum_value<Direction>(generator_);
 
-    return request::OrderReplaceRequest{
-        .client_id = 0,
-        .client_order_id = active_orders[order_to_replace_index].client_order_id,
-        .client_replacement_id = generate_order_id(),
-        .security_id = security_id,
-        .direction = direction,
-        .price = resulting_price,
-        .quantity = resulting_amount,
-    };
+    interface_.send_order_replace_request(0,
+        active_orders[order_to_replace_index].client_order_id,
+        security_id,
+        direction,
+        resulting_price,
+        resulting_amount);
   }
 
   template<typename Enum>
@@ -345,25 +307,14 @@ private:
     return values[std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<Enum>() - 1)(generator)];
   }
 
-  ClientOrderID generate_order_id() { return current_client_order_id_.inc(); }
-
-  struct ActiveOrder {
-    ClientOrderID order_id;
-  };
-
-  SinkType& matching_engine_sink_;
+  GeneratorInterface& interface_;
 
   const uint32_t min_active_orders_by_security_;
   const uint32_t max_active_orders_by_security_;
 
-  SecurityStorage& security_storage_;
-  StrongTypeIndexedVector<SecurityID, OrderStorage> active_orders_;
-
   std::mt19937 generator_;
   std::uniform_int_distribution<std::uint32_t> type_distribution_{0, 2};
   std::uniform_int_distribution<SecurityID::UnderlyingType> security_id_distribution_;
-
-  Counter<ClientOrderID> current_client_order_id_;
 };
 
 }  // namespace exchange_sim

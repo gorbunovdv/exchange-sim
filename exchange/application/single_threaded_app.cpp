@@ -5,6 +5,7 @@
 #include "domain/security.h"
 
 #include "exchange/domain/engine_snapshots.h"
+#include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -54,7 +55,8 @@ void run_single_threaded_app(const glz::generic& config) {
       exchange_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
   SimpleReceiver<request::RequestType, MatchingEngine<decltype(exchange_dispatcher.get_sink())>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
-  SimpleOrderGenerator order_generator(security_storage, config["order_generator"], matching_engine.get_sink());
+  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, decltype(matching_engine.get_sink())> order_generator(
+      security_storage, matching_engine.get_sink(), config["order_generator"]);
 
   CallbackSink<market_data_snapshot::SnapshotType> market_data_generator_sink_callback(
       [&order_generator](
