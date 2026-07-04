@@ -33,3 +33,7 @@ Early work in progress. Current milestone (MVP): single-threaded matching engine
 ## Build
 
     just build
+
+## Restrictions
+
+- Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. It will not be tested in CI and it should be used for development purposes only.
