@@ -85,7 +85,7 @@ public:
                    [this](const report::OrderAccepted& report) {
                      active_orders_[report.security_id].handle_order_accepted(report);
                    },
-                   [this](const report::Trade&) {},
+                   [](const report::Trade&) {},
                    [this](const report::OrderBookEntry& report) {
                      active_orders_[report.security_id].handle_order_book_entry(report);
                    },
@@ -113,9 +113,9 @@ public:
         report);
   }
 
-  auto& security_storage() { return security_storage_; }
+  const auto& security_storage() const { return security_storage_; }
 
-  auto& active_orders() { return active_orders_; }
+  const auto& active_orders() const { return active_orders_; }
 
   bool asked_to_stop() const { return false; }
 

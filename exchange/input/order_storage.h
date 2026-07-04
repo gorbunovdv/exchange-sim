@@ -12,7 +12,7 @@ struct Order {
   ClientOrderID client_order_id;
   SecurityID security_id;
 
-  enum class State { SENT, ACCEPTED, ACTIVE, CANCEL_SENT, REPLACE_SENT };
+  enum class State : std::uint8_t { SENT, ACCEPTED, ACTIVE, CANCEL_SENT, REPLACE_SENT };
 
   State state;
 };
@@ -132,7 +132,7 @@ public:
   const Order& operator[](size_t index) const {
     auto active_orders =
         orders_ | std::views::filter([](const Order& order) { return order.state == Order::State::ACTIVE; });
-    auto it = std::ranges::next(active_orders.begin(), index, active_orders.end());
+    auto it = std::ranges::next(active_orders.begin(), static_cast<std::ptrdiff_t>(index), active_orders.end());
     CHECK(it != active_orders.end(), "Index out of range");
     return *it;
   }
