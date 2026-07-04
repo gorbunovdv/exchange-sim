@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <string>
+#include <format>
 
 namespace exchange_sim {
 
