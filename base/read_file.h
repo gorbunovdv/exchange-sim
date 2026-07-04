@@ -6,7 +6,6 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
-#include <format>
 
 namespace exchange_sim {
 
