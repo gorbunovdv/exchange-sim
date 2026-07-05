@@ -1,8 +1,6 @@
 #pragma once
 #include "base/logging/logging_backend.h"
 
-#include "domain/types.h"
-
 #include "exchange/domain/types.h"
 
 namespace exchange_sim {
@@ -26,12 +24,13 @@ public:
         "Order already exists, client_id={} client_order_id={}",
         request.client_id,
         request.client_order_id);
-    orders_.push_back(Order{
+    orders_.push_front(Order{
         .client_id = request.client_id,
         .client_order_id = request.client_order_id,
         .security_id = request.security_id,
         .state = Order::State::SENT,
     });
+    order_map_.emplace(std::pair{request.client_id, request.client_order_id}, orders_.begin());
   }
 
   void handle_cancel_sent(const request::OrderCancelRequest& request) {
@@ -50,24 +49,35 @@ public:
         request.client_order_id);
   }
 
-  std::vector<Order>::iterator find_order_or_end(ClientID client_id, ClientOrderID client_order_id) {
-    return std::find_if(orders_.begin(), orders_.end(), [&](const Order& order) {
-      return order.client_id == client_id && order.client_order_id == client_order_id;
-    });
+  std::list<Order>::iterator find_order_or_end(ClientID client_id, ClientOrderID client_order_id) {
+    if (auto it = order_map_.find({client_id, client_order_id}); it != order_map_.end()) {
+      return it->second;
+    }
+    return orders_.end();
   }
 
-  std::vector<Order>::iterator find_order(ClientID client_id, ClientOrderID client_order_id) {
+  std::list<Order>::iterator find_order(ClientID client_id, ClientOrderID client_order_id) {
     auto it = find_order_or_end(client_id, client_order_id);
     CHECK(it != orders_.end(), "Order not found, client_id={} client_order_id={}", client_id, client_order_id);
     return it;
   }
 
   void handle_order_accepted(const report::OrderAccepted& report) {
-    find_order(report.client_id, report.client_order_id)->state = Order::State::ACCEPTED;
+    CHECK(std::exchange(find_order(report.client_id, report.client_order_id)->state, Order::State::ACCEPTED) ==
+            Order::State::SENT,
+        "Order must be sent to be accepted, client_id={} client_order_id={}",
+        report.client_id,
+        report.client_order_id);
   }
 
   void handle_order_rejected(const report::OrderRejected& report) {
+    auto it = find_order(report.client_id, report.client_order_id);
+    CHECK(it->state == Order::State::SENT,
+        "Order must be sent to be rejected, client_id={} client_order_id={}",
+        report.client_id,
+        report.client_order_id);
     orders_.erase(find_order(report.client_id, report.client_order_id));
+    order_map_.erase({report.client_id, report.client_order_id});
   }
 
   void handle_order_book_entry(const report::OrderBookEntry& report) {
@@ -79,15 +89,33 @@ public:
   }
 
   void handle_order_expired(const report::OrderExpired& report) {
-    orders_.erase(find_order(report.client_id, report.client_order_id));
+    auto it = find_order(report.client_id, report.client_order_id);
+    CHECK(it->state == Order::State::ACCEPTED,
+        "Order must be accepted to expire, client_id={} client_order_id={}",
+        report.client_id,
+        report.client_order_id);
+    orders_.erase(it);
+    order_map_.erase({report.client_id, report.client_order_id});
   }
 
   void handle_order_filled(const report::OrderFilled& report) {
-    orders_.erase(find_order(report.client_id, report.client_order_id));
+    auto it = find_order(report.client_id, report.client_order_id);
+    CHECK(it->state == Order::State::ACCEPTED || it->state == Order::State::ACTIVE,
+        "Order must be accepted or active to be filled, client_id={} client_order_id={}",
+        report.client_id,
+        report.client_order_id);
+    orders_.erase(it);
+    order_map_.erase({report.client_id, report.client_order_id});
   }
 
   void handle_order_canceled(const report::OrderCancelled& report) {
-    orders_.erase(find_order(report.client_id, report.client_order_id));
+    auto it = find_order(report.client_id, report.client_order_id);
+    CHECK(it->state == Order::State::CANCEL_SENT,
+        "Cancel must be sent for order to be cancelled, client_id={} client_order_id={}",
+        report.client_id,
+        report.client_order_id);
+    orders_.erase(it);
+    order_map_.erase({report.client_id, report.client_order_id});
   }
 
   void handle_cancel_rejected(const report::CancellationRejected& report) {
@@ -99,13 +127,20 @@ public:
   }
 
   void handle_replace_accepted(const report::ReplacementAccepted& report) {
-    orders_.erase(find_order(report.client_id, report.client_order_id));
-    orders_.push_back(Order{
+    auto it = find_order(report.client_id, report.client_order_id);
+    CHECK(it->state == Order::State::REPLACE_SENT,
+        "Replace must be sent for replace to be accepted, client_id={} client_order_id={}",
+        report.client_id,
+        report.client_order_id);
+    orders_.erase(it);
+    order_map_.erase({report.client_id, report.client_order_id});
+    orders_.push_front(Order{
         .client_id = report.client_id,
         .client_order_id = report.client_replacement_id,
         .security_id = report.security_id,
         .state = Order::State::ACCEPTED,
     });
+    order_map_.emplace(std::pair{report.client_id, report.client_replacement_id}, orders_.begin());
   }
 
   void handle_replace_rejected(const report::ReplacementRejected& report) {
@@ -138,7 +173,13 @@ public:
   }
 
 private:
-  std::vector<Order> orders_;
+  std::list<Order> orders_;
+
+  using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
+    return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
+  });
+
+  std::unordered_map<std::pair<ClientID, ClientOrderID>, decltype(orders_)::iterator, PairHash> order_map_;
 };
 
 }  // namespace exchange_sim
