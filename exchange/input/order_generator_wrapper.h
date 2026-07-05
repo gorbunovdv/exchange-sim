@@ -83,32 +83,50 @@ public:
   void handle(report::ReportType report) {
     std::visit(boost::hof::match(
                    [this](const report::OrderAccepted& report) {
-                     active_orders_[report.security_id].handle_order_accepted(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_order_accepted(report);
+                     }
                    },
                    [](const report::Trade&) {},
                    [this](const report::OrderBookEntry& report) {
-                     active_orders_[report.security_id].handle_order_book_entry(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_order_book_entry(report);
+                     }
                    },
                    [this](const report::OrderFilled& report) {
-                     active_orders_[report.security_id].handle_order_filled(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_order_filled(report);
+                     }
                    },
                    [this](const report::OrderExpired& report) {
-                     active_orders_[report.security_id].handle_order_expired(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_order_expired(report);
+                     }
                    },
                    [this](const report::OrderCancelled& report) {
-                     active_orders_[report.security_id].handle_order_canceled(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_order_canceled(report);
+                     }
                    },
                    [this](const report::OrderRejected& report) {
-                     active_orders_[report.security_id].handle_order_rejected(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_order_rejected(report);
+                     }
                    },
                    [this](const report::CancellationRejected& report) {
-                     active_orders_[report.security_id].handle_cancel_rejected(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_cancel_rejected(report);
+                     }
                    },
                    [this](const report::ReplacementAccepted& report) {
-                     active_orders_[report.security_id].handle_replace_accepted(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_replace_accepted(report);
+                     }
                    },
                    [this](const report::ReplacementRejected& report) {
-                     active_orders_[report.security_id].handle_replace_rejected(report);
+                     if (security_storage_.has_security(report.security_id)) {
+                       active_orders_[report.security_id].handle_replace_rejected(report);
+                     }
                    }),
         report);
   }
