@@ -55,7 +55,7 @@ TEST(RiskChecker, TooMuchAmountOrderTest) {
                 .price = Price(1),
                 .quantity = Amount(10000),
             }),
-      engine_snapshot::OrderRejectedReason::INSUFFICIENT_FUNDS);
+      engine_snapshot::OrderRejectedReason::MAX_AMOUNT_EXCEEDED);
 }
 
 TEST(RiskChecker, TooMuchAmountReplaceTest) {
@@ -68,7 +68,7 @@ TEST(RiskChecker, TooMuchAmountReplaceTest) {
                 .price = Price(1),
                 .quantity = Amount(10000),
             }),
-      engine_snapshot::ReplacementRejectedReason::INSUFFICIENT_FUNDS);
+      engine_snapshot::ReplacementRejectedReason::MAX_AMOUNT_EXCEEDED);
 }
 
 TEST(RiskChecker, InvalidAmountOrderTest) {
