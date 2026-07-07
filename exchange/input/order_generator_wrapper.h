@@ -102,7 +102,7 @@ private:
   SecurityStorage& security_storage_;
   StrongTypeIndexedVector<SecurityID, OrderStorage> active_orders_;
   Counter<ClientOrderID> current_client_order_id_;
-  SinkType sink_;
+  SinkType& sink_;
 };
 
 template<template<typename> typename OrderGenerator, template<typename> typename GeneratorInterface, typename SinkType>

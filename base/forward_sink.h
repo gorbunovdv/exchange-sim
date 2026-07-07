@@ -10,7 +10,7 @@ public:
 
   void set_sink(SinkType* sink) { sink_ = sink; }
 
-  void push(Object&& object) { sink_->push(std::forward<Object>(object)); }
+  void push(Object&& object) { sink_->push(std::move(object)); }
 
 private:
   SinkType* sink_;

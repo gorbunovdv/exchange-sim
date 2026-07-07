@@ -46,15 +46,24 @@ void run_single_threaded_callback_app(const glz::generic& config) {
         static_cast<double>(security.high_price),
         static_cast<double>(security.max_amount));
   }
-  ForwardSink<market_events::EventType, CallbackSink<market_events::EventType>> market_data_generator_sink;
-  ForwardSink<report::ReportType, CallbackSink<report::ReportType>> report_generator_sink;
 
-  CallbackReceiver<engine_events::EventType,
-      ExchangeDispatcher<decltype(market_data_generator_sink), decltype(report_generator_sink)>>
+  using MarketDataSinkType = ForwardSink<market_events::EventType, CallbackSink<market_events::EventType>>;
+  using ReportSinkType = ForwardSink<report::ReportType, CallbackSink<report::ReportType>>;
+
+  MarketDataSinkType market_data_generator_sink;
+  ReportSinkType report_generator_sink;
+
+  CallbackReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>>
       exchange_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
-  CallbackReceiver<request::RequestType, MatchingEngine<decltype(exchange_dispatcher.get_sink())>> matching_engine(
+
+  using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
+
+  CallbackReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
-  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, decltype(matching_engine.get_sink())> order_generator(
+
+  using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
+
+  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, MatchingEngineSinkType> order_generator(
       security_storage, matching_engine.get_sink(), config["order_generator"]);
 
   CallbackSink<market_events::EventType> market_data_generator_sink_callback(
