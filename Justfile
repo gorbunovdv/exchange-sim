@@ -11,7 +11,7 @@ default:
 
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 "{{ CLANG_FORMAT }}" "{{ CLANG_TIDY }}" cmake just python3-pip pipx -y
+    apt install git gcc-15 g++-15 clang-21 "{{ CLANG_FORMAT }}" "{{ CLANG_TIDY }}" ninja-build ccache cmake just python3-pip pipx -y
     pipx ensurepath
     pipx install conan
 
@@ -46,7 +46,7 @@ build preset='clang-release':
 test-from-scratch preset='clang-debug-asan':
     @just clean "{{ preset }}"
     @just build "{{ preset }}"
-    ctest --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
+    ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
 format:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r {{ CLANG_FORMAT }} --style=file -i
@@ -65,3 +65,6 @@ lint-from-scratch preset='clang-debug':
 
 run *args:
     systemd-run --scope --slice=hft.slice -p AllowedCPUs=2-7 {{ args }}
+
+act:
+    gh act --container-architecture linux/amd64

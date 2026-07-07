@@ -1,7 +1,28 @@
 #pragma once
 #include <chrono>
 #include <cstdint>
+
+#if defined(__x86_64__)
 #include <x86intrin.h>
+#elif defined(__aarch64__)
+inline uint64_t __rdtsc() {
+  uint64_t val;
+  asm volatile("mrs %0, cntvct_el0" : "=r"(val));
+  return val;
+}
+
+inline uint64_t __rdtscp(unsigned int* aux) {
+  asm volatile("isb" : : : "memory");
+  uint64_t val;
+  asm volatile("mrs %0, cntvct_el0" : "=r"(val));
+  if (aux) {
+    *aux = 0;
+  }
+  return val;
+}
+#else
+#error "Architecture not supported"
+#endif
 
 namespace exchange_sim {
 

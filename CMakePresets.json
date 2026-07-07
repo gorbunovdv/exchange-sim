@@ -5,9 +5,12 @@
       "name": "base",
       "hidden": true,
       "binaryDir": "${sourceDir}/cmake-build-${presetName}",
+      "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_PROJECT_TOP_LEVEL_INCLUDES": "${sourceDir}/conan/conan_provider.cmake",
-        "CONAN_INSTALL_ARGS": "--build=missing;-c;tools.cmake.cmaketoolchain:user_presets="
+        "CONAN_INSTALL_ARGS": "--build=missing;-c;tools.cmake.cmaketoolchain:user_presets=",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
       }
     },
     {
@@ -153,6 +156,10 @@
     {
       "name": "gcc-release",
       "configurePreset": "gcc-release"
+    },
+    {
+      "name": "mac-clang-debug-asan",
+      "configurePreset": "mac-clang-debug-asan"
     }
   ]
 }
