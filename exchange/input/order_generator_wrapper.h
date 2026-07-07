@@ -4,7 +4,7 @@
 
 #include "domain/security_storage.h"
 
-#include "exchange/domain/market_data_snapshots.h"
+#include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
 #include "exchange/input/order_storage.h"
@@ -112,9 +112,7 @@ public:
   explicit OrderGeneratorWrapper(SecurityStorage& security_storage, SinkType& sink, Args&&... args):
       generator_interface_(security_storage, sink), generator_(generator_interface_, std::forward<Args>(args)...) {}
 
-  void process(market_data_snapshot::SnapshotType&& market_data_snapshot) {
-    generator_.process(std::move(market_data_snapshot));
-  }
+  void process(market_events::EventType&& market_events) { generator_.process(std::move(market_events)); }
 
   void process(report::ReportType&& report) {
     generator_interface_.handle(report);

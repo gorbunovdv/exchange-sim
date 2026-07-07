@@ -1,10 +1,10 @@
+#include "base/callback_receiver.h"
 #include "base/forward_sink.h"
 #include "base/run.h"
-#include "base/simple_receiver.h"
 
 #include "domain/security.h"
 
-#include "exchange/domain/engine_snapshots.h"
+#include "exchange/domain/engine_events.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/matching/matching_engine.h"
@@ -35,7 +35,7 @@ std::vector<SecurityConfig> generate_securities(const glz::generic& config) {
   return securities;
 }
 
-void run_single_threaded_app(const glz::generic& config) {
+void run_single_threaded_callback_app(const glz::generic& config) {
   SecurityStorage security_storage(generate_securities(config));
   for (Security security : security_storage.securities()) {
     INFO("Added security, symbol={} lot_size={} tick_size={} low_price={} high_price={} max_amount={}",
@@ -46,21 +46,19 @@ void run_single_threaded_app(const glz::generic& config) {
         static_cast<double>(security.high_price),
         static_cast<double>(security.max_amount));
   }
-  ForwardSink<market_data_snapshot::SnapshotType, CallbackSink<market_data_snapshot::SnapshotType>>
-      market_data_generator_sink;
+  ForwardSink<market_events::EventType, CallbackSink<market_events::EventType>> market_data_generator_sink;
   ForwardSink<report::ReportType, CallbackSink<report::ReportType>> report_generator_sink;
 
-  SimpleReceiver<engine_snapshot::SnapshotType,
+  CallbackReceiver<engine_events::EventType,
       ExchangeDispatcher<decltype(market_data_generator_sink), decltype(report_generator_sink)>>
       exchange_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
-  SimpleReceiver<request::RequestType, MatchingEngine<decltype(exchange_dispatcher.get_sink())>> matching_engine(
+  CallbackReceiver<request::RequestType, MatchingEngine<decltype(exchange_dispatcher.get_sink())>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
   OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, decltype(matching_engine.get_sink())> order_generator(
       security_storage, matching_engine.get_sink(), config["order_generator"]);
 
-  CallbackSink<market_data_snapshot::SnapshotType> market_data_generator_sink_callback(
-      [&order_generator](
-          market_data_snapshot::SnapshotType&& snapshot) { order_generator.process(std::move(snapshot)); });
+  CallbackSink<market_events::EventType> market_data_generator_sink_callback(
+      [&order_generator](market_events::EventType&& snapshot) { order_generator.process(std::move(snapshot)); });
   CallbackSink<report::ReportType> report_generator_sink_callback(
       [&order_generator](report::ReportType&& report) { order_generator.process(std::move(report)); });
 
@@ -78,7 +76,7 @@ int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
     const auto config = exchange_sim::read_config_and_initialize_logging(std::span(argv, argv + argc));
-    exchange_sim::run_single_threaded_app(config);
+    exchange_sim::run_single_threaded_callback_app(config);
   }
   CPPTRACE_CATCH(...) {
     try {

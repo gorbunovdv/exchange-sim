@@ -1,5 +1,5 @@
+#include "base/callback_receiver.h"
 #include "base/callback_sink.h"
-#include "base/simple_receiver.h"
 
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -13,7 +13,7 @@ using namespace exchange_sim;
 
 struct MatchingOutputTestInput {
   std::vector<request::RequestType> requests;
-  std::vector<market_data_snapshot::SnapshotType> expected_market_data;
+  std::vector<market_events::EventType> expected_market_data;
   std::vector<report::ReportType> expected_reports;
 
   std::string test_name;
@@ -25,7 +25,7 @@ std::ostream& operator<<(std::ostream& os, const MatchingOutputTestInput& input)
 
 class MatchingOutputTest : public ::testing::TestWithParam<MatchingOutputTestInput> {};
 
-TEST_P(MatchingOutputTest, ReturnExpectedSnapshots) {
+TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   auto compare_event = []<typename VariantType>(const VariantType& actual, const VariantType& expected) {
     std::visit(
         [&expected](const auto& actual) {
@@ -37,14 +37,13 @@ TEST_P(MatchingOutputTest, ReturnExpectedSnapshots) {
 
   auto input = GetParam();
 
-  std::vector<market_data_snapshot::SnapshotType> actual_market_data;
+  std::vector<market_events::EventType> actual_market_data;
   std::vector<report::ReportType> actual_reports;
 
-  CallbackSink<market_data_snapshot::SnapshotType> market_data_sink(
-      [&actual_market_data](
-          market_data_snapshot::SnapshotType&& snapshot) { actual_market_data.push_back(std::move(snapshot)); });
+  CallbackSink<market_events::EventType> market_data_sink(
+      [&actual_market_data](market_events::EventType&& event) { actual_market_data.push_back(std::move(event)); });
   CallbackSink<report::ReportType> report_generator_sink(
-      [&actual_reports](report::ReportType&& snapshot) { actual_reports.push_back(std::move(snapshot)); });
+      [&actual_reports](report::ReportType&& event) { actual_reports.push_back(std::move(event)); });
 
   SecurityStorage storage({
       SecurityConfig{
@@ -65,8 +64,8 @@ TEST_P(MatchingOutputTest, ReturnExpectedSnapshots) {
       },
   });
 
-  SimpleReceiver<engine_snapshot::SnapshotType,
-      ExchangeDispatcher<CallbackSink<market_data_snapshot::SnapshotType>, CallbackSink<report::ReportType>>>
+  CallbackReceiver<engine_events::EventType,
+      ExchangeDispatcher<CallbackSink<market_events::EventType>, CallbackSink<report::ReportType>>>
       exchange_dispatcher(glz::generic{}, market_data_sink, report_generator_sink);
   MatchingEngine matching_engine(glz::generic{}, storage, exchange_dispatcher.get_sink());
 
@@ -107,14 +106,14 @@ const MatchingOutputTestInput AddLimit_Cancel = {
         },
     .expected_market_data =
         {
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::BUY,
                 Price{1},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
@@ -183,7 +182,7 @@ const MatchingOutputTestInput AddIoc_Expire = {
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
-                engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED,
+                engine_events::ExpirationReason::IOC_REMAINDER_EXPIRED,
             },
         },
     .test_name = "AddIoc_Expire",
@@ -278,25 +277,25 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
         },
     .expected_market_data =
         {
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::BUY,
                 Price{1},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::BUY,
                 Price{1},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
@@ -390,25 +389,25 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
         },
     .expected_market_data =
         {
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::BUY,
                 Price{1},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::BUY,
                 Price{2},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
@@ -510,32 +509,32 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
         },
     .expected_market_data =
         {
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{3},
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
                 Amount{1},
             },
-            market_data_snapshot::Trade{
+            market_events::Trade{
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -543,11 +542,11 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{4},
                 ExchangeOrderID{2},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
-            market_data_snapshot::Trade{
+            market_events::Trade{
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -555,7 +554,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{4},
                 ExchangeOrderID{3},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{3},
                 SecurityID{0},
             },
@@ -659,7 +658,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
-                engine_snapshot::FilledType::PASSIVE_FILL,
+                engine_events::FilledType::PASSIVE_FILL,
             },
             report::Trade{
                 SecurityID{0},
@@ -690,14 +689,14 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
-                engine_snapshot::FilledType::PASSIVE_FILL,
+                engine_events::FilledType::PASSIVE_FILL,
             },
             report::OrderExpired{
                 ExchangeOrderID{4},
                 ClientID{2},
                 ClientOrderID{0},
                 SecurityID{0},
-                engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED,
+                engine_events::ExpirationReason::IOC_REMAINDER_EXPIRED,
             },
         },
     .test_name = "ReplaceLosesPriority_IocTradesOrder2ThenReplacementThenExpires",
@@ -745,21 +744,21 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
         },
     .expected_market_data =
         {
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
                 Amount{2},
             },
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
                 Price{11},
                 Amount{3},
             },
-            market_data_snapshot::Trade{
+            market_events::Trade{
                 SecurityID{0},
                 Price{10},
                 Amount{2},
@@ -767,11 +766,11 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{3},
                 ExchangeOrderID{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
-            market_data_snapshot::Trade{
+            market_events::Trade{
                 SecurityID{0},
                 Price{11},
                 Amount{1},
@@ -779,14 +778,14 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{3},
                 ExchangeOrderID{2},
             },
-            market_data_snapshot::BookOrderChange{
+            market_events::BookOrderChange{
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
                 Price{11},
                 Amount{2},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
@@ -870,7 +869,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
-                engine_snapshot::FilledType::PASSIVE_FILL,
+                engine_events::FilledType::PASSIVE_FILL,
             },
             report::Trade{
                 SecurityID{0},
@@ -901,7 +900,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 SecurityID{0},
                 Direction::BUY,
                 Price{11},
-                engine_snapshot::FilledType::AGGRESSIVE_FILL,
+                engine_events::FilledType::AGGRESSIVE_FILL,
             },
             report::OrderCancelled{
                 ExchangeOrderID{2},
@@ -959,21 +958,21 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
         },
     .expected_market_data =
         {
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
                 Amount{1},
             },
-            market_data_snapshot::BookOrderEntry{
+            market_events::BookOrderEntry{
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
                 Amount{1},
             },
-            market_data_snapshot::Trade{
+            market_events::Trade{
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -981,11 +980,11 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{3},
                 ExchangeOrderID{1},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
-            market_data_snapshot::Trade{
+            market_events::Trade{
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -993,7 +992,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{3},
                 ExchangeOrderID{2},
             },
-            market_data_snapshot::BookOrderDeletion{
+            market_events::BookOrderDeletion{
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
@@ -1084,7 +1083,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
-                engine_snapshot::FilledType::PASSIVE_FILL,
+                engine_events::FilledType::PASSIVE_FILL,
             },
             report::Trade{
                 SecurityID{0},
@@ -1115,14 +1114,14 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 SecurityID{0},
                 Direction::SELL,
                 Price{10},
-                engine_snapshot::FilledType::PASSIVE_FILL,
+                engine_events::FilledType::PASSIVE_FILL,
             },
             report::OrderExpired{
                 ExchangeOrderID{3},
                 ClientID{2},
                 ClientOrderID{0},
                 SecurityID{0},
-                engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED,
+                engine_events::ExpirationReason::IOC_REMAINDER_EXPIRED,
             },
         },
     .test_name = "RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires",

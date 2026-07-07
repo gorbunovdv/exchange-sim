@@ -10,7 +10,7 @@
 
 #include <variant>
 
-namespace exchange_sim::engine_snapshot {
+namespace exchange_sim::engine_events {
 
 struct OrderAccepted {
   ExchangeOrderID order_id;
@@ -165,7 +165,7 @@ struct ReplacementRejected {
   bool operator==(const ReplacementRejected& other) const = default;
 };
 
-using SnapshotType = std::variant<OrderAccepted,
+using EventType = std::variant<OrderAccepted,
     Trade,
     OrderBookEntry,
     OrderFilled,
@@ -178,9 +178,9 @@ using SnapshotType = std::variant<OrderAccepted,
     ReplacementRejected>;
 
 template<typename SinkType>
-concept Sink = SinkOf<SinkType, SnapshotType>;
+concept Sink = SinkOf<SinkType, EventType>;
 
 template<typename ProcessorType>
-concept Processor = ProcessorOf<ProcessorType, SnapshotType>;
+concept Processor = ProcessorOf<ProcessorType, EventType>;
 
-}  // namespace exchange_sim::engine_snapshot
+}  // namespace exchange_sim::engine_events

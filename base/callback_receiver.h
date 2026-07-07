@@ -9,10 +9,10 @@ namespace exchange_sim {
 
 template<typename ArgumentClass, typename BaseClass>
   requires ProcessorOf<BaseClass, ArgumentClass>
-class SimpleReceiver {
+class CallbackReceiver {
 public:
   template<typename... Args>
-  explicit SimpleReceiver(Args&&... args):
+  explicit CallbackReceiver(Args&&... args):
       base_class_(std::forward<Args>(args)...),
       sink_([this](ArgumentClass&& object) { return base_class_.process(std::move(object)); }) {}
 

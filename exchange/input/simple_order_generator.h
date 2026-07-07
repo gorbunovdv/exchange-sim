@@ -4,7 +4,7 @@
 
 #include "domain/security.h"
 
-#include "exchange/domain/market_data_snapshots.h"
+#include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 
 #include <boost/hof.hpp>
@@ -39,9 +39,9 @@ public:
     }
   }
 
-  void process(market_data_snapshot::SnapshotType&& snapshot) {
+  void process(market_events::EventType&& snapshot) {
     std::visit(boost::hof::match(
-                   [this](market_data_snapshot::BookOrderEntry&& snapshot) {
+                   [this](market_events::BookOrderEntry&& snapshot) {
                      INFO(
                          "Received market data snapshot, type=BookOrderEntry"
                          " order_id={} security_id={}"
@@ -52,7 +52,7 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity));
                    },
-                   [this](market_data_snapshot::BookOrderChange&& snapshot) {
+                   [this](market_events::BookOrderChange&& snapshot) {
                      INFO(
                          "Received market data snapshot, type=BookOrderChange"
                          " order_id={} security_id={} direction={} price={} new_quantity={}",
@@ -62,14 +62,14 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.new_quantity));
                    },
-                   [this](market_data_snapshot::BookOrderDeletion&& snapshot) {
+                   [this](market_events::BookOrderDeletion&& snapshot) {
                      INFO(
                          "Received market data snapshot, type=BookOrderDeletion"
                          " order_id={} security_id={}",
                          snapshot.order_id,
                          snapshot.security_id.value());
                    },
-                   [this](market_data_snapshot::Trade&& snapshot) {
+                   [this](market_events::Trade&& snapshot) {
                      INFO(
                          "Received market data snapshot, type=Trade"
                          " security_id={} price={} quantity={}"

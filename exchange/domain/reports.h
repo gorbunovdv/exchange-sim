@@ -4,14 +4,14 @@
 
 #include "domain/types.h"
 
-#include "exchange/domain/engine_snapshots.h"
+#include "exchange/domain/engine_events.h"
 #include "exchange/domain/types.h"
 
 #include <variant>
 
 namespace exchange_sim::report {
 
-using OrderAccepted = engine_snapshot::OrderAccepted;
+using OrderAccepted = engine_events::OrderAccepted;
 
 struct Trade {
   SecurityID security_id;
@@ -27,18 +27,18 @@ struct Trade {
   bool operator==(const Trade& other) const = default;
 };
 
-using OrderBookEntry = engine_snapshot::OrderBookEntry;
-using OrderFilled = engine_snapshot::OrderFilled;
-using OrderExpired = engine_snapshot::OrderExpired;
-using OrderCancelled = engine_snapshot::OrderCancelled;
-using OrderRejected = engine_snapshot::OrderRejected;
-using CancellationRejected = engine_snapshot::CancellationRejected;
-using ReplacementAccepted = engine_snapshot::ReplacementAccepted;
-using ReplacementRejected = engine_snapshot::ReplacementRejected;
+using OrderBookEntry = engine_events::OrderBookEntry;
+using OrderFilled = engine_events::OrderFilled;
+using OrderExpired = engine_events::OrderExpired;
+using OrderCancelled = engine_events::OrderCancelled;
+using OrderRejected = engine_events::OrderRejected;
+using CancellationRejected = engine_events::CancellationRejected;
+using ReplacementAccepted = engine_events::ReplacementAccepted;
+using ReplacementRejected = engine_events::ReplacementRejected;
 
-using OrderRejectedReason = engine_snapshot::OrderRejectedReason;
-using CancellationRejectedReason = engine_snapshot::CancellationRejectedReason;
-using ReplacementRejectedReason = engine_snapshot::ReplacementRejectedReason;
+using OrderRejectedReason = engine_events::OrderRejectedReason;
+using CancellationRejectedReason = engine_events::CancellationRejectedReason;
+using ReplacementRejectedReason = engine_events::ReplacementRejectedReason;
 
 using ReportType = std::variant<OrderAccepted,
     Trade,

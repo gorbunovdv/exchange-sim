@@ -1,3 +1,4 @@
+#include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
 #include "exchange/input/order_storage.h"
@@ -113,7 +114,7 @@ report::OrderFilled convert_to<report::OrderFilled>(const request::OrderAddReque
       .security_id = request.security_id,
       .direction = request.direction,
       .price = request.price,
-      .type = engine_snapshot::FilledType::AGGRESSIVE_FILL,
+      .type = engine_events::FilledType::AGGRESSIVE_FILL,
   };
 }
 
@@ -124,7 +125,7 @@ report::OrderExpired convert_to<report::OrderExpired>(const request::OrderAddReq
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
-      .reason = engine_snapshot::ExpirationReason::IOC_REMAINDER_EXPIRED,
+      .reason = engine_events::ExpirationReason::IOC_REMAINDER_EXPIRED,
   };
 }
 
@@ -145,7 +146,7 @@ report::OrderRejected convert_to<report::OrderRejected>(const request::OrderAddR
       .security_id = request.security_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
-      .reason = engine_snapshot::OrderRejectedReason::SECURITY_NOT_FOUND,
+      .reason = engine_events::OrderRejectedReason::SECURITY_NOT_FOUND,
   };
 }
 
@@ -171,7 +172,7 @@ report::CancellationRejected convert_to<report::CancellationRejected>(const requ
       .client_order_id = request.client_order_id,
       .client_cancellation_id = request.client_order_id + 1,
       .security_id = request.security_id,
-      .reason = engine_snapshot::CancellationRejectedReason::SECURITY_NOT_FOUND,
+      .reason = engine_events::CancellationRejectedReason::SECURITY_NOT_FOUND,
   };
 }
 
@@ -182,7 +183,7 @@ report::ReplacementRejected convert_to<report::ReplacementRejected>(const reques
       .client_order_id = request.client_order_id,
       .client_replacement_id = request.client_order_id + 1,
       .security_id = request.security_id,
-      .reason = engine_snapshot::ReplacementRejectedReason::SECURITY_NOT_FOUND,
+      .reason = engine_events::ReplacementRejectedReason::SECURITY_NOT_FOUND,
   };
 }
 
