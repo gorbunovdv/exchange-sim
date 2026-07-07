@@ -1,5 +1,5 @@
+#include "base/callback_receiver.h"
 #include "base/callback_sink.h"
-#include "base/simple_receiver.h"
 
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -64,7 +64,7 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
       },
   });
 
-  SimpleReceiver<engine_events::EventType,
+  CallbackReceiver<engine_events::EventType,
       ExchangeDispatcher<CallbackSink<market_events::EventType>, CallbackSink<report::ReportType>>>
       exchange_dispatcher(glz::generic{}, market_data_sink, report_generator_sink);
   MatchingEngine matching_engine(glz::generic{}, storage, exchange_dispatcher.get_sink());

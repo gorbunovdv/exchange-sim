@@ -1,5 +1,5 @@
+#include "base/callback_receiver.h"
 #include "base/run.h"
-#include "base/simple_receiver.h"
 
 #include "domain/security.h"
 
@@ -33,7 +33,7 @@ std::vector<SecurityConfig> generate_securities(const glz::generic& config) {
   return securities;
 }
 
-void run_single_threaded_app(const glz::generic& config) {
+void run_single_threaded_callback_app(const glz::generic& config) {
   SecurityStorage security_storage(generate_securities(config));
   for (Security security : security_storage.securities()) {
     INFO("Added security, symbol={} lot_size={} tick_size={} low_price={} high_price={} max_amount={}",
@@ -44,12 +44,13 @@ void run_single_threaded_app(const glz::generic& config) {
         static_cast<double>(security.high_price),
         static_cast<double>(security.max_amount));
   }
-  SimpleReceiver<market_events::EventType, MarketDataGenerator> market_data_generator(config["market_data_generator"]);
-  SimpleReceiver<report::ReportType, ReportGenerator> report_generator(config["report_generator"]);
-  SimpleReceiver<engine_events::EventType,
+  CallbackReceiver<market_events::EventType, MarketDataGenerator> market_data_generator(
+      config["market_data_generator"]);
+  CallbackReceiver<report::ReportType, ReportGenerator> report_generator(config["report_generator"]);
+  CallbackReceiver<engine_events::EventType,
       ExchangeDispatcher<CallbackSink<market_events::EventType>, CallbackSink<report::ReportType>>>
       exchange_dispatcher(config["exchange_dispatcher"], market_data_generator.get_sink(), report_generator.get_sink());
-  SimpleReceiver<request::RequestType, MatchingEngine<CallbackSink<engine_events::EventType>>> matching_engine(
+  CallbackReceiver<request::RequestType, MatchingEngine<CallbackSink<engine_events::EventType>>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
   SimpleOrderGenerator order_generator(security_storage, config["order_generator"], matching_engine.get_sink());
   order_generator.run();
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
     const auto config = exchange_sim::read_config_and_initialize_logging(std::span(argv, argv + argc));
-    exchange_sim::run_single_threaded_app(config);
+    exchange_sim::run_single_threaded_callback_app(config);
   }
   CPPTRACE_CATCH(...) {
     try {
