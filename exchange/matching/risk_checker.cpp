@@ -5,7 +5,7 @@ namespace exchange_sim {
 template<typename Request>
 std::optional<typename RejectionReason<Request>::ReasonType> RiskChecker::reject_request(const Request& request) const {
   if (request.quantity > security_.max_amount) {
-    return RejectionReason<Request>::ReasonType::INSUFFICIENT_FUNDS;
+    return RejectionReason<Request>::ReasonType::MAX_AMOUNT_EXCEEDED;
   }
   if (request.quantity <= 0 || request.quantity % security_.lot_size != 0) {
     return RejectionReason<Request>::ReasonType::INVALID_QUANTITY;
