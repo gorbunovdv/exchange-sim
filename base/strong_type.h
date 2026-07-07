@@ -10,9 +10,9 @@ public:
   using UnderlyingType = Underlying;
   using TagType = Tag;
 
-  explicit StrongType(UnderlyingType value): value_(value) {}
+  explicit constexpr StrongType(UnderlyingType value): value_(value) {}
 
-  UnderlyingType value() const { return value_; }
+  constexpr UnderlyingType value() const { return value_; }
 
 private:
   UnderlyingType value_;
@@ -40,12 +40,12 @@ namespace skills {
 
 struct EqualTo {
   template<typename T>
-  bool operator==(this const T& self, const T& other) {
+  constexpr bool operator==(this const T& self, const T& other) {
     return self.value() == other.value();
   }
 
   template<typename T>
-  bool operator!=(this const T& self, const T& other) {
+  constexpr bool operator!=(this const T& self, const T& other) {
     return self.value() != other.value();
   }
 };
