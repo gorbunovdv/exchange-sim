@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <thread>
+
 using namespace exchange_sim;
 
 TEST(RdtscTest, SleepTimeTest) {

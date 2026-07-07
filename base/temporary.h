@@ -3,6 +3,7 @@
 #include "base/noncopyable.h"
 
 #include <filesystem>
+#include <format>
 #include <unistd.h>
 
 namespace exchange_sim {
