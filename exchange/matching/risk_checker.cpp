@@ -13,7 +13,7 @@ std::optional<typename RejectionReason<Request>::ReasonType> RiskChecker::reject
   if (request.price < security_.low_price || request.price > security_.high_price) {
     return RejectionReason<Request>::ReasonType::PRICE_OUT_OF_RANGE;
   }
-  if (request.price % security_.tick_size != 0) {
+  if ((request.price - security_.low_price) % security_.tick_size != 0) {
     return RejectionReason<Request>::ReasonType::PRICE_NOT_MULTIPLE_OF_TICK_SIZE;
   }
   return std::nullopt;

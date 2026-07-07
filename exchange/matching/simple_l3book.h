@@ -282,12 +282,12 @@ private:
   const Security& security_;
   RiskChecker risk_checker_;
   magic_enum::containers::array<Direction, std::map<Price, std::list<ActiveOrder>>> book_;
-  std::unordered_map<std::pair<ClientID, ClientOrderID>,
-      std::list<ActiveOrder>::iterator,
-      decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-        return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
-      })>
-      active_orders_;
+
+  using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
+    return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
+  });
+
+  std::unordered_map<std::pair<ClientID, ClientOrderID>, std::list<ActiveOrder>::iterator, PairHash> active_orders_;
 
   Counter<ExchangeOrderID>& order_id_counter_;
   Counter<ExchangeTradeID>& trade_id_counter_;
