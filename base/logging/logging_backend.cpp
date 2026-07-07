@@ -1,15 +1,17 @@
 #include "logging_backend.h"
-#include <quill/sinks/ConsoleSink.h>
-#include <quill/sinks/FileSink.h>
+
+#include "base/logging/quill_sinks.h"
+
+#include <magic_enum/magic_enum.hpp>
 #include <quill/Backend.h>
 #include <quill/Frontend.h>
 #include <quill/Logger.h>
-#include <magic_enum/magic_enum.hpp>
-#include <string>
-#include <optional>
-#include <utility>
-#include <stdexcept>
+
 #include <format>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace exchange_sim {
 

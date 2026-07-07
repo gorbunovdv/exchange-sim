@@ -1,10 +1,12 @@
 #include "config.h"
 
 #include "base/read_file.h"
+
 #include <glaze/glaze.hpp>
+
 #include <filesystem>
-#include <stdexcept>
 #include <format>
+#include <stdexcept>
 
 namespace exchange_sim {
 

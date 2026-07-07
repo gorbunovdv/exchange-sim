@@ -15,7 +15,7 @@ Early work in progress. Current milestone (MVP): single-threaded matching engine
 ## Scope
 
 - Matching: FIFO price-time priority, deterministic per instrument
-- Order operations: Add / Cancel / Modify
+- Order operations: Add / Cancel / Replace
 - L3 order book per instrument
 - Synthetic order generator, market-data dispatcher, execution reports
 - Benchmarking: latency and throughput

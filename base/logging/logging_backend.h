@@ -1,9 +1,16 @@
 #pragma once
 
 #include "base/noncopyable.h"
+
 #include <quill/LogMacros.h>
 #include <quill/Logger.h>
+
+#include <cstdint>
 #include <filesystem>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <string>
 
 namespace exchange_sim {
 
@@ -47,6 +54,13 @@ quill::Logger* get_logger();
   do { \
     LOG_CRITICAL(get_logger(), __VA_ARGS__); \
     throw std::runtime_error("Critical error occured"); \
+  } while (false)
+
+#define CHECK(condition, ...) \
+  do { \
+    if (!(condition)) { \
+      CRITICAL(__VA_ARGS__); \
+    } \
   } while (false)
 
 }  // namespace exchange_sim

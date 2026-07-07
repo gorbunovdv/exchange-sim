@@ -1,0 +1,118 @@
+#pragma once
+
+#include "exchange/domain/engine_events.h"
+#include "exchange/domain/market_events.h"
+#include "exchange/domain/reports.h"
+
+#include <glaze/glaze.hpp>
+
+namespace exchange_sim {
+
+template<market_events::Sink MDSinkType, report::Sink ORSinkType>
+class ExchangeDispatcher {
+public:
+  explicit ExchangeDispatcher(const glz::generic&, MDSinkType& market_data_sink, ORSinkType& report_generator_sink):
+      market_data_sink_(market_data_sink), report_generator_sink_(report_generator_sink) {
+    static_assert(engine_events::Processor<ExchangeDispatcher>);
+  }
+
+  void process(engine_events::EventType&& event) {
+    std::visit([this](auto&& event) { this->process_event(std::forward<decltype(event)>(event)); }, std::move(event));
+  }
+
+private:
+  void process_event(engine_events::OrderAccepted&& event) { report_generator_sink_.push(std::move(event)); }
+
+  void process_event(engine_events::Trade&& event) {
+    market_data_sink_.push(market_events::Trade{
+        .security_id = event.security_id,
+        .price = event.price,
+        .quantity = event.quantity,
+        .trade_id = event.trade_id,
+        .aggressor_order_id = event.aggressor_order_id,
+        .recipient_order_id = event.recipient_order_id,
+    });
+    report_generator_sink_.push(report::Trade{
+        .security_id = event.security_id,
+        .aggressor_direction = event.aggressor_direction,
+        .price = event.price,
+        .quantity = event.quantity,
+        .client_id = event.aggressor_client_id,
+        .client_order_id = event.aggressor_client_order_id,
+        .trade_id = event.trade_id,
+        .aggressor_order_id = event.aggressor_order_id,
+        .recipient_order_id = event.recipient_order_id,
+    });
+    report_generator_sink_.push(report::Trade{
+        .security_id = event.security_id,
+        .aggressor_direction = event.aggressor_direction,
+        .price = event.price,
+        .quantity = event.quantity,
+        .client_id = event.recipient_client_id,
+        .client_order_id = event.recipient_client_order_id,
+        .trade_id = event.trade_id,
+        .aggressor_order_id = event.aggressor_order_id,
+        .recipient_order_id = event.recipient_order_id,
+    });
+  }
+
+  void process_event(engine_events::OrderBookEntry&& event) {
+    market_data_sink_.push(market_events::BookOrderEntry{
+        .order_id = event.order_id,
+        .security_id = event.security_id,
+        .direction = event.direction,
+        .price = event.price,
+        .quantity = event.quantity,
+    });
+    report_generator_sink_.push(std::move(event));
+  }
+
+  void process_event(engine_events::OrderFilled&& event) {
+    if (event.type == engine_events::FilledType::PASSIVE_FILL) {
+      market_data_sink_.push(market_events::BookOrderDeletion{
+          .order_id = event.order_id,
+          .security_id = event.security_id,
+      });
+    }
+    report_generator_sink_.push(std::move(event));
+  }
+
+  void process_event(engine_events::OrderReduced&& event) {
+    market_data_sink_.push(market_events::BookOrderChange{
+        .order_id = event.order_id,
+        .security_id = event.security_id,
+        .direction = event.direction,
+        .price = event.price,
+        .new_quantity = event.remaining_quantity,
+    });
+  }
+
+  void process_event(engine_events::OrderExpired&& event) { report_generator_sink_.push(std::move(event)); }
+
+  void process_event(engine_events::OrderCancelled&& event) {
+    market_data_sink_.push(market_events::BookOrderDeletion{
+        .order_id = event.order_id,
+        .security_id = event.security_id,
+    });
+    report_generator_sink_.push(std::move(event));
+  }
+
+  void process_event(engine_events::OrderRejected&& event) { report_generator_sink_.push(std::move(event)); }
+
+  void process_event(engine_events::CancellationRejected&& event) { report_generator_sink_.push(std::move(event)); }
+
+  void process_event(engine_events::ReplacementAccepted&& event) {
+    market_data_sink_.push(market_events::BookOrderDeletion{
+        .order_id = event.order_id,
+        .security_id = event.security_id,
+    });
+    report_generator_sink_.push(std::move(event));
+  }
+
+  void process_event(engine_events::ReplacementRejected&& event) { report_generator_sink_.push(std::move(event)); }
+
+  MDSinkType& market_data_sink_;
+  ORSinkType& report_generator_sink_;
+};
+
+}  // namespace exchange_sim

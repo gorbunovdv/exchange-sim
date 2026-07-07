@@ -1,8 +1,11 @@
 #pragma once
 
-#include <fstream>
-#include <string>
+#include <filesystem>
 #include <format>
+#include <fstream>
+#include <iterator>
+#include <stdexcept>
+#include <string>
 
 namespace exchange_sim {
 

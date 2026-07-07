@@ -1,0 +1,2 @@
+add_library(simple_order_generator INTERFACE simple_order_generator.h)
+target_link_libraries(simple_order_generator INTERFACE base domain)

@@ -1,8 +1,10 @@
-#include <gtest/gtest.h>
-#include <numeric>
 #include "base/logging/logging_backend.h"
-#include "base/temporary.h"
 #include "base/read_file.h"
+#include "base/temporary.h"
+
+#include <gtest/gtest.h>
+
+#include <numeric>
 
 using namespace exchange_sim;
 

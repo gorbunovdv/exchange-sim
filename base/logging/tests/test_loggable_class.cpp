@@ -1,9 +1,10 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
-#include "base/temporary.h"
 #include "base/read_file.h"
+#include "base/temporary.h"
 
 #include <gtest/gtest.h>
+
 #include <string_view>
 
 using namespace exchange_sim;
