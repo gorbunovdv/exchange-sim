@@ -55,7 +55,7 @@ TEST(RiskChecker, TooMuchAmountOrderTest) {
                 .price = Price(1),
                 .quantity = Amount(10000),
             }),
-      engine_snapshot::OrderRejectedReason::MAX_AMOUNT_EXCEEDED);
+      engine_events::OrderRejectedReason::MAX_AMOUNT_EXCEEDED);
 }
 
 TEST(RiskChecker, TooMuchAmountReplaceTest) {
@@ -68,7 +68,7 @@ TEST(RiskChecker, TooMuchAmountReplaceTest) {
                 .price = Price(1),
                 .quantity = Amount(10000),
             }),
-      engine_snapshot::ReplacementRejectedReason::MAX_AMOUNT_EXCEEDED);
+      engine_events::ReplacementRejectedReason::MAX_AMOUNT_EXCEEDED);
 }
 
 TEST(RiskChecker, InvalidAmountOrderTest) {
@@ -82,7 +82,7 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
                 .price = Price(1),
                 .quantity = Amount(0),
             }),
-      engine_snapshot::OrderRejectedReason::INVALID_QUANTITY);
+      engine_events::OrderRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .client_id = 0,
@@ -94,7 +94,7 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
                 .price = Price(1),
                 .quantity = Amount(-1),
             }),
-      engine_snapshot::OrderRejectedReason::INVALID_QUANTITY);
+      engine_events::OrderRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .client_id = 0,
@@ -106,7 +106,7 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
                 .price = Price(1),
                 .quantity = Amount(1.05),
             }),
-      engine_snapshot::OrderRejectedReason::INVALID_QUANTITY);
+      engine_events::OrderRejectedReason::INVALID_QUANTITY);
 }
 
 TEST(RiskChecker, InvalidAmountReplaceTest) {
@@ -119,7 +119,7 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
                 .price = Price(1),
                 .quantity = Amount(0),
             }),
-      engine_snapshot::ReplacementRejectedReason::INVALID_QUANTITY);
+      engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .client_id = 0,
@@ -130,7 +130,7 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
                 .price = Price(1),
                 .quantity = Amount(-1),
             }),
-      engine_snapshot::ReplacementRejectedReason::INVALID_QUANTITY);
+      engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .client_id = 0,
@@ -141,7 +141,7 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
                 .price = Price(1),
                 .quantity = Amount(1.05),
             }),
-      engine_snapshot::ReplacementRejectedReason::INVALID_QUANTITY);
+      engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 }
 
 TEST(RiskChecker, PriceOutOfRangeOrderTest) {
@@ -155,7 +155,7 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
                 .price = Price(0.5),
                 .quantity = Amount(1),
             }),
-      engine_snapshot::OrderRejectedReason::PRICE_OUT_OF_RANGE);
+      engine_events::OrderRejectedReason::PRICE_OUT_OF_RANGE);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .client_id = 0,
@@ -167,7 +167,7 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
                 .price = Price(20),
                 .quantity = Amount(1),
             }),
-      engine_snapshot::OrderRejectedReason::PRICE_OUT_OF_RANGE);
+      engine_events::OrderRejectedReason::PRICE_OUT_OF_RANGE);
 }
 
 TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
@@ -180,7 +180,7 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
                 .price = Price(0.5),
                 .quantity = Amount(1),
             }),
-      engine_snapshot::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
+      engine_events::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .client_id = 0,
@@ -191,7 +191,7 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
                 .price = Price(20),
                 .quantity = Amount(1),
             }),
-      engine_snapshot::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
+      engine_events::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
 }
 
 TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
@@ -205,7 +205,7 @@ TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
                 .price = Price(1.1),
                 .quantity = Amount(1),
             }),
-      engine_snapshot::OrderRejectedReason::PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
+      engine_events::OrderRejectedReason::PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
 }
 
 TEST(RiskChecker, InvalidPriceTickSizeReplaceTest) {
@@ -218,7 +218,7 @@ TEST(RiskChecker, InvalidPriceTickSizeReplaceTest) {
                 .price = Price(1.1),
                 .quantity = Amount(1),
             }),
-      engine_snapshot::ReplacementRejectedReason::PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
+      engine_events::ReplacementRejectedReason::PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
 }
 
 }  // namespace exchange_sim

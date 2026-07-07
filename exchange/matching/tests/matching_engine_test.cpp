@@ -13,9 +13,9 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
     EXPECT_EQ(expected, std::get<std::remove_cvref_t<decltype(expected)>>(actual));
   };
 
-  std::vector<engine_snapshot::SnapshotType> snapshots;
-  CallbackSink<engine_snapshot::SnapshotType> snapshot_sink(
-      [&snapshots](engine_snapshot::SnapshotType&& snapshot) { snapshots.push_back(std::move(snapshot)); });
+  std::vector<engine_events::EventType> events;
+  CallbackSink<engine_events::EventType> event_sink(
+      [&events](engine_events::EventType&& event) { events.push_back(std::move(event)); });
   SecurityStorage storage({
       SecurityConfig{
           .symbol = "A",
@@ -26,7 +26,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
           .max_amount = Amount(1000),
       },
   });
-  MatchingEngine engine(glz::generic{}, storage, snapshot_sink);
+  MatchingEngine engine(glz::generic{}, storage, event_sink);
   engine.process(request::OrderAddRequest{
       .client_id = ClientID{0},
       .client_order_id = ClientOrderID{0},
@@ -52,28 +52,28 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .client_cancellation_id = ClientOrderID{2},
       .security_id = SecurityID{1},
   });
-  ASSERT_TRUE(snapshots.size() == 3);
-  compare_event(snapshots[0],
-      (engine_snapshot::OrderRejected{
+  ASSERT_TRUE(events.size() == 3);
+  compare_event(events[0],
+      (engine_events::OrderRejected{
           .security_id = SecurityID{1},
           .client_id = ClientID{0},
           .client_order_id = ClientOrderID{0},
-          .reason = engine_snapshot::OrderRejectedReason::SECURITY_NOT_FOUND,
+          .reason = engine_events::OrderRejectedReason::SECURITY_NOT_FOUND,
       }));
-  compare_event(snapshots[1],
-      (engine_snapshot::ReplacementRejected{
+  compare_event(events[1],
+      (engine_events::ReplacementRejected{
           .client_id = ClientID{0},
           .client_order_id = ClientOrderID{0},
           .client_replacement_id = ClientOrderID{1},
           .security_id = SecurityID{1},
-          .reason = engine_snapshot::ReplacementRejectedReason::SECURITY_NOT_FOUND,
+          .reason = engine_events::ReplacementRejectedReason::SECURITY_NOT_FOUND,
       }));
-  compare_event(snapshots[2],
-      (engine_snapshot::CancellationRejected{
+  compare_event(events[2],
+      (engine_events::CancellationRejected{
           .client_id = ClientID{0},
           .client_order_id = ClientOrderID{1},
           .client_cancellation_id = ClientOrderID{2},
           .security_id = SecurityID{1},
-          .reason = engine_snapshot::CancellationRejectedReason::SECURITY_NOT_FOUND,
+          .reason = engine_events::CancellationRejectedReason::SECURITY_NOT_FOUND,
       }));
 }

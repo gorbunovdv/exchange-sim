@@ -4,7 +4,7 @@
 
 #include "domain/types.h"
 
-#include "exchange/domain/market_data_snapshots.h"
+#include "exchange/domain/market_events.h"
 
 #include <boost/hof/match.hpp>
 #include <glaze/glaze.hpp>
@@ -13,53 +13,51 @@ namespace exchange_sim {
 
 class MarketDataGenerator {
 public:
-  explicit MarketDataGenerator(const glz::generic&) {
-    static_assert(market_data_snapshot::Processor<MarketDataGenerator>);
-  }
+  explicit MarketDataGenerator(const glz::generic&) { static_assert(market_events::Processor<MarketDataGenerator>); }
 
-  void process(market_data_snapshot::SnapshotType&& snapshot) {
+  void process(market_events::EventType&& event) {
     std::visit(boost::hof::match(
-                   [](market_data_snapshot::BookOrderEntry&& snapshot) {
+                   [](market_events::BookOrderEntry&& event) {
                      INFO(
-                         "Received market data snapshot, type=BookOrderEntry"
+                         "Received market data event, type=BookOrderEntry"
                          " order_id={} security_id={}"
                          " direction={} price={} quantity={}",
-                         snapshot.order_id,
-                         snapshot.security_id.value(),
-                         format_as(snapshot.direction),
-                         static_cast<double>(snapshot.price),
-                         static_cast<double>(snapshot.quantity));
+                         event.order_id,
+                         event.security_id.value(),
+                         format_as(event.direction),
+                         static_cast<double>(event.price),
+                         static_cast<double>(event.quantity));
                    },
-                   [](market_data_snapshot::BookOrderChange&& snapshot) {
+                   [](market_events::BookOrderChange&& event) {
                      INFO(
-                         "Received market data snapshot, type=BookOrderChange"
+                         "Received market data event, type=BookOrderChange"
                          " order_id={} security_id={} direction={} price={} new_quantity={}",
-                         snapshot.order_id,
-                         snapshot.security_id.value(),
-                         format_as(snapshot.direction),
-                         static_cast<double>(snapshot.price),
-                         static_cast<double>(snapshot.new_quantity));
+                         event.order_id,
+                         event.security_id.value(),
+                         format_as(event.direction),
+                         static_cast<double>(event.price),
+                         static_cast<double>(event.new_quantity));
                    },
-                   [](market_data_snapshot::BookOrderDeletion&& snapshot) {
+                   [](market_events::BookOrderDeletion&& event) {
                      INFO(
-                         "Received market data snapshot, type=BookOrderDeletion"
+                         "Received market data event, type=BookOrderDeletion"
                          " order_id={} security_id={}",
-                         snapshot.order_id,
-                         snapshot.security_id.value());
+                         event.order_id,
+                         event.security_id.value());
                    },
-                   [](market_data_snapshot::Trade&& snapshot) {
+                   [](market_events::Trade&& event) {
                      INFO(
-                         "Received market data snapshot, type=Trade"
+                         "Received market data event, type=Trade"
                          " security_id={} price={} quantity={}"
                          " trade_id={} aggressor_order_id={} recipient_order_id={}",
-                         snapshot.security_id.value(),
-                         static_cast<double>(snapshot.price),
-                         static_cast<double>(snapshot.quantity),
-                         snapshot.trade_id,
-                         snapshot.aggressor_order_id,
-                         snapshot.recipient_order_id);
+                         event.security_id.value(),
+                         static_cast<double>(event.price),
+                         static_cast<double>(event.quantity),
+                         event.trade_id,
+                         event.aggressor_order_id,
+                         event.recipient_order_id);
                    }),
-        std::move(snapshot));
+        std::move(event));
   }
 
 private:

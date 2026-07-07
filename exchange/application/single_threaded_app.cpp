@@ -3,7 +3,7 @@
 
 #include "domain/security.h"
 
-#include "exchange/domain/engine_snapshots.h"
+#include "exchange/domain/engine_events.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -44,13 +44,12 @@ void run_single_threaded_app(const glz::generic& config) {
         static_cast<double>(security.high_price),
         static_cast<double>(security.max_amount));
   }
-  SimpleReceiver<market_data_snapshot::SnapshotType, MarketDataGenerator> market_data_generator(
-      config["market_data_generator"]);
+  SimpleReceiver<market_events::EventType, MarketDataGenerator> market_data_generator(config["market_data_generator"]);
   SimpleReceiver<report::ReportType, ReportGenerator> report_generator(config["report_generator"]);
-  SimpleReceiver<engine_snapshot::SnapshotType,
-      ExchangeDispatcher<CallbackSink<market_data_snapshot::SnapshotType>, CallbackSink<report::ReportType>>>
+  SimpleReceiver<engine_events::EventType,
+      ExchangeDispatcher<CallbackSink<market_events::EventType>, CallbackSink<report::ReportType>>>
       exchange_dispatcher(config["exchange_dispatcher"], market_data_generator.get_sink(), report_generator.get_sink());
-  SimpleReceiver<request::RequestType, MatchingEngine<CallbackSink<engine_snapshot::SnapshotType>>> matching_engine(
+  SimpleReceiver<request::RequestType, MatchingEngine<CallbackSink<engine_events::EventType>>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
   SimpleOrderGenerator order_generator(security_storage, config["order_generator"], matching_engine.get_sink());
   order_generator.run();
