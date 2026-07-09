@@ -1,4 +1,8 @@
 {
+  "cpu_cores": {
+    "shared_core": 0,
+    "dedicated_cores": [1]
+  },
   "securities": [
     {
       "symbol": "EURUSD",

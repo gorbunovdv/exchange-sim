@@ -3,3 +3,5 @@ find_package(cpptrace REQUIRED)
 add_executable(single_threaded_callback_app single_threaded_callback_app.cpp)
 target_link_libraries(single_threaded_callback_app PUBLIC base domain simple_order_generator matching exchange_dispatcher cpptrace::cpptrace)
 
+add_executable(empty_app empty_app.cpp)
+target_link_libraries(empty_app PUBLIC base domain simple_order_generator matching exchange_dispatcher cpptrace::cpptrace)

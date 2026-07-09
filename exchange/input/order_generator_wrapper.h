@@ -119,7 +119,11 @@ public:
     generator_.process(std::move(report));
   }
 
-  void run() { generator_.run(); }
+  void run() {
+    while (!generator_interface_.asked_to_stop()) {
+      generator_.run();
+    }
+  }
 
 private:
   GeneratorInterface<SinkType> generator_interface_;

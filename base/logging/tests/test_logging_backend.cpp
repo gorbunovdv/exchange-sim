@@ -17,6 +17,7 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
       .path = file.path(),
       .log_level = quill::LogLevel::Info,
       .format = quill::PatternFormatterOptions("{{%(logger)}} %(message)"),
+      .cpu_id = 0,
   });
 
   std::array lines = {"ababc", "fdhsdfhs", "dsjfsdjhfj", "dkfkjsdf"};

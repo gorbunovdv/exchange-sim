@@ -4,6 +4,7 @@
 
 #include "domain/security.h"
 
+#include "exchange/application/helpers/generate_securities.h"
 #include "exchange/domain/engine_events.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
@@ -18,22 +19,6 @@
 namespace exchange_sim {
 
 namespace {
-
-std::vector<SecurityConfig> generate_securities(const glz::generic& config) {
-  std::vector<SecurityConfig> securities;
-  securities.reserve(config["securities"].size());
-  for (const auto& security_config : config["securities"].get_array()) {
-    securities.emplace_back(SecurityConfig{
-        .symbol = Symbol(security_config["symbol"].as<std::string>()),
-        .tick_size = Price(security_config["tick_size"].as<double>()),
-        .lot_size = Amount(security_config["lot_size"].as<double>()),
-        .low_price = Price(security_config["low_price"].as<double>()),
-        .high_price = Price(security_config["high_price"].as<double>()),
-        .max_amount = Amount(security_config["max_amount"].as<double>()),
-    });
-  }
-  return securities;
-}
 
 void run_single_threaded_callback_app(const glz::generic& config) {
   SecurityStorage security_storage(generate_securities(config));
@@ -81,11 +66,13 @@ void run_single_threaded_callback_app(const glz::generic& config) {
 
 }  // namespace exchange_sim
 
+using namespace exchange_sim;
+
 int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
-    const auto config = exchange_sim::read_config_and_initialize_logging(std::span(argv, argv + argc));
-    exchange_sim::run_single_threaded_callback_app(config);
+    const auto [core_pinner, _, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
+    run_single_threaded_callback_app(config);
   }
   CPPTRACE_CATCH(...) {
     try {
