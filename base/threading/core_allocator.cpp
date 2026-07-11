@@ -39,17 +39,18 @@ bool set_thread_name(const std::string& name) {
 }  // namespace
 
 void CoreLease::pin_thread(const std::string& name) const {
-  CHECK(pin_current_thread_to_core(cpu_id_),
+  CHECK(pin_current_thread_to_core(cpu_id()),
       "Could not pin thread to cpu_id={} type={}",
-      cpu_id_.value(),
+      cpu_id().value(),
       magic_enum::enum_name(core_type_));
   CHECK(set_thread_name(name), "Could not set thread name to {}", name);
 }
 
 CoreLease::~CoreLease() noexcept {
   CPPTRACE_TRY {
-    if (allocator_ != nullptr) {
-      allocator_->release_core(cpu_id_, core_type_);
+    if (cpu_id_.has_value()) {
+      CHECK(allocator_ != nullptr, "allocator is not set for CoreLease to release");
+      allocator_->release_core(cpu_id(), core_type_);
     }
   }
   CPPTRACE_CATCH(...) {

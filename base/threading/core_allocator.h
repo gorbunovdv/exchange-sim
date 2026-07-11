@@ -25,7 +25,10 @@ class CoreAllocator;
 
 class CoreLease : NonCopyable {
 public:
-  CpuID cpu_id() const { return cpu_id_; }
+  CpuID cpu_id() const {
+    CHECK(cpu_id_.has_value(), "cpu_id is not set for CoreLease");
+    return cpu_id_.value();
+  }
 
   CoreType type() const { return core_type_; }
 
@@ -33,8 +36,22 @@ public:
 
   ~CoreLease() noexcept;
 
-  CoreLease(CoreLease&&) = default;
-  CoreLease& operator=(CoreLease&&) = default;
+  CoreLease(CoreLease&& other) noexcept {
+    if (this != &other) {
+      std::swap(core_type_, other.core_type_);
+      cpu_id_ = std::exchange(other.cpu_id_, std::nullopt);
+      std::swap(allocator_, other.allocator_);
+    }
+  }
+
+  CoreLease& operator=(CoreLease&& other) noexcept {
+    if (this != &other) {
+      std::swap(core_type_, other.core_type_);
+      cpu_id_ = std::exchange(other.cpu_id_, std::nullopt);
+      std::swap(allocator_, other.allocator_);
+    }
+    return *this;
+  }
 
 private:
   friend class CoreAllocator;
@@ -43,7 +60,7 @@ private:
       core_type_(core_type), cpu_id_(cpu_id), allocator_(core_manager) {}
 
   CoreType core_type_;
-  CpuID cpu_id_;
+  std::optional<CpuID> cpu_id_;
   CoreAllocator* allocator_ = nullptr;
 };
 
