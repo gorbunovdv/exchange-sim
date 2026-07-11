@@ -5,3 +5,6 @@ target_link_libraries(single_threaded_callback_app PUBLIC base domain simple_ord
 
 add_executable(empty_app empty_app.cpp)
 target_link_libraries(empty_app PUBLIC base domain simple_order_generator matching exchange_dispatcher cpptrace::cpptrace)
+
+add_executable(calc_stats calc_stats.cpp)
+target_link_libraries(calc_stats PUBLIC base domain cpptrace::cpptrace)

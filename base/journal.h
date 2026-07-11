@@ -5,9 +5,8 @@
 #include "base/noncopyable.h"
 #include "base/time/rdtsc.h"
 
-#include "macros.h"
-#include "threading/core_allocator.h"
-#include "throughput.h"
+#include "base/threading/core_allocator.h"
+#include "base/throughput.h"
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -74,16 +73,74 @@ public:
   template<typename Consumer>
   bool consume_if_available(Consumer&& consumer) {
     CHECK(mode_ == JournalMode::READ, "Mode should be read");
-    value_type data;
+    alignas(value_type) std::array<std::byte, sizeof(value_type)> data;
     stream_.read(reinterpret_cast<char*>(data.data()), data.size());
     if (stream_) {
-      std::forward<Consumer>(consumer)(data);
+      std::forward<Consumer>(consumer)(std::move(*reinterpret_cast<value_type*>(data.data())));
       return true;
     }
     return false;
   }
 
   ~Journal() { thread_.get_stop_source().request_stop(); }
+
+  class Iterator {
+  public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type = Journal::value_type;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const value_type*;
+    using reference = const value_type&;
+
+    explicit Iterator(Journal* journal): journal_(journal) {
+      advance();
+    }
+
+    Iterator& operator++() {
+      advance();
+      return *this;
+    }
+
+    pointer operator->() {
+      using ::exchange_sim::get_logger;
+
+      CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
+      return &current_value_;
+    }
+
+    reference operator*() {
+      using ::exchange_sim::get_logger;
+
+      CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
+      return current_value_.value();
+    }
+
+    bool operator==(std::default_sentinel_t) const {
+      return is_eof_;
+    }
+
+  private:
+    void advance() {
+      if (!is_eof_ && journal_ && journal_->stream_) {
+        is_eof_ = !journal_->consume_if_available([this](value_type&& value) {
+          current_value_.emplace(std::move(value));
+        });
+      }
+    }
+
+    Journal* journal_;
+    std::optional<value_type> current_value_;
+    bool is_eof_ = false;
+  };
+
+  auto begin() {
+    CHECK(mode_ == JournalMode::READ, "Mode should be read");
+    return Iterator(this);
+  }
+
+  auto end() {
+    return std::default_sentinel;
+  }
 
 private:
   void flush() {
@@ -99,7 +156,6 @@ private:
 
   std::string name_;
   std::optional<CoreLease> core_lease_;
-  std::jthread thread_;
 
   std::fstream stream_;
   JournalMode mode_;
@@ -111,6 +167,8 @@ private:
   std::atomic<size_t> head_ = 0, tail_ = 0;
 
   Throughput throughput_;
+
+  std::jthread thread_;
 };
 
 }  // namespace exchange_sim

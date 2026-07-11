@@ -39,5 +39,9 @@
   "matching_engine": {
   },
   "exchange_dispatcher": {
+  },
+  "calc_stats": {
+    "output_file": "./results/stats.json",
+    "requests_to_skip": 1000
   }
 }
