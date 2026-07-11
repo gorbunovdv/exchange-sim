@@ -1,5 +1,6 @@
 #pragma once
 #include "base/logging/logging_backend.h"
+#include "base/strong_type.h"
 
 #include <boost/scope/scope_exit.hpp>
 #include <magic_enum/magic_enum.hpp>
@@ -18,7 +19,7 @@ enum class CoreType : std::uint8_t {
   SHARED,
 };
 
-using CpuID = uint32_t;
+using CpuID = StrongType<uint32_t, struct CpuIDType, skills::EqualTo>;
 
 class CoreAllocator;
 
@@ -28,9 +29,9 @@ public:
 
   CoreType type() const { return core_type_; }
 
-  void pin_thread(std::string name);
+  void pin_thread(const std::string& name) const;
 
-  ~CoreLease();
+  ~CoreLease() noexcept;
 
   CoreLease(CoreLease&&) = default;
   CoreLease& operator=(CoreLease&&) = default;
@@ -39,23 +40,23 @@ private:
   friend class CoreAllocator;
 
   explicit CoreLease(CoreType core_type, CpuID cpu_id, CoreAllocator* core_manager):
-      core_type_(core_type), cpu_id_(cpu_id), manager_(core_manager) {}
+      core_type_(core_type), cpu_id_(cpu_id), allocator_(core_manager) {}
 
   CoreType core_type_;
   CpuID cpu_id_;
-  CoreAllocator* manager_ = nullptr;
+  CoreAllocator* allocator_ = nullptr;
 };
 
 class CoreAllocator : NonMoveable {
 public:
   struct Config {
-    uint32_t shared_core;
-    std::vector<uint32_t> dedicated_cores;
+    CpuID shared_core;
+    std::vector<CpuID> dedicated_cores;
   };
 
   explicit CoreAllocator(Config config): CoreAllocator(config.shared_core, std::move(config.dedicated_cores)) {}
 
-  explicit CoreAllocator(uint32_t shared_core, std::vector<uint32_t> dedicated_cores):
+  explicit CoreAllocator(CpuID shared_core, std::vector<CpuID> dedicated_cores):
       shared_core_(shared_core), dedicated_cores_(std::move(dedicated_cores)) {}
 
   CoreLease lease_core(CoreType type);
@@ -64,8 +65,8 @@ public:
 
 private:
   mutable std::mutex mutex_;
-  uint32_t shared_core_;
-  std::vector<uint32_t> dedicated_cores_;
+  CpuID shared_core_;
+  std::vector<CpuID> dedicated_cores_;
 };
 
 

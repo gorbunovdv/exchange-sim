@@ -1,5 +1,6 @@
 #include "base/callback_receiver.h"
 #include "base/forward_sink.h"
+#include "base/journal.h"
 #include "base/run.h"
 
 #include "domain/security.h"
@@ -20,7 +21,10 @@ namespace exchange_sim {
 
 namespace {
 
-void run_single_threaded_callback_app(const glz::generic& config) {
+void run_single_threaded_callback_app(std::shared_ptr<Runtime> runtime, const glz::generic& config) {
+  auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
+  dedicated_core.pin_thread("run_single_threaded_callback_app");
+
   SecurityStorage security_storage(generate_securities(config));
   for (Security security : security_storage.securities()) {
     INFO("Added security, symbol={} lot_size={} tick_size={} low_price={} high_price={} max_amount={}",
@@ -31,6 +35,21 @@ void run_single_threaded_callback_app(const glz::generic& config) {
         static_cast<double>(security.high_price),
         static_cast<double>(security.max_amount));
   }
+
+  const size_t constJournalSize = 1 << 20;
+
+  Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
+      config["journaling"]["market_events"].as<std::string>(),
+      JournalMode::WRITE,
+      constJournalSize);
+  Journal<report::ReportType> report_journal("Journal<report::ReportType>",
+      config["journaling"]["reports"].as<std::string>(),
+      JournalMode::WRITE,
+      constJournalSize);
+  Journal<request::RequestType> request_journal("Journal<request::RequestType>",
+      config["journaling"]["requests"].as<std::string>(),
+      JournalMode::WRITE,
+      constJournalSize);
 
   using MarketDataSinkType = ForwardSink<market_events::EventType, CallbackSink<market_events::EventType>>;
   using ReportSinkType = ForwardSink<report::ReportType, CallbackSink<report::ReportType>>;
@@ -49,7 +68,12 @@ void run_single_threaded_callback_app(const glz::generic& config) {
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
   OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, MatchingEngineSinkType> order_generator(
-      security_storage, matching_engine.get_sink(), config["order_generator"]);
+      security_storage,
+      request_journal,
+      market_data_journal,
+      report_journal,
+      matching_engine.get_sink(),
+      config["order_generator"]);
 
   CallbackSink<market_events::EventType> market_data_generator_sink_callback(
       [&order_generator](market_events::EventType&& snapshot) { order_generator.process(std::move(snapshot)); });
@@ -71,8 +95,8 @@ using namespace exchange_sim;
 int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
-    const auto [core_pinner, _, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
-    run_single_threaded_callback_app(config);
+    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
+    run_single_threaded_callback_app(runtime, config);
   }
   CPPTRACE_CATCH(...) {
     try {

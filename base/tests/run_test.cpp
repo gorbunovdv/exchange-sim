@@ -109,7 +109,7 @@ TEST(Run, BasicTest) {
 
   char* argv[] = {nullptr, config_file_path_string.data()};
 
-  auto [_1, _2, config] = read_config_and_initialize_logging(std::span(argv, argv + 2));
+  auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + 2));
   ASSERT_TRUE(config.contains("logging"));
   EXPECT_EQ(config["logging"]["type"].as<std::string>(), "file");
   EXPECT_EQ(config["logging"]["log_level"].as<std::string>(), "info");

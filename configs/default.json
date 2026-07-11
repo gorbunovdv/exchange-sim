@@ -31,11 +31,12 @@
     "min_active_orders_by_security": 1,
     "max_active_orders_by_security": 5
   },
+  "journaling": {
+    "market_events": "./results/market_data.bin",
+    "requests": "./results/requests.bin",
+    "reports": "./results/reports.bin"
+  },
   "matching_engine": {
-  },
-  "market_data_generator": {
-  },
-  "report_generator": {
   },
   "exchange_dispatcher": {
   }

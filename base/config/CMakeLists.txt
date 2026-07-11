@@ -10,4 +10,4 @@ target_compile_definitions(config_test PRIVATE
 )
 target_link_libraries(config_test PUBLIC config gtest::gtest)
 include(GoogleTest)
-gtest_discover_tests(config_test)
+gtest_discover_tests(config_test DISCOVERY_MODE PRE_TEST)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/counter.h"
+#include "base/throughput.h"
 
 #include "domain/security_storage.h"
 
@@ -16,8 +17,9 @@ namespace exchange_sim {
 template<typename SinkType>
 class GeneratorInterface {
 public:
-  explicit GeneratorInterface(SecurityStorage& security_storage, SinkType& sink):
-      security_storage_(security_storage), active_orders_(security_storage.size()), sink_(sink) {}
+  explicit GeneratorInterface(
+      SecurityStorage& security_storage, Journal<request::RequestType>& journal, SinkType& sink):
+      security_storage_(security_storage), active_orders_(security_storage.size()), sink_(sink), journal_(journal) {}
 
   ClientOrderID send_order_add_request(ClientID client_id,
       SecurityID security_id,
@@ -40,6 +42,9 @@ public:
     if (security_storage_.has_security(security_id)) {
       active_orders_[security_id].handle(request);
     }
+    auto timestamp = Ticks::rdtscp();
+    journal_.write(timestamp, request);
+    requests_.tick(timestamp);
     sink_.push(std::move(request));
     return client_order_id;
   }
@@ -53,6 +58,9 @@ public:
     if (security_storage_.has_security(security_id)) {
       active_orders_[security_id].handle(request);
     }
+    auto timestamp = Ticks::rdtscp();
+    journal_.write(timestamp, request);
+    requests_.tick(timestamp);
     sink_.push(std::move(request));
     return client_cancellation_id;
   }
@@ -76,6 +84,9 @@ public:
     if (security_storage_.has_security(security_id)) {
       active_orders_[security_id].handle(request);
     }
+    auto timestamp = Ticks::rdtscp();
+    journal_.write(timestamp, request);
+    requests_.tick(timestamp);
     sink_.push(std::move(request));
     return client_replacement_id;
   }
@@ -103,19 +114,35 @@ private:
   StrongTypeIndexedVector<SecurityID, OrderStorage> active_orders_;
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;
+  Journal<request::RequestType>& journal_;
+  Throughput requests_ = Throughput("requests");
 };
 
 template<template<typename> typename OrderGenerator, template<typename> typename GeneratorInterface, typename SinkType>
 class OrderGeneratorWrapper {
 public:
   template<typename... Args>
-  explicit OrderGeneratorWrapper(SecurityStorage& security_storage, SinkType& sink, Args&&... args):
-      generator_interface_(security_storage, sink), generator_(generator_interface_, std::forward<Args>(args)...) {}
+  explicit OrderGeneratorWrapper(SecurityStorage& security_storage,
+      Journal<request::RequestType>& requests_journal,
+      Journal<market_events::EventType>& market_data_journal,
+      Journal<report::ReportType>& report_journal,
+      SinkType& sink,
+      Args&&... args):
+      generator_interface_(security_storage, requests_journal, sink),
+      generator_(generator_interface_, std::forward<Args>(args)...),
+      market_data_journal_(market_data_journal),
+      report_journal_(report_journal) {}
 
-  void process(market_events::EventType&& market_events) { generator_.process(std::move(market_events)); }
+  void process(market_events::EventType&& market_event) {
+    auto timestamp = Ticks::rdtscp();
+    market_data_journal_.write(timestamp, market_event);
+    generator_.process(std::move(market_event));
+  }
 
   void process(report::ReportType&& report) {
+    auto timestamp = Ticks::rdtscp();
     generator_interface_.handle(report);
+    report_journal_.write(timestamp, report);
     generator_.process(std::move(report));
   }
 
@@ -128,6 +155,9 @@ public:
 private:
   GeneratorInterface<SinkType> generator_interface_;
   OrderGenerator<GeneratorInterface<SinkType>> generator_;
+
+  Journal<market_events::EventType>& market_data_journal_;
+  Journal<report::ReportType>& report_journal_;
 };
 
 }  // namespace exchange_sim

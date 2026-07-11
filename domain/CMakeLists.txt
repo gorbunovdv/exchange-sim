@@ -7,4 +7,4 @@ target_link_libraries(domain PUBLIC base Boost::boost magic_enum::magic_enum)
 
 add_executable(security_storage_test tests/security_storage_test.cpp)
 target_link_libraries(security_storage_test PUBLIC domain gtest::gtest)
-gtest_discover_tests(security_storage_test)
+gtest_discover_tests(security_storage_test DISCOVERY_MODE PRE_TEST)

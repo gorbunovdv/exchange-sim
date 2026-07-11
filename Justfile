@@ -2,8 +2,6 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set export
 
 ROOT_DIR := justfile_directory()
-CLANG_FORMAT := "clang-format-21"
-CLANG_TIDY := "clang-tidy-21"
 CPU_COUNT := num_cpus()
 
 default:
@@ -11,7 +9,7 @@ default:
 
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 "{{ CLANG_FORMAT }}" "{{ CLANG_TIDY }}" ninja-build ccache cmake just python3-pip pipx -y
+    apt install git gcc-15 g++-15 clang-21 clang-format-21 clang-tidy-21 ninja-build ccache cmake just python3-pip pipx -y
     pipx ensurepath
     pipx install conan
 
@@ -49,14 +47,14 @@ test-from-scratch preset='clang-debug-asan':
     ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
 format:
-    git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r {{ CLANG_FORMAT }} --style=file -i
+    git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file -i
 
 format-check:
-    git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r {{ CLANG_FORMAT }} --style=file --dry-run --Werror
+    git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
 
 lint preset:
     test -f "cmake-build-{{ preset }}/compile_commands.json"
-    git ls-files -z -- '*.cpp' | xargs -0 -r {{ CLANG_TIDY }} -p "./cmake-build-{{ preset }}/" --quiet
+    git ls-files -z -- '*.cpp' | xargs -0 -r clang-tidy -p "./cmake-build-{{ preset }}/" --quiet
 
 lint-from-scratch preset='clang-debug':
     @just clean {{ preset }}

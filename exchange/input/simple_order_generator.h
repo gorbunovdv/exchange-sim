@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/logging/loggable_class.h"
+#include "base/throughput.h"
 
 #include "domain/security.h"
 
@@ -37,9 +38,10 @@ public:
   }
 
   void process(market_events::EventType&& snapshot) {
+    market_data_.tick();
     std::visit(boost::hof::match(
                    [this](market_events::BookOrderEntry&& snapshot) {
-                     INFO(
+                     DEBUG(
                          "Received market data snapshot, type=BookOrderEntry"
                          " order_id={} security_id={}"
                          " direction={} price={} quantity={}",
@@ -50,7 +52,7 @@ public:
                          static_cast<double>(snapshot.quantity));
                    },
                    [this](market_events::BookOrderChange&& snapshot) {
-                     INFO(
+                     DEBUG(
                          "Received market data snapshot, type=BookOrderChange"
                          " order_id={} security_id={} direction={} price={} new_quantity={}",
                          snapshot.order_id,
@@ -60,14 +62,14 @@ public:
                          static_cast<double>(snapshot.new_quantity));
                    },
                    [this](market_events::BookOrderDeletion&& snapshot) {
-                     INFO(
+                     DEBUG(
                          "Received market data snapshot, type=BookOrderDeletion"
                          " order_id={} security_id={}",
                          snapshot.order_id,
                          snapshot.security_id.value());
                    },
                    [this](market_events::Trade&& snapshot) {
-                     INFO(
+                     DEBUG(
                          "Received market data snapshot, type=Trade"
                          " security_id={} price={} quantity={}"
                          " trade_id={} aggressor_order_id={} recipient_order_id={}",
@@ -82,10 +84,11 @@ public:
   }
 
   void process(report::ReportType report) {
+    reports_.tick();
     std::visit(
         boost::hof::match(
             [this](report::OrderAccepted&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=OrderAccepted"
                   " order_id={} client_id={} client_order_id={} security_id={} time_in_force={}"
                   " direction={} price={} quantity={}",
@@ -99,7 +102,7 @@ public:
                   static_cast<double>(report.quantity));
             },
             [this](report::Trade&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=Trade"
                   " security_id={} aggressor_direction={} price={} quantity={}"
                   " client_id={} client_order_id={} trade_id={} aggressor_order_id={} recipient_order_id={}",
@@ -114,7 +117,7 @@ public:
                   report.recipient_order_id);
             },
             [this](report::OrderBookEntry&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=OrderBookEntry"
                   " order_id={} client_id={} client_order_id={} security_id={} direction={} price={} quantity={}",
                   report.order_id,
@@ -126,7 +129,7 @@ public:
                   static_cast<double>(report.quantity));
             },
             [this](report::OrderFilled&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=OrderFilled"
                   " order_id={} client_id={} client_order_id={} security_id={} direction={} price={} type={}",
                   report.order_id,
@@ -138,7 +141,7 @@ public:
                   magic_enum::enum_name(report.type));
             },
             [this](report::OrderExpired&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=OrderExpired"
                   " order_id={} client_id={} client_order_id={} security_id={} reason={}",
                   report.order_id,
@@ -148,7 +151,7 @@ public:
                   magic_enum::enum_name(report.reason));
             },
             [this](report::OrderCancelled&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=OrderCancelled"
                   " order_id={} client_id={} client_order_id={} client_cancellation_id={} security_id={}",
                   report.order_id,
@@ -158,7 +161,7 @@ public:
                   report.security_id.value());
             },
             [this](report::OrderRejected&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=OrderRejected"
                   " security_id={} client_id={} client_order_id={} reason={}",
                   report.security_id.value(),
@@ -167,7 +170,7 @@ public:
                   magic_enum::enum_name(report.reason));
             },
             [this](report::CancellationRejected&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=CancellationRejected"
                   " client_id={} client_order_id={} client_cancellation_id={} security_id={} reason={}",
                   report.client_id,
@@ -177,7 +180,7 @@ public:
                   magic_enum::enum_name(report.reason));
             },
             [this](report::ReplacementAccepted&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=ReplacementAccepted"
                   " order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={}"
                   " security_id={} direction={} price={} quantity={}",
@@ -192,7 +195,7 @@ public:
                   static_cast<double>(report.quantity));
             },
             [this](report::ReplacementRejected&& report) {
-              INFO(
+              DEBUG(
                   "Received report, type=ReplacementRejected"
                   " client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
                   report.client_id,
@@ -308,6 +311,9 @@ private:
   std::mt19937 generator_;
   std::uniform_int_distribution<std::uint32_t> type_distribution_{0, 2};
   std::uniform_int_distribution<SecurityID::UnderlyingType> security_id_distribution_;
+
+  Throughput market_data_ = Throughput("market_data_events");
+  Throughput reports_ = Throughput("reports");
 };
 
 }  // namespace exchange_sim
