@@ -9,7 +9,7 @@ default:
 
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 clang-format-21 clang-tidy-21 ninja-build ccache cmake just python3-pip pipx -y
+    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-pip pipx -y
     pipx ensurepath
     pipx install conan
 

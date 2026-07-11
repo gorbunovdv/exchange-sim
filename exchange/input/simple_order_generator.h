@@ -38,7 +38,6 @@ public:
   }
 
   void process(market_events::EventType&& snapshot) {
-    market_data_.tick();
     std::visit(boost::hof::match(
                    [this](market_events::BookOrderEntry&& snapshot) {
                      DEBUG(
@@ -84,7 +83,6 @@ public:
   }
 
   void process(report::ReportType report) {
-    reports_.tick();
     std::visit(
         boost::hof::match(
             [this](report::OrderAccepted&& report) {
@@ -311,9 +309,6 @@ private:
   std::mt19937 generator_;
   std::uniform_int_distribution<std::uint32_t> type_distribution_{0, 2};
   std::uniform_int_distribution<SecurityID::UnderlyingType> security_id_distribution_;
-
-  Throughput market_data_ = Throughput("market_data_events");
-  Throughput reports_ = Throughput("reports");
 };
 
 }  // namespace exchange_sim

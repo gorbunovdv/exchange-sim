@@ -54,14 +54,18 @@ CoreLease::~CoreLease() noexcept {
   }
   CPPTRACE_CATCH(...) {
     try {
-      throw;
-    } catch (const std::exception& e) {
-      ERROR("Exception occurred: {}", e.what());
+      try {
+        throw;
+      } catch (const std::exception& e) {
+        ERROR("Exception occurred: {}", e.what());
+      } catch (...) {
+        ERROR("Unknown exception occurred");
+      }
+      ERROR("\nStacktrace:");
+      ERROR("{}", cpptrace::from_current_exception().to_string());
     } catch (...) {
-      ERROR("Unknown exception occurred");
+      std::cerr << "Logger threw during handling another exception" << std::endl;
     }
-    ERROR("\nStacktrace:");
-    ERROR("{}", cpptrace::from_current_exception().to_string());
   }
 }
 

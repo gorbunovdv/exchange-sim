@@ -36,18 +36,21 @@ void run_single_threaded_callback_app(std::shared_ptr<Runtime> runtime, const gl
         static_cast<double>(security.max_amount));
   }
 
-  const size_t constJournalSize = 1 << 20;
+  static constexpr size_t constJournalSize = 1 << 20;
 
   Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
+      runtime->core_allocator().lease_core(CoreType::SHARED),
       JournalMode::WRITE,
       constJournalSize);
   Journal<report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
+      runtime->core_allocator().lease_core(CoreType::SHARED),
       JournalMode::WRITE,
       constJournalSize);
   Journal<request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
+      runtime->core_allocator().lease_core(CoreType::SHARED),
       JournalMode::WRITE,
       constJournalSize);
 

@@ -44,7 +44,6 @@ public:
     }
     auto timestamp = Ticks::rdtscp();
     journal_.write(timestamp, request);
-    requests_.tick(timestamp);
     sink_.push(std::move(request));
     return client_order_id;
   }
@@ -60,7 +59,6 @@ public:
     }
     auto timestamp = Ticks::rdtscp();
     journal_.write(timestamp, request);
-    requests_.tick(timestamp);
     sink_.push(std::move(request));
     return client_cancellation_id;
   }
@@ -86,7 +84,6 @@ public:
     }
     auto timestamp = Ticks::rdtscp();
     journal_.write(timestamp, request);
-    requests_.tick(timestamp);
     sink_.push(std::move(request));
     return client_replacement_id;
   }
@@ -115,7 +112,6 @@ private:
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;
   Journal<request::RequestType>& journal_;
-  Throughput requests_ = Throughput("requests");
 };
 
 template<template<typename> typename OrderGenerator, template<typename> typename GeneratorInterface, typename SinkType>
@@ -141,8 +137,8 @@ public:
 
   void process(report::ReportType&& report) {
     auto timestamp = Ticks::rdtscp();
-    generator_interface_.handle(report);
     report_journal_.write(timestamp, report);
+    generator_interface_.handle(report);
     generator_.process(std::move(report));
   }
 

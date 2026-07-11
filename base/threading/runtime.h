@@ -9,7 +9,7 @@ public:
     CoreAllocator::Config core_allocator_config;
   };
 
-  explicit Runtime(Config config): core_allocator_(config.core_allocator_config) {}
+  explicit Runtime(const Config& config): core_allocator_(config.core_allocator_config) {}
 
   CoreAllocator& core_allocator() { return core_allocator_; }
 

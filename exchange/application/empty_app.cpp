@@ -11,7 +11,7 @@ namespace exchange_sim {
 
 namespace {
 
-void run_empty_app(std::shared_ptr<Runtime>, const glz::generic& config) {
+void run_empty_app(const std::shared_ptr<Runtime>&, const glz::generic& config) {
   INFO("config={}", glz::write_json(config).value());
 }
 

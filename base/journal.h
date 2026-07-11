@@ -6,6 +6,7 @@
 #include "base/time/rdtsc.h"
 
 #include "macros.h"
+#include "threading/core_allocator.h"
 #include "throughput.h"
 
 #include <magic_enum/magic_enum.hpp>
@@ -30,8 +31,14 @@ public:
 
   static constexpr size_t value_size = sizeof(value_type);
 
-  explicit Journal(const std::string& name, const std::filesystem::path& journal_path, JournalMode mode, size_t size):
+  explicit Journal(const std::string& name,
+      const std::filesystem::path& journal_path,
+      std::optional<CoreLease>&& core_lease,
+      JournalMode mode,
+      size_t size):
       LoggableClass(name),
+      name_(name),
+      core_lease_(std::move(core_lease)),
       stream_(journal_path, (mode == JournalMode::WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
       mode_(mode),
       queue_(size),
@@ -41,6 +48,8 @@ public:
     }
     if (mode == JournalMode::WRITE) {
       thread_ = std::jthread([this](const std::stop_token& token) {
+        CHECK(core_lease_.has_value(), "Must have core lease to start writing journal");
+        core_lease_.value().pin_thread(name_);
         while (!token.stop_requested()) {
           flush();
           std::this_thread::yield();
@@ -88,6 +97,8 @@ private:
     tail_.store(last_head % queue_.size());
   }
 
+  std::string name_;
+  std::optional<CoreLease> core_lease_;
   std::jthread thread_;
 
   std::fstream stream_;
