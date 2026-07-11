@@ -3,10 +3,9 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
 #include "base/noncopyable.h"
-#include "base/time/rdtsc.h"
-
 #include "base/threading/core_allocator.h"
 #include "base/throughput.h"
+#include "base/time/rdtsc.h"
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -92,9 +91,7 @@ public:
     using pointer = const value_type*;
     using reference = const value_type&;
 
-    explicit Iterator(Journal* journal): journal_(journal) {
-      advance();
-    }
+    explicit Iterator(Journal* journal): journal_(journal) { advance(); }
 
     Iterator& operator++() {
       advance();
@@ -115,16 +112,13 @@ public:
       return current_value_.value();
     }
 
-    bool operator==(std::default_sentinel_t) const {
-      return is_eof_;
-    }
+    bool operator==(std::default_sentinel_t) const { return is_eof_; }
 
   private:
     void advance() {
       if (!is_eof_ && journal_ && journal_->stream_) {
-        is_eof_ = !journal_->consume_if_available([this](value_type&& value) {
-          current_value_.emplace(std::move(value));
-        });
+        is_eof_ =
+            !journal_->consume_if_available([this](value_type&& value) { current_value_.emplace(std::move(value)); });
       }
     }
 
@@ -138,9 +132,7 @@ public:
     return Iterator(this);
   }
 
-  auto end() {
-    return std::default_sentinel;
-  }
+  auto end() { return std::default_sentinel; }
 
 private:
   void flush() {

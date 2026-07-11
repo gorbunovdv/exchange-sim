@@ -28,29 +28,35 @@ struct RequestStat {
 
 }  // namespace exchange_sim
 
-template <>
+template<>
 struct glz::meta<exchange_sim::RequestStat> {
   using T = exchange_sim::RequestStat;
-  static constexpr auto value = object(
-    "origin_time", &T::origin_time,
-    "first_report", &T::first_report_ns,
-    "last_report", &T::last_report_ns,
-    "first_market_event", &T::first_market_event_ns,
-    "last_market_event", &T::last_market_event_ns,
-    "reports_count", &T::reports_count,
-    "market_events_count", &T::market_events_count,
-    "trades_count", &T::trades_count
-  );
+  static constexpr auto value = object("origin_time",
+      &T::origin_time,
+      "first_report",
+      &T::first_report_ns,
+      "last_report",
+      &T::last_report_ns,
+      "first_market_event",
+      &T::first_market_event_ns,
+      "last_market_event",
+      &T::last_market_event_ns,
+      "reports_count",
+      &T::reports_count,
+      "market_events_count",
+      &T::market_events_count,
+      "trades_count",
+      &T::trades_count);
 };
 
 namespace exchange_sim {
 
 void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config) {
   Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
-    config["journaling"]["market_events"].as<std::string>(),
-    std::nullopt,
-    JournalMode::READ,
-    0);
+      config["journaling"]["market_events"].as<std::string>(),
+      std::nullopt,
+      JournalMode::READ,
+      0);
   Journal<report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
       std::nullopt,
@@ -101,38 +107,52 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
     }
 
     RequestStat stat{
-      .origin_time = request_struct.timestamp.ticks(),
+        .origin_time = request_struct.timestamp.ticks(),
     };
 
     for (const auto& market_event_struct : current_market_events) {
-      std::visit([&](auto&& current_market_event) {
-        if (current_market_event.origin_time.ticks() == stat.origin_time) {
-          if (!stat.first_market_event_ns.has_value() || market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count() > stat.last_market_event_ns.value()) {
-            stat.first_market_event_ns = market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
-          }
-          if (!stat.last_market_event_ns.has_value() || market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count() < stat.last_market_event_ns.value()) {
-            stat.last_market_event_ns = market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
-          }
-          stat.market_events_count++;
-        }
-        if constexpr (std::is_same_v<std::remove_cvref_t<decltype(current_market_event)>, market_events::Trade>) {
-          stat.trades_count++;
-        }
-      }, market_event_struct.value);
+      std::visit(
+          [&](auto&& current_market_event) {
+            if (current_market_event.origin_time.ticks() == stat.origin_time) {
+              if (!stat.first_market_event_ns.has_value() ||
+                  market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count() >
+                      stat.last_market_event_ns.value()) {
+                stat.first_market_event_ns =
+                    market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
+              }
+              if (!stat.last_market_event_ns.has_value() ||
+                  market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count() <
+                      stat.last_market_event_ns.value()) {
+                stat.last_market_event_ns =
+                    market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
+              }
+              stat.market_events_count++;
+            }
+            if constexpr (std::is_same_v<std::remove_cvref_t<decltype(current_market_event)>, market_events::Trade>) {
+              stat.trades_count++;
+            }
+          },
+          market_event_struct.value);
     }
 
     for (const auto& report_struct : current_reports) {
-      std::visit([&](auto&& current_report) {
-        if (current_report.origin_time.ticks() == stat.origin_time) {
-          if (!stat.first_report_ns.has_value() || report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count() < stat.first_report_ns.value()) {
-            stat.first_report_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
-          }
-          if (!stat.last_report_ns.has_value() || report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count() > stat.last_report_ns.value()) {
-            stat.last_report_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
-          }
-          stat.reports_count++;
-        }
-      }, report_struct.value);
+      std::visit(
+          [&](auto&& current_report) {
+            if (current_report.origin_time.ticks() == stat.origin_time) {
+              if (!stat.first_report_ns.has_value() ||
+                  report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count() <
+                      stat.first_report_ns.value()) {
+                stat.first_report_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
+              }
+              if (!stat.last_report_ns.has_value() ||
+                  report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count() >
+                      stat.last_report_ns.value()) {
+                stat.last_report_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
+              }
+              stat.reports_count++;
+            }
+          },
+          report_struct.value);
     }
 
     write_buffer.clear();
