@@ -7,6 +7,8 @@
 #include "base/throughput.h"
 #include "base/time/rdtsc.h"
 
+#include "cache_line.h"
+
 #include <magic_enum/magic_enum.hpp>
 
 #include <filesystem>
@@ -152,11 +154,14 @@ private:
   std::fstream stream_;
   JournalMode mode_;
 
-  // todo(gorbunovdv): Align the access to the value_type
-  std::vector<std::array<std::byte, sizeof(value_type)>> queue_;
+  struct alignas(value_type) AlignedType {
+    std::array<std::byte, sizeof(value_type)> placeholder;
+  };
 
-  // todo(gorbunovdv): Remove false sharing
-  std::atomic<size_t> head_ = 0, tail_ = 0;
+  std::vector<AlignedType> queue_;
+
+  alignas(constCacheLineSize) std::atomic<size_t> head_ = 0;
+  alignas(constCacheLineSize) std::atomic<size_t> tail_ = 0;
 
   Throughput throughput_;
 
