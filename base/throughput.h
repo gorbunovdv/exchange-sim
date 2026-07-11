@@ -19,7 +19,8 @@ public:
     counter_ += count;
     if (current.nanoseconds_distance(prev_tick_) > 10s) {
       uint32_t events_processed = counter_;
-      double nanoseconds_per_event = static_cast<double>(current.nanoseconds_distance(prev_tick_).count()) / events_processed;
+      double nanoseconds_per_event =
+          static_cast<double>(current.nanoseconds_distance(prev_tick_).count()) / events_processed;
       double events_per_second = (1s / 1ns) / nanoseconds_per_event;
       INFO("Calculating throughput, events_processed={} time_elapsed_ns={} ns/event={} events/s={:.2f}",
           events_processed,
