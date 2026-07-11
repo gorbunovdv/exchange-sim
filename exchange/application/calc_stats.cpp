@@ -15,11 +15,11 @@ namespace exchange_sim {
 struct RequestStat {
   Ticks::Underlying origin_time;
 
-  std::optional<std::uint64_t> first_report_ns = std::nullopt;
-  std::optional<std::uint64_t> last_report_ns = std::nullopt;
+  std::optional<std::int64_t> first_report_ns = std::nullopt;
+  std::optional<std::int64_t> last_report_ns = std::nullopt;
 
-  std::optional<std::uint64_t> first_market_event_ns = std::nullopt;
-  std::optional<std::uint64_t> last_market_event_ns = std::nullopt;
+  std::optional<std::int64_t> first_market_event_ns = std::nullopt;
+  std::optional<std::int64_t> last_market_event_ns = std::nullopt;
 
   size_t reports_count = 0;
   size_t market_events_count = 0;
