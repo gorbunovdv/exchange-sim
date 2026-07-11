@@ -88,6 +88,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -98,6 +99,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
                 Amount{1},
             },
             request::OrderCancelRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -107,6 +109,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
     .expected_market_data =
         {
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::BUY,
@@ -114,6 +117,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
                 Amount{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
@@ -121,6 +125,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -131,6 +136,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -140,6 +146,7 @@ const MatchingOutputTestInput AddLimit_Cancel = {
                 Amount{1},
             },
             report::OrderCancelled{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -154,6 +161,7 @@ const MatchingOutputTestInput AddIoc_Expire = {
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -168,6 +176,7 @@ const MatchingOutputTestInput AddIoc_Expire = {
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -178,6 +187,7 @@ const MatchingOutputTestInput AddIoc_Expire = {
                 Amount{1},
             },
             report::OrderExpired{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -192,6 +202,7 @@ const MatchingOutputTestInput Cancel_Reject = {
     .requests =
         {
             request::OrderCancelRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -202,6 +213,7 @@ const MatchingOutputTestInput Cancel_Reject = {
     .expected_reports =
         {
             report::CancellationRejected{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -216,6 +228,7 @@ const MatchingOutputTestInput Replace_Reject = {
     .requests =
         {
             request::OrderReplaceRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -229,6 +242,7 @@ const MatchingOutputTestInput Replace_Reject = {
     .expected_reports =
         {
             report::ReplacementRejected{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -243,6 +257,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{1},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -253,6 +268,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{2},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -263,12 +279,14 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             request::OrderCancelRequest{
+                Ticks{0},
                 ClientID{2},
                 ClientOrderID{0},
                 ClientOrderID{1},
                 SecurityID{0},
             },
             request::OrderCancelRequest{
+                Ticks{0},
                 ClientID{1},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -278,6 +296,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
     .expected_market_data =
         {
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::BUY,
@@ -285,6 +304,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::BUY,
@@ -292,10 +312,12 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
@@ -303,6 +325,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{1},
                 ClientOrderID{0},
@@ -313,6 +336,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{1},
                 ClientOrderID{0},
@@ -322,6 +346,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{2},
                 ClientOrderID{0},
@@ -332,6 +357,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{2},
                 ClientOrderID{0},
@@ -341,6 +367,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 Amount{1},
             },
             report::OrderCancelled{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{2},
                 ClientOrderID{0},
@@ -348,6 +375,7 @@ const MatchingOutputTestInput AddLimitTwoClientsSameClientOrderId_CancelSecond_C
                 SecurityID{0},
             },
             report::OrderCancelled{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{1},
                 ClientOrderID{0},
@@ -362,6 +390,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -372,6 +401,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             request::OrderReplaceRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -381,6 +411,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             request::OrderCancelRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{1},
                 ClientOrderID{2},
@@ -390,6 +421,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
     .expected_market_data =
         {
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::BUY,
@@ -397,10 +429,12 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::BUY,
@@ -408,6 +442,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
@@ -415,6 +450,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -425,6 +461,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -434,6 +471,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             report::ReplacementAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ExchangeOrderID{2},
                 ClientID{0},
@@ -445,6 +483,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{0},
                 ClientOrderID{1},
@@ -454,6 +493,7 @@ const MatchingOutputTestInput AddLimit_Replace_Cancel = {
                 Amount{1},
             },
             report::OrderCancelled{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{0},
                 ClientOrderID{1},
@@ -468,6 +508,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -478,6 +519,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{1},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -488,6 +530,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             request::OrderReplaceRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{2},
@@ -497,6 +540,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{2},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -510,6 +554,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
     .expected_market_data =
         {
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::SELL,
@@ -517,6 +562,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
@@ -524,10 +570,12 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{3},
                 SecurityID{0},
                 Direction::SELL,
@@ -535,6 +583,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             market_events::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -543,10 +592,12 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{2},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
             market_events::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -555,6 +606,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{3},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{3},
                 SecurityID{0},
             },
@@ -562,6 +614,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -572,6 +625,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -581,6 +635,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -591,6 +646,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -600,6 +656,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             report::ReplacementAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ExchangeOrderID{3},
                 ClientID{0},
@@ -611,6 +668,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{3},
                 ClientID{0},
                 ClientOrderID{2},
@@ -620,6 +678,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{1},
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{4},
                 ClientID{2},
                 ClientOrderID{0},
@@ -630,6 +689,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 Amount{3},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -641,6 +701,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{2},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -652,6 +713,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{2},
             },
             report::OrderFilled{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -661,6 +723,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 engine_events::FilledType::PASSIVE_FILL,
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -672,6 +735,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{3},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -683,6 +747,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 ExchangeOrderID{3},
             },
             report::OrderFilled{
+                Ticks{0},
                 ExchangeOrderID{3},
                 ClientID{0},
                 ClientOrderID{2},
@@ -692,6 +757,7 @@ const MatchingOutputTestInput ReplaceLosesPriority_IocTradesOrder2ThenReplacemen
                 engine_events::FilledType::PASSIVE_FILL,
             },
             report::OrderExpired{
+                Ticks{0},
                 ExchangeOrderID{4},
                 ClientID{2},
                 ClientOrderID{0},
@@ -706,6 +772,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -716,6 +783,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{2},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{1},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -726,6 +794,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{3},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{2},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -736,6 +805,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{3},
             },
             request::OrderCancelRequest{
+                Ticks{0},
                 ClientID{1},
                 ClientOrderID{0},
                 ClientOrderID{1},
@@ -745,6 +815,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
     .expected_market_data =
         {
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::SELL,
@@ -752,6 +823,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{2},
             },
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
@@ -759,6 +831,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{3},
             },
             market_events::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Price{10},
                 Amount{2},
@@ -767,10 +840,12 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
             market_events::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Price{11},
                 Amount{1},
@@ -779,6 +854,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{2},
             },
             market_events::BookOrderChange{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
@@ -786,6 +862,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{2},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
@@ -793,6 +870,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -803,6 +881,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{2},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -812,6 +891,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{2},
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -822,6 +902,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{3},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -831,6 +912,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{3},
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{3},
                 ClientID{2},
                 ClientOrderID{0},
@@ -841,6 +923,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 Amount{3},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -852,6 +935,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{1},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -863,6 +947,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{1},
             },
             report::OrderFilled{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -872,6 +957,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 engine_events::FilledType::PASSIVE_FILL,
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{11},
@@ -883,6 +969,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{2},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{11},
@@ -894,6 +981,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 ExchangeOrderID{2},
             },
             report::OrderFilled{
+                Ticks{0},
                 ExchangeOrderID{3},
                 ClientID{2},
                 ClientOrderID{0},
@@ -903,6 +991,7 @@ const MatchingOutputTestInput IocFullyTradesBestPricePartiallyTradesNextPrice_Ca
                 engine_events::FilledType::AGGRESSIVE_FILL,
             },
             report::OrderCancelled{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -917,6 +1006,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
     .requests =
         {
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -927,6 +1017,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{1},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -937,6 +1028,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             request::OrderReplaceRequest{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{2},
@@ -946,6 +1038,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             request::OrderAddRequest{
+                Ticks{0},
                 ClientID{2},
                 ClientOrderID{0},
                 SecurityID{0},
@@ -959,6 +1052,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
     .expected_market_data =
         {
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
                 Direction::SELL,
@@ -966,6 +1060,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             market_events::BookOrderEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
                 Direction::SELL,
@@ -973,6 +1068,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             market_events::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -981,10 +1077,12 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{1},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{1},
                 SecurityID{0},
             },
             market_events::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Price{10},
                 Amount{1},
@@ -993,6 +1091,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{2},
             },
             market_events::BookOrderDeletion{
+                Ticks{0},
                 ExchangeOrderID{2},
                 SecurityID{0},
             },
@@ -1000,6 +1099,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
     .expected_reports =
         {
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -1010,6 +1110,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -1019,6 +1120,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -1029,6 +1131,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             report::OrderBookEntry{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -1038,6 +1141,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{1},
             },
             report::ReplacementRejected{
+                Ticks{0},
                 ClientID{0},
                 ClientOrderID{0},
                 ClientOrderID{2},
@@ -1045,6 +1149,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 report::ReplacementRejectedReason::PRICE_OUT_OF_RANGE,
             },
             report::OrderAccepted{
+                Ticks{0},
                 ExchangeOrderID{3},
                 ClientID{2},
                 ClientOrderID{0},
@@ -1055,6 +1160,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 Amount{3},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -1066,6 +1172,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{1},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -1077,6 +1184,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{1},
             },
             report::OrderFilled{
+                Ticks{0},
                 ExchangeOrderID{1},
                 ClientID{0},
                 ClientOrderID{0},
@@ -1086,6 +1194,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 engine_events::FilledType::PASSIVE_FILL,
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -1097,6 +1206,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{2},
             },
             report::Trade{
+                Ticks{0},
                 SecurityID{0},
                 Direction::BUY,
                 Price{10},
@@ -1108,6 +1218,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 ExchangeOrderID{2},
             },
             report::OrderFilled{
+                Ticks{0},
                 ExchangeOrderID{2},
                 ClientID{1},
                 ClientOrderID{0},
@@ -1117,6 +1228,7 @@ const MatchingOutputTestInput RejectedReplaceKeepsPriority_IocTradesOrder1ThenOr
                 engine_events::FilledType::PASSIVE_FILL,
             },
             report::OrderExpired{
+                Ticks{0},
                 ExchangeOrderID{3},
                 ClientID{2},
                 ClientOrderID{0},

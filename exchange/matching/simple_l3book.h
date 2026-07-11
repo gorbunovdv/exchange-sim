@@ -22,6 +22,7 @@ public:
   void add(request::OrderAddRequest&& request, engine_events::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_events::OrderRejected{
+          .origin_time = request.origin_time,
           .security_id = security_.security_id,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
@@ -31,6 +32,7 @@ public:
     }
     if (active_orders_.contains(std::make_pair(request.client_id, request.client_order_id))) {
       sink.push(engine_events::OrderRejected{
+          .origin_time = request.origin_time,
           .security_id = security_.security_id,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
@@ -39,6 +41,7 @@ public:
       return;
     }
     ActiveOrder current_order = {
+        .origin_time = request.origin_time,
         .direction = request.direction,
         .order_id = generate_order_id(),
         .client_id = request.client_id,
@@ -47,6 +50,7 @@ public:
         .quantity = request.quantity,
     };
     sink.push(engine_events::OrderAccepted{
+        .origin_time = request.origin_time,
         .order_id = current_order.order_id,
         .client_id = current_order.client_id,
         .client_order_id = current_order.client_order_id,
@@ -59,6 +63,7 @@ public:
     current_order = fill_order_and_place_in_book(current_order, request.time_in_force, sink);
     if (current_order.quantity != 0 && request.time_in_force != OrderTimeInForce::IOC) {
       sink.push(engine_events::OrderBookEntry{
+          .origin_time = request.origin_time,
           .order_id = current_order.order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
@@ -69,6 +74,7 @@ public:
       });
     } else if (current_order.quantity == 0) {
       sink.push(engine_events::OrderFilled{
+          .origin_time = request.origin_time,
           .order_id = current_order.order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
@@ -79,6 +85,7 @@ public:
       });
     } else {
       sink.push(engine_events::OrderExpired{
+          .origin_time = request.origin_time,
           .order_id = current_order.order_id,
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
@@ -91,6 +98,7 @@ public:
   void replace(request::OrderReplaceRequest&& request, engine_events::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_events::ReplacementRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_replacement_id = request.client_replacement_id,
@@ -101,11 +109,14 @@ public:
     }
     if (request.client_order_id != request.client_replacement_id &&
         active_orders_.contains(std::make_pair(request.client_id, request.client_replacement_id))) {
-      sink.push(engine_events::ReplacementRejected{.client_id = request.client_id,
+      sink.push(engine_events::ReplacementRejected{
+          .origin_time = request.origin_time,
+          .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_replacement_id = request.client_replacement_id,
           .security_id = security_.security_id,
-          .reason = engine_events::ReplacementRejectedReason::DUPLICATE_CLIENT_ORDER_ID});
+          .reason = engine_events::ReplacementRejectedReason::DUPLICATE_CLIENT_ORDER_ID,
+      });
       return;
     }
     if (auto current_order_opt = extract_order(request.client_id, request.client_order_id);
@@ -113,6 +124,7 @@ public:
       auto current_order = current_order_opt.value();
       ExchangeOrderID new_order_id = generate_order_id();
       sink.push(engine_events::ReplacementAccepted{
+          .origin_time = request.origin_time,
           .order_id = current_order.order_id,
           .new_order_id = new_order_id,
           .client_id = current_order.client_id,
@@ -131,6 +143,7 @@ public:
       current_order = fill_order_and_place_in_book(current_order, OrderTimeInForce::LIMIT, sink);
       if (current_order.quantity != 0) {
         sink.push(engine_events::OrderBookEntry{
+            .origin_time = request.origin_time,
             .order_id = current_order.order_id,
             .client_id = current_order.client_id,
             .client_order_id = current_order.client_order_id,
@@ -141,6 +154,7 @@ public:
         });
       } else {
         sink.push(engine_events::OrderFilled{
+            .origin_time = request.origin_time,
             .order_id = current_order.order_id,
             .client_id = request.client_id,
             .client_order_id = current_order.client_order_id,
@@ -152,6 +166,7 @@ public:
       }
     } else {
       sink.push(engine_events::ReplacementRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_replacement_id = request.client_replacement_id,
@@ -165,6 +180,7 @@ public:
     if (auto order_opt = extract_order(request.client_id, request.client_order_id); order_opt.has_value()) {
       auto order = order_opt.value();
       sink.push(engine_events::OrderCancelled{
+          .origin_time = request.origin_time,
           .order_id = order.order_id,
           .client_id = request.client_id,
           .client_order_id = order.client_order_id,
@@ -173,6 +189,7 @@ public:
       });
     } else {
       sink.push(engine_events::CancellationRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_cancellation_id = request.client_cancellation_id,
@@ -184,6 +201,7 @@ public:
 
 private:
   struct ActiveOrder {
+    Ticks origin_time;
     Direction direction;
     ExchangeOrderID order_id;
     ClientID client_id;
@@ -234,6 +252,7 @@ private:
       current_order.quantity -= quantity_to_fill;
       opposite_order.quantity -= quantity_to_fill;
       sink.push(engine_events::Trade{
+          .origin_time = current_order.origin_time,
           .security_id = security_.security_id,
           .aggressor_direction = current_order.direction,
           .price = opposite_order.price,
@@ -248,6 +267,7 @@ private:
       });
       if (opposite_order.quantity == 0) {
         sink.push(engine_events::OrderFilled{
+            .origin_time = current_order.origin_time,
             .order_id = opposite_order.order_id,
             .client_id = opposite_order.client_id,
             .client_order_id = opposite_order.client_order_id,
@@ -261,6 +281,7 @@ private:
         opposite_direction_book_level.pop_front();
       } else {
         sink.push(engine_events::OrderReduced{
+            .origin_time = current_order.origin_time,
             .order_id = opposite_order.order_id,
             .client_id = opposite_order.client_id,
             .client_order_id = opposite_order.client_order_id,

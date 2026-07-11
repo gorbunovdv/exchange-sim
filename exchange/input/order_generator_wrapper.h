@@ -30,6 +30,7 @@ public:
       Amount quantity) {
     auto client_order_id = generate_client_order_id();
     auto request = request::OrderAddRequest{
+        .origin_time = Ticks{0},
         .client_id = client_id,
         .client_order_id = client_order_id,
         .security_id = security_id,
@@ -43,14 +44,16 @@ public:
       active_orders_[security_id].handle(request);
     }
     auto timestamp = Ticks::rdtscp();
-    journal_.write(timestamp, request);
-    sink_.push(std::move(request));
+    request.origin_time = timestamp;
+    sink_.push(request);
+    journal_.write(timestamp, std::move(request));
     return client_order_id;
   }
 
   ClientOrderID send_order_cancel_request(ClientID client_id, ClientOrderID client_order_id, SecurityID security_id) {
     auto client_cancellation_id = generate_client_order_id();
-    auto request = request::OrderCancelRequest{.client_id = client_id,
+    auto request = request::OrderCancelRequest{.origin_time = Ticks{0},
+        .client_id = client_id,
         .client_order_id = client_order_id,
         .client_cancellation_id = client_cancellation_id,
         .security_id = security_id};
@@ -58,8 +61,9 @@ public:
       active_orders_[security_id].handle(request);
     }
     auto timestamp = Ticks::rdtscp();
-    journal_.write(timestamp, request);
-    sink_.push(std::move(request));
+    request.origin_time = timestamp;
+    sink_.push(request);
+    journal_.write(timestamp, std::move(request));
     return client_cancellation_id;
   }
 
@@ -71,6 +75,7 @@ public:
       Amount quantity) {
     ClientOrderID client_replacement_id = generate_client_order_id();
     auto request = request::OrderReplaceRequest{
+        .origin_time = Ticks{0},
         .client_id = client_id,
         .client_order_id = client_order_id,
         .client_replacement_id = client_replacement_id,
@@ -83,8 +88,9 @@ public:
       active_orders_[security_id].handle(request);
     }
     auto timestamp = Ticks::rdtscp();
-    journal_.write(timestamp, request);
-    sink_.push(std::move(request));
+    request.origin_time = timestamp;
+    sink_.push(request);
+    journal_.write(timestamp, std::move(request));
     return client_replacement_id;
   }
 

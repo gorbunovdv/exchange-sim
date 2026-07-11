@@ -42,8 +42,9 @@ public:
                    [this](market_events::BookOrderEntry&& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderEntry"
-                         " order_id={} security_id={}"
+                         " origin_time={} order_id={} security_id={}"
                          " direction={} price={} quantity={}",
+                         snapshot.origin_time.ticks(),
                          snapshot.order_id,
                          snapshot.security_id.value(),
                          format_as(snapshot.direction),
@@ -53,7 +54,8 @@ public:
                    [this](market_events::BookOrderChange&& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderChange"
-                         " order_id={} security_id={} direction={} price={} new_quantity={}",
+                         " origin_time={} order_id={} security_id={} direction={} price={} new_quantity={}",
+                         snapshot.origin_time.ticks(),
                          snapshot.order_id,
                          snapshot.security_id.value(),
                          format_as(snapshot.direction),
@@ -63,15 +65,17 @@ public:
                    [this](market_events::BookOrderDeletion&& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderDeletion"
-                         " order_id={} security_id={}",
+                         " origin_time={} order_id={} security_id={}",
+                         snapshot.origin_time.ticks(),
                          snapshot.order_id,
                          snapshot.security_id.value());
                    },
                    [this](market_events::Trade&& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=Trade"
-                         " security_id={} price={} quantity={}"
+                         " origin_time={} security_id={} price={} quantity={}"
                          " trade_id={} aggressor_order_id={} recipient_order_id={}",
+                         snapshot.origin_time.ticks(),
                          snapshot.security_id.value(),
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity),
@@ -88,8 +92,9 @@ public:
             [this](report::OrderAccepted&& report) {
               DEBUG(
                   "Received report, type=OrderAccepted"
-                  " order_id={} client_id={} client_order_id={} security_id={} time_in_force={}"
+                  " origin_time={} order_id={} client_id={} client_order_id={} security_id={} time_in_force={}"
                   " direction={} price={} quantity={}",
+                  report.origin_time.ticks(),
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
@@ -102,8 +107,9 @@ public:
             [this](report::Trade&& report) {
               DEBUG(
                   "Received report, type=Trade"
-                  " security_id={} aggressor_direction={} price={} quantity={}"
+                  " origin_time={} security_id={} aggressor_direction={} price={} quantity={}"
                   " client_id={} client_order_id={} trade_id={} aggressor_order_id={} recipient_order_id={}",
+                  report.origin_time.ticks(),
                   report.security_id.value(),
                   format_as(report.aggressor_direction),
                   static_cast<double>(report.price),
@@ -117,7 +123,9 @@ public:
             [this](report::OrderBookEntry&& report) {
               DEBUG(
                   "Received report, type=OrderBookEntry"
-                  " order_id={} client_id={} client_order_id={} security_id={} direction={} price={} quantity={}",
+                  " origin_time={} order_id={} client_id={} client_order_id={} security_id={}"
+                  " direction={} price={} quantity={}",
+                  report.origin_time.ticks(),
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
@@ -129,7 +137,9 @@ public:
             [this](report::OrderFilled&& report) {
               DEBUG(
                   "Received report, type=OrderFilled"
-                  " order_id={} client_id={} client_order_id={} security_id={} direction={} price={} type={}",
+                  " origin_time={} order_id={} client_id={} client_order_id={} security_id={}"
+                  " direction={} price={} type={}",
+                  report.origin_time.ticks(),
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
@@ -141,7 +151,8 @@ public:
             [this](report::OrderExpired&& report) {
               DEBUG(
                   "Received report, type=OrderExpired"
-                  " order_id={} client_id={} client_order_id={} security_id={} reason={}",
+                  " origin_time={} order_id={} client_id={} client_order_id={} security_id={} reason={}",
+                  report.origin_time.ticks(),
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
@@ -151,7 +162,9 @@ public:
             [this](report::OrderCancelled&& report) {
               DEBUG(
                   "Received report, type=OrderCancelled"
-                  " order_id={} client_id={} client_order_id={} client_cancellation_id={} security_id={}",
+                  " origin_time={} order_id={} client_id={} client_order_id={} client_cancellation_id={} "
+                  "security_id={}",
+                  report.origin_time.ticks(),
                   report.order_id,
                   report.client_id,
                   report.client_order_id,
@@ -161,7 +174,8 @@ public:
             [this](report::OrderRejected&& report) {
               DEBUG(
                   "Received report, type=OrderRejected"
-                  " security_id={} client_id={} client_order_id={} reason={}",
+                  " origin_time={} security_id={} client_id={} client_order_id={} reason={}",
+                  report.origin_time.ticks(),
                   report.security_id.value(),
                   report.client_id,
                   report.client_order_id,
@@ -170,7 +184,8 @@ public:
             [this](report::CancellationRejected&& report) {
               DEBUG(
                   "Received report, type=CancellationRejected"
-                  " client_id={} client_order_id={} client_cancellation_id={} security_id={} reason={}",
+                  " origin_time={} client_id={} client_order_id={} client_cancellation_id={} security_id={} reason={}",
+                  report.origin_time.ticks(),
                   report.client_id,
                   report.client_order_id,
                   report.client_cancellation_id,
@@ -180,8 +195,9 @@ public:
             [this](report::ReplacementAccepted&& report) {
               DEBUG(
                   "Received report, type=ReplacementAccepted"
-                  " order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={}"
+                  " origin_time={} order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={}"
                   " security_id={} direction={} price={} quantity={}",
+                  report.origin_time.ticks(),
                   report.order_id,
                   report.new_order_id,
                   report.client_id,
@@ -195,7 +211,8 @@ public:
             [this](report::ReplacementRejected&& report) {
               DEBUG(
                   "Received report, type=ReplacementRejected"
-                  " client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
+                  " origin_time={} client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
+                  report.origin_time.ticks(),
                   report.client_id,
                   report.client_order_id,
                   report.client_replacement_id,

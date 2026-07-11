@@ -14,6 +14,7 @@ namespace exchange_sim::report {
 using OrderAccepted = engine_events::OrderAccepted;
 
 struct Trade {
+  Ticks origin_time;
   SecurityID security_id;
   Direction aggressor_direction;
   Price price;

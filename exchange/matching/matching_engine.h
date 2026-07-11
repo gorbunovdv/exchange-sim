@@ -35,6 +35,7 @@ private:
   void process_object(request::OrderAddRequest&& request) {
     if (!security_storage_.has_security(request.security_id)) {
       sink_.push(engine_events::OrderRejected{
+          .origin_time = request.origin_time,
           .security_id = request.security_id,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
@@ -48,6 +49,7 @@ private:
   void process_object(request::OrderReplaceRequest&& request) {
     if (!security_storage_.has_security(request.security_id)) {
       sink_.push(engine_events::ReplacementRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_replacement_id = request.client_replacement_id,
@@ -62,6 +64,7 @@ private:
   void process_object(request::OrderCancelRequest&& request) {
     if (!security_storage_.has_security(request.security_id)) {
       sink_.push(engine_events::CancellationRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_cancellation_id = request.client_cancellation_id,

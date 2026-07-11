@@ -2,6 +2,7 @@
 
 #include "base/processor.h"
 #include "base/sink.h"
+#include "base/time/rdtsc.h"
 
 #include "domain/security.h"
 #include "domain/types.h"
@@ -13,6 +14,7 @@
 namespace exchange_sim::request {
 
 struct OrderAddRequest {
+  Ticks origin_time;
   ClientID client_id;
   ClientOrderID client_order_id;
   SecurityID security_id;
@@ -24,6 +26,7 @@ struct OrderAddRequest {
 };
 
 struct OrderReplaceRequest {
+  Ticks origin_time;
   ClientID client_id;
   ClientOrderID client_order_id;
   ClientOrderID client_replacement_id;
@@ -34,6 +37,7 @@ struct OrderReplaceRequest {
 };
 
 struct OrderCancelRequest {
+  Ticks origin_time;
   ClientID client_id;
   ClientOrderID client_order_id;
   ClientOrderID client_cancellation_id;

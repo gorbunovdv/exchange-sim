@@ -25,6 +25,7 @@ private:
 
   void process_event(engine_events::Trade&& event) {
     market_data_sink_.push(market_events::Trade{
+        .origin_time = event.origin_time,
         .security_id = event.security_id,
         .price = event.price,
         .quantity = event.quantity,
@@ -33,6 +34,7 @@ private:
         .recipient_order_id = event.recipient_order_id,
     });
     report_generator_sink_.push(report::Trade{
+        .origin_time = event.origin_time,
         .security_id = event.security_id,
         .aggressor_direction = event.aggressor_direction,
         .price = event.price,
@@ -44,6 +46,7 @@ private:
         .recipient_order_id = event.recipient_order_id,
     });
     report_generator_sink_.push(report::Trade{
+        .origin_time = event.origin_time,
         .security_id = event.security_id,
         .aggressor_direction = event.aggressor_direction,
         .price = event.price,
@@ -58,6 +61,7 @@ private:
 
   void process_event(engine_events::OrderBookEntry&& event) {
     market_data_sink_.push(market_events::BookOrderEntry{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
         .direction = event.direction,
@@ -70,6 +74,7 @@ private:
   void process_event(engine_events::OrderFilled&& event) {
     if (event.type == engine_events::FilledType::PASSIVE_FILL) {
       market_data_sink_.push(market_events::BookOrderDeletion{
+          .origin_time = event.origin_time,
           .order_id = event.order_id,
           .security_id = event.security_id,
       });
@@ -79,6 +84,7 @@ private:
 
   void process_event(engine_events::OrderReduced&& event) {
     market_data_sink_.push(market_events::BookOrderChange{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
         .direction = event.direction,
@@ -91,6 +97,7 @@ private:
 
   void process_event(engine_events::OrderCancelled&& event) {
     market_data_sink_.push(market_events::BookOrderDeletion{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
     });
@@ -103,6 +110,7 @@ private:
 
   void process_event(engine_events::ReplacementAccepted&& event) {
     market_data_sink_.push(market_events::BookOrderDeletion{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
     });

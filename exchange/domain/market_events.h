@@ -2,6 +2,7 @@
 
 #include "base/processor.h"
 #include "base/sink.h"
+#include "base/time/rdtsc.h"
 
 #include "domain/security.h"
 #include "domain/types.h"
@@ -13,6 +14,7 @@
 namespace exchange_sim::market_events {
 
 struct BookOrderEntry {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   SecurityID security_id;
   Direction direction;
@@ -23,6 +25,7 @@ struct BookOrderEntry {
 };
 
 struct BookOrderChange {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   SecurityID security_id;
   Direction direction;
@@ -33,6 +36,7 @@ struct BookOrderChange {
 };
 
 struct BookOrderDeletion {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   SecurityID security_id;
 
@@ -40,6 +44,7 @@ struct BookOrderDeletion {
 };
 
 struct Trade {
+  Ticks origin_time;
   SecurityID security_id;
   Price price;
   Amount quantity;

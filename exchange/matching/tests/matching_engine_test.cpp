@@ -28,6 +28,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
   });
   MatchingEngine engine(glz::generic{}, storage, event_sink);
   engine.process(request::OrderAddRequest{
+      .origin_time = Ticks{0},
       .client_id = ClientID{0},
       .client_order_id = ClientOrderID{0},
       .security_id = SecurityID{1},
@@ -38,6 +39,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .quantity = Amount(1),
   });
   engine.process(request::OrderReplaceRequest{
+      .origin_time = Ticks{0},
       .client_id = ClientID{0},
       .client_order_id = ClientOrderID{0},
       .client_replacement_id = ClientOrderID{1},
@@ -47,6 +49,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .quantity = Amount(1),
   });
   engine.process(request::OrderCancelRequest{
+      .origin_time = Ticks{0},
       .client_id = ClientID{0},
       .client_order_id = ClientOrderID{1},
       .client_cancellation_id = ClientOrderID{2},
@@ -55,6 +58,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
   ASSERT_TRUE(events.size() == 3);
   compare_event(events[0],
       (engine_events::OrderRejected{
+          .origin_time = Ticks{0},
           .security_id = SecurityID{1},
           .client_id = ClientID{0},
           .client_order_id = ClientOrderID{0},
@@ -62,6 +66,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       }));
   compare_event(events[1],
       (engine_events::ReplacementRejected{
+          .origin_time = Ticks{0},
           .client_id = ClientID{0},
           .client_order_id = ClientOrderID{0},
           .client_replacement_id = ClientOrderID{1},
@@ -70,6 +75,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       }));
   compare_event(events[2],
       (engine_events::CancellationRejected{
+          .origin_time = Ticks{0},
           .client_id = ClientID{0},
           .client_order_id = ClientOrderID{1},
           .client_cancellation_id = ClientOrderID{2},

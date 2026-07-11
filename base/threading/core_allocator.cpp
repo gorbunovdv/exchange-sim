@@ -64,7 +64,7 @@ CoreLease::~CoreLease() noexcept {
       ERROR("\nStacktrace:");
       ERROR("{}", cpptrace::from_current_exception().to_string());
     } catch (...) {
-      std::cerr << "Logger threw during handling another exception" << std::endl;
+      std::cerr << "Logger threw during handling another exception" << '\n';
     }
   }
 }

@@ -19,6 +19,7 @@ static const auto risk_checker = RiskChecker(security);
 
 TEST(RiskChecker, CorrectOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -33,6 +34,7 @@ TEST(RiskChecker, CorrectOrderTest) {
 
 TEST(RiskChecker, CorrectReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -46,6 +48,7 @@ TEST(RiskChecker, CorrectReplaceTest) {
 
 TEST(RiskChecker, TooMuchAmountOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -60,6 +63,7 @@ TEST(RiskChecker, TooMuchAmountOrderTest) {
 
 TEST(RiskChecker, TooMuchAmountReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -73,6 +77,7 @@ TEST(RiskChecker, TooMuchAmountReplaceTest) {
 
 TEST(RiskChecker, InvalidAmountOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -85,6 +90,7 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
       engine_events::OrderRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -97,6 +103,7 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
       engine_events::OrderRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -111,6 +118,7 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
 
 TEST(RiskChecker, InvalidAmountReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -122,6 +130,7 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
       engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -133,6 +142,7 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
       engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -146,6 +156,7 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
 
 TEST(RiskChecker, PriceOutOfRangeOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -158,6 +169,7 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
       engine_events::OrderRejectedReason::PRICE_OUT_OF_RANGE);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -172,6 +184,7 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
 
 TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -183,6 +196,7 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
       engine_events::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,
@@ -196,6 +210,7 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
 
 TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .security_id = SecurityID{0},
@@ -210,6 +225,7 @@ TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
 
 TEST(RiskChecker, InvalidPriceTickSizeReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
+                .origin_time = Ticks{0},
                 .client_id = 0,
                 .client_order_id = 0,
                 .client_replacement_id = 0,

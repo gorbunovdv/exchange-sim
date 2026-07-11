@@ -21,7 +21,7 @@ namespace exchange_sim {
 
 namespace {
 
-void run_single_threaded_callback_app(std::shared_ptr<Runtime> runtime, const glz::generic& config) {
+void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
   dedicated_core.pin_thread("run_single_threaded_callback_app");
 

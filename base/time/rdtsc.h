@@ -32,7 +32,7 @@ const uint64_t& rdtsc_frequency();
 
 class Ticks {
 public:
-  explicit Ticks(uint64_t ticks = 0): ticks_(ticks) {}
+  constexpr explicit Ticks(uint64_t ticks = 0): ticks_(ticks) {}
 
   static Ticks rdtsc() noexcept { return Ticks(__rdtsc()); }
 
@@ -52,6 +52,8 @@ public:
   std::chrono::nanoseconds nanoseconds_till_now() const { return rdtsc().nanoseconds_distance(*this); }
 
   uint64_t ticks() const { return ticks_; }
+
+  bool operator==(const Ticks& other) const = default;
 
   friend Ticks operator+(const Ticks& lhs, const Ticks& rhs) { return Ticks(lhs.ticks_ + rhs.ticks_); }
 

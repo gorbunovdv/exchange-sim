@@ -14,6 +14,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
     return;
   }
   storage.handle(report::OrderAccepted{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -30,6 +31,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
     CHECK(state != Order::State::ACTIVE, "IOC order can't be active");
   } else {
     storage.handle(report::OrderBookEntry{
+        .origin_time = request.origin_time,
         .order_id = request.client_order_id,
         .client_id = request.client_id,
         .client_order_id = request.client_order_id,
@@ -43,6 +45,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
     }
     if (state == Order::State::CANCEL_SENT) {
       storage.handle(request::OrderCancelRequest{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_cancellation_id = request.client_order_id + 1,
@@ -50,6 +53,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
       });
     } else if (state == Order::State::REPLACE_SENT) {
       storage.handle(request::OrderReplaceRequest{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_replacement_id = request.client_order_id + 1,
@@ -65,6 +69,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
 }
 
 static constexpr request::OrderAddRequest constOrderAddRequest = {
+    .origin_time = Ticks{0},
     .client_id = ClientID{0},
     .client_order_id = ClientOrderID{0},
     .security_id = SecurityID{0},
@@ -81,6 +86,7 @@ T convert_to(const request::OrderAddRequest& request);
 template<>
 report::OrderAccepted convert_to<report::OrderAccepted>(const request::OrderAddRequest& request) {
   return report::OrderAccepted{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -95,6 +101,7 @@ report::OrderAccepted convert_to<report::OrderAccepted>(const request::OrderAddR
 template<>
 report::OrderBookEntry convert_to<report::OrderBookEntry>(const request::OrderAddRequest& request) {
   return report::OrderBookEntry{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -108,6 +115,7 @@ report::OrderBookEntry convert_to<report::OrderBookEntry>(const request::OrderAd
 template<>
 report::OrderFilled convert_to<report::OrderFilled>(const request::OrderAddRequest& request) {
   return report::OrderFilled{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -121,6 +129,7 @@ report::OrderFilled convert_to<report::OrderFilled>(const request::OrderAddReque
 template<>
 report::OrderExpired convert_to<report::OrderExpired>(const request::OrderAddRequest& request) {
   return report::OrderExpired{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -132,6 +141,7 @@ report::OrderExpired convert_to<report::OrderExpired>(const request::OrderAddReq
 template<>
 report::OrderCancelled convert_to<report::OrderCancelled>(const request::OrderAddRequest& request) {
   return report::OrderCancelled{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -143,6 +153,7 @@ report::OrderCancelled convert_to<report::OrderCancelled>(const request::OrderAd
 template<>
 report::OrderRejected convert_to<report::OrderRejected>(const request::OrderAddRequest& request) {
   return report::OrderRejected{
+      .origin_time = request.origin_time,
       .security_id = request.security_id,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
@@ -153,6 +164,7 @@ report::OrderRejected convert_to<report::OrderRejected>(const request::OrderAddR
 template<>
 report::ReplacementAccepted convert_to<report::ReplacementAccepted>(const request::OrderAddRequest& request) {
   return report::ReplacementAccepted{
+      .origin_time = request.origin_time,
       .order_id = request.client_order_id + 1,
       .new_order_id = request.client_order_id + 1,
       .client_id = request.client_id,
@@ -168,6 +180,7 @@ report::ReplacementAccepted convert_to<report::ReplacementAccepted>(const reques
 template<>
 report::CancellationRejected convert_to<report::CancellationRejected>(const request::OrderAddRequest& request) {
   return report::CancellationRejected{
+      .origin_time = request.origin_time,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .client_cancellation_id = request.client_order_id + 1,
@@ -179,6 +192,7 @@ report::CancellationRejected convert_to<report::CancellationRejected>(const requ
 template<>
 report::ReplacementRejected convert_to<report::ReplacementRejected>(const request::OrderAddRequest& request) {
   return report::ReplacementRejected{
+      .origin_time = request.origin_time,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .client_replacement_id = request.client_order_id + 1,
