@@ -81,12 +81,12 @@ CoreLease CoreAllocator::lease_core(CoreType type) {
     dedicated_cores_.pop_back();
     return CoreLease{CoreType::DEDICATED, cpu_id, this};
   }
-  return CoreLease{CoreType::SHARED, shared_core_, nullptr};
+  return CoreLease{CoreType::SHARED, shared_core_, this};
 }
 
 void CoreAllocator::release_core(CpuID cpu_id, CoreType type) {
-  std::lock_guard lock(mutex_);
   if (type == CoreType::DEDICATED) {
+    std::lock_guard lock(mutex_);
     CHECK(std::ranges::find(dedicated_cores_, cpu_id) == dedicated_cores_.end(),
         "Core already released, cpu_id={}",
         cpu_id.value());

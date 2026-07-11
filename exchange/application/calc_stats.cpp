@@ -114,17 +114,13 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       std::visit(
           [&](auto&& current_market_event) {
             if (current_market_event.origin_time.ticks() == stat.origin_time) {
-              if (!stat.first_market_event_ns.has_value() ||
-                  market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count() >
-                      stat.last_market_event_ns.value()) {
-                stat.first_market_event_ns =
-                    market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
+              auto time_ns =
+                  market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
+              if (!stat.first_market_event_ns.has_value() || time_ns < stat.last_market_event_ns.value()) {
+                stat.first_market_event_ns = time_ns;
               }
-              if (!stat.last_market_event_ns.has_value() ||
-                  market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count() <
-                      stat.last_market_event_ns.value()) {
-                stat.last_market_event_ns =
-                    market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
+              if (!stat.last_market_event_ns.has_value() || time_ns > stat.last_market_event_ns.value()) {
+                stat.last_market_event_ns = time_ns;
               }
               stat.market_events_count++;
             }
@@ -139,15 +135,12 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       std::visit(
           [&](auto&& current_report) {
             if (current_report.origin_time.ticks() == stat.origin_time) {
-              if (!stat.first_report_ns.has_value() ||
-                  report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count() <
-                      stat.first_report_ns.value()) {
-                stat.first_report_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
+              auto time_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
+              if (!stat.first_report_ns.has_value() || time_ns < stat.first_report_ns.value()) {
+                stat.first_report_ns = time_ns;
               }
-              if (!stat.last_report_ns.has_value() ||
-                  report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count() >
-                      stat.last_report_ns.value()) {
-                stat.last_report_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
+              if (!stat.last_report_ns.has_value() || time_ns > stat.last_report_ns.value()) {
+                stat.last_report_ns = time_ns;
               }
               stat.reports_count++;
             }

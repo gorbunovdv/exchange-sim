@@ -36,18 +36,15 @@ public:
 
   ~CoreLease() noexcept;
 
-  CoreLease(CoreLease&& other) noexcept {
-    if (this != &other) {
-      std::swap(core_type_, other.core_type_);
-      cpu_id_ = std::exchange(other.cpu_id_, std::nullopt);
-      std::swap(allocator_, other.allocator_);
-    }
-  }
+  CoreLease(CoreLease&& other) noexcept:
+      core_type_(other.core_type_),
+      cpu_id_(std::exchange(other.cpu_id_, std::nullopt)),
+      allocator_(std::exchange(other.allocator_, nullptr)) {}
 
   CoreLease& operator=(CoreLease&& other) noexcept {
     if (this != &other) {
       std::swap(core_type_, other.core_type_);
-      cpu_id_ = std::exchange(other.cpu_id_, std::nullopt);
+      std::swap(cpu_id_, other.cpu_id_);
       std::swap(allocator_, other.allocator_);
     }
     return *this;
