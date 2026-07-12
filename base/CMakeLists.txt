@@ -16,5 +16,9 @@ target_link_libraries(run_test PUBLIC base gtest::gtest)
 gtest_discover_tests(run_test DISCOVERY_MODE PRE_TEST)
 
 add_executable(temporary_test tests/temporary_test.cpp)
-target_link_libraries(temporary_test PUBLIC gtest::gtest)
+target_link_libraries(temporary_test PUBLIC base gtest::gtest)
 gtest_discover_tests(temporary_test DISCOVERY_MODE PRE_TEST)
+
+add_executable(journal_test tests/journal_test.cpp)
+target_link_libraries(journal_test PUBLIC base gtest::gtest)
+gtest_discover_tests(journal_test DISCOVERY_MODE PRE_TEST)

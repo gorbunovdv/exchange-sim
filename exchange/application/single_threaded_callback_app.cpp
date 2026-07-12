@@ -40,18 +40,18 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
-      runtime->core_allocator().lease_core(CoreType::SHARED),
       JournalMode::WRITE,
+      runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
   Journal<report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
-      runtime->core_allocator().lease_core(CoreType::SHARED),
       JournalMode::WRITE,
+      runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
   Journal<request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
-      runtime->core_allocator().lease_core(CoreType::SHARED),
       JournalMode::WRITE,
+      runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
 
   using MarketDataSinkType = ForwardSink<market_events::EventType, CallbackSink<market_events::EventType>>;

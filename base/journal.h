@@ -35,24 +35,28 @@ public:
 
   explicit Journal(const std::string& name,
       const std::filesystem::path& journal_path,
-      std::optional<CoreLease>&& core_lease,
       JournalMode mode,
-      size_t size):
+      std::optional<CoreLease>&& core_lease = std::nullopt,
+      std::optional<size_t> size = std::nullopt):
       LoggableClass(name),
       name_(name),
       core_lease_(std::move(core_lease)),
       stream_(journal_path, (mode == JournalMode::WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
       mode_(mode),
-      queue_(size),
+      queue_(size.has_value() ? *size : 0),
       throughput_(name) {
     if (!stream_.is_open()) {
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
     if (mode == JournalMode::WRITE) {
+      CHECK(queue_.size() > 0, "Must have non-zero queue size to start writing journal");
       thread_ = std::jthread([this](const std::stop_token& token) {
         CPPTRACE_TRY {
-          CHECK(core_lease_.has_value(), "Must have core lease to start writing journal");
-          core_lease_.value().pin_thread(name_);
+          if (core_lease_.has_value()) {
+            core_lease_.value().pin_thread(name_);
+          } else {
+            WARNING("Not pinning journal thread as core lease is empty");
+          }
           while (!token.stop_requested()) {
             flush();
             std::this_thread::yield();

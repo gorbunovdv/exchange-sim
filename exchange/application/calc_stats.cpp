@@ -52,21 +52,12 @@ struct glz::meta<exchange_sim::RequestStat> {
 namespace exchange_sim {
 
 void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config) {
-  Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
-      config["journaling"]["market_events"].as<std::string>(),
-      std::nullopt,
-      JournalMode::READ,
-      0);
-  Journal<report::ReportType> report_journal("Journal<report::ReportType>",
-      config["journaling"]["reports"].as<std::string>(),
-      std::nullopt,
-      JournalMode::READ,
-      0);
-  Journal<request::RequestType> request_journal("Journal<request::RequestType>",
-      config["journaling"]["requests"].as<std::string>(),
-      std::nullopt,
-      JournalMode::READ,
-      0);
+  Journal<market_events::EventType> market_data_journal(
+      "Journal<market_events::EventType>", config["journaling"]["market_events"].as<std::string>(), JournalMode::READ);
+  Journal<report::ReportType> report_journal(
+      "Journal<report::ReportType>", config["journaling"]["reports"].as<std::string>(), JournalMode::READ);
+  Journal<request::RequestType> request_journal(
+      "Journal<request::RequestType>", config["journaling"]["requests"].as<std::string>(), JournalMode::READ);
 
   std::deque<decltype(report_journal)::value_type> current_reports;
   std::deque<decltype(market_data_journal)::value_type> current_market_events;
