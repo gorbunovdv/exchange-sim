@@ -48,7 +48,7 @@ public:
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
     if (mode == JournalMode::WRITE) {
-      CHECK(queue_.size() > 0, "Must have non-zero queue size to start writing journal");
+      CHECK(!queue_.empty(), "Must have non-zero queue size to start writing journal");
       thread_ = std::jthread([this](const std::stop_token& token) {
         CPPTRACE_TRY {
           if (core_lease_.has_value()) {
