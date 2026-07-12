@@ -124,9 +124,9 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
                 stat.last_market_event_ns = time_ns;
               }
               stat.market_events_count++;
-            }
-            if constexpr (std::is_same_v<std::remove_cvref_t<decltype(current_market_event)>, market_events::Trade>) {
-              stat.trades_count++;
+              if constexpr (std::is_same_v<std::remove_cvref_t<decltype(current_market_event)>, market_events::Trade>) {
+                stat.trades_count++;
+              }
             }
           },
           market_event_struct.value);
