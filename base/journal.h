@@ -9,6 +9,8 @@
 
 #include "cache_line.h"
 
+#include <cpptrace/from_current.hpp>
+#include <cpptrace/from_current_macros.hpp>
 #include <magic_enum/magic_enum.hpp>
 
 #include <filesystem>
@@ -48,14 +50,31 @@ public:
     }
     if (mode == JournalMode::WRITE) {
       thread_ = std::jthread([this](const std::stop_token& token) {
-        CHECK(core_lease_.has_value(), "Must have core lease to start writing journal");
-        core_lease_.value().pin_thread(name_);
-        while (!token.stop_requested()) {
-          flush();
-          std::this_thread::yield();
+        CPPTRACE_TRY {
+          CHECK(core_lease_.has_value(), "Must have core lease to start writing journal");
+          core_lease_.value().pin_thread(name_);
+          while (!token.stop_requested()) {
+            flush();
+            std::this_thread::yield();
+          }
+          while (head_ != tail_) {
+            flush();
+          }
         }
-        while (head_ != tail_) {
-          flush();
+        CPPTRACE_CATCH(...) {
+          try {
+            try {
+              throw;
+            } catch (const std::exception& e) {
+              ERROR("Exception occurred: {}", e.what());
+            } catch (...) {
+              ERROR("Unknown exception occurred");
+            }
+            ERROR("\nStacktrace:");
+            ERROR("{}", cpptrace::from_current_exception().to_string());
+          } catch (...) {
+            std::cerr << "Logger threw during handling another exception" << '\n';
+          }
         }
       });
     }
