@@ -18,7 +18,8 @@ def main():
 
     args = parser.parse_args()
     config = load_config(args.config_file)
-    profile = ProfileReport(pd.read_json(config['calc_stats']['output_file']).sample(frac=0.1), title='Massive Stats Report')
+    table = pd.read_json(config['calc_stats']['output_file'])
+    profile = ProfileReport(table.sample(n=min(len(table), config['calc_stats']['sample_size'])), title='Massive Stats Report')
     profile.to_file(config['calc_stats']['output_file'] + '.html')
 
 

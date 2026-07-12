@@ -123,14 +123,14 @@ public:
       using ::exchange_sim::get_logger;
 
       CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
-      return &current_value_;
+      return &(*current_value_);
     }
 
     reference operator*() {
       using ::exchange_sim::get_logger;
 
       CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
-      return current_value_.value();
+      return *current_value_;
     }
 
     bool operator==(std::default_sentinel_t) const { return is_eof_; }
