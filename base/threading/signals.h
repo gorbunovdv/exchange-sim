@@ -1,27 +1,29 @@
 #pragma once
 
-#include <format>
+#include "base/threading/core_allocator.h"
+
 #include <signal.h>
+#include <stop_token>
 
 namespace exchange_sim {
 
-inline constexpr int constWakeupSignal = SIGUSR1;
+constexpr int constWakeupSignal = SIGUSR1;
 
-inline sigset_t shutdown_signal_set() {
-  sigset_t signal_set;
-  sigemptyset(&signal_set);
-  sigaddset(&signal_set, SIGINT);
-  sigaddset(&signal_set, SIGTERM);
-  sigaddset(&signal_set, SIGHUP);
-  sigaddset(&signal_set, constWakeupSignal);
-  return signal_set;
-}
+sigset_t shutdown_signal_set();
 
-inline void block_shutdown_signals() {
-  sigset_t signal_set = shutdown_signal_set();
-  if (int rc = pthread_sigmask(SIG_BLOCK, &signal_set, nullptr); rc != 0) {
-    throw std::runtime_error(std::format("pthread_sigmask failed, rc={}", rc));
-  }
-}
+void block_shutdown_signals();
+
+class ShutdownSignalThread {
+public:
+  explicit ShutdownSignalThread(std::stop_source stop_source, CoreLease&& core_lease);
+
+  ~ShutdownSignalThread();
+
+private:
+  std::stop_source stop_source_;
+  CoreLease core_lease_;
+  std::atomic_bool teardown_{false};
+  std::jthread thread_;
+};
 
 }  // namespace exchange_sim
