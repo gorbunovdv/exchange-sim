@@ -99,9 +99,16 @@ public:
     CHECK(mode_ == JournalMode::READ, "Mode should be read");
     alignas(value_type) std::array<std::byte, sizeof(value_type)> data;
     stream_.read(reinterpret_cast<char*>(data.data()), data.size());
-    if (stream_) {
+    std::streamsize bytes_read = stream_.gcount();
+    if (stream_.bad()) {
+      CRITICAL("Encountered error while reading from journal");
+    }
+    if (stream_ && bytes_read == sizeof(value_type)) {
       std::forward<Consumer>(consumer)(std::move(*reinterpret_cast<value_type*>(data.data())));
       return true;
+    }
+    if (bytes_read != 0) {
+      ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
     }
     return false;
   }

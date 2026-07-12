@@ -16,12 +16,8 @@ TEST(JournalTest, WriteReadTest) {
 
   {
     Journal<Struct> journal("Journal<Struct>", temp_journal_file.path(), JournalMode::WRITE, std::nullopt, 10);
-    journal.write(Ticks{0}, Struct{
-      .a = 1, .b = 2
-    });
-    journal.write(Ticks{1}, Struct{
-      .a = 2, .b = 1
-    });
+    journal.write(Ticks{0}, Struct{.a = 1, .b = 2});
+    journal.write(Ticks{1}, Struct{.a = 2, .b = 1});
   }
 
   {
