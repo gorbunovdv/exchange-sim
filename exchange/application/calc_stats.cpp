@@ -5,6 +5,7 @@
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
 
+#include <boost/hof/match.hpp>
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
 
@@ -14,6 +15,7 @@ namespace exchange_sim {
 
 struct RequestStat {
   Ticks::Underlying origin_time;
+  enum class Type : std::uint8_t { ADD = 0, CANCEL = 1, REPLACE = 2 } type;
 
   std::optional<std::int64_t> first_report_ns = std::nullopt;
   std::optional<std::int64_t> last_report_ns = std::nullopt;
@@ -33,6 +35,8 @@ struct glz::meta<exchange_sim::RequestStat> {
   using T = exchange_sim::RequestStat;
   static constexpr auto value = object("origin_time",
       &T::origin_time,
+      "type",
+      &T::type,
       "first_report",
       &T::first_report_ns,
       "last_report",
@@ -99,9 +103,13 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       continue;
     }
 
-    RequestStat stat{
-        .origin_time = request_struct.timestamp.ticks(),
-    };
+    RequestStat stat{.origin_time = request_struct.timestamp.ticks(), .type = [&]() {
+                       return std::visit(
+                           boost::hof::match([](const request::OrderAddRequest&) { return RequestStat::Type::ADD; },
+                               [](const request::OrderCancelRequest&) { return RequestStat::Type::CANCEL; },
+                               [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
+                           request_struct.value);
+                     }()};
 
     for (const auto& market_event_struct : current_market_events) {
       std::visit(
