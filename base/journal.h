@@ -3,11 +3,10 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
 #include "base/noncopyable.h"
+#include "base/threading/cache_line.h"
 #include "base/threading/core_allocator.h"
 #include "base/throughput.h"
 #include "base/time/rdtsc.h"
-
-#include "cache_line.h"
 
 #include <cpptrace/from_current.hpp>
 #include <cpptrace/from_current_macros.hpp>
