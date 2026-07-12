@@ -72,6 +72,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
 
   output_file << "[\n";
   size_t processed_count = 0;
+  auto requests_to_skip = config["calc_stats"]["requests_to_skip"].as<size_t>();
   bool first_to_write = true;
 
   Throughput requests_throughput("requests");
@@ -94,7 +95,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       ++market_data_iterator;
     }
 
-    if (processed_count <= config["calc_stats"]["requests_to_skip"].as<size_t>()) {
+    if (processed_count <= requests_to_skip) {
       continue;
     }
 
@@ -108,7 +109,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
             if (current_market_event.origin_time.ticks() == stat.origin_time) {
               auto time_ns =
                   market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
-              if (!stat.first_market_event_ns.has_value() || time_ns < stat.last_market_event_ns.value()) {
+              if (!stat.first_market_event_ns.has_value() || time_ns < stat.first_market_event_ns.value()) {
                 stat.first_market_event_ns = time_ns;
               }
               if (!stat.last_market_event_ns.has_value() || time_ns > stat.last_market_event_ns.value()) {

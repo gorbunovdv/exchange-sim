@@ -28,9 +28,6 @@ ShutdownSignalThread::ShutdownSignalThread(std::stop_source stop_source, CoreLea
       for (;;) {
         int sig = 0;
         int rc = sigwait(&signal_set, &sig);
-        if (rc == EINTR) {
-          continue;
-        }
         CHECK(rc == 0, "sigwait failed, rc={}", rc);
         if (sig == constWakeupSignal) {
           if (teardown_.load()) {

@@ -140,7 +140,7 @@ public:
       Journal<report::ReportType>& report_journal,
       SinkType& sink,
       Args&&... args):
-      generator_interface_(stop_token, security_storage, requests_journal, sink),
+      generator_interface_(std::move(stop_token), security_storage, requests_journal, sink),
       generator_(generator_interface_, std::forward<Args>(args)...),
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}

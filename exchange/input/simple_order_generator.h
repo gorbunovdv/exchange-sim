@@ -246,10 +246,6 @@ private:
       generate_cancel_order_request(SecurityID{security_id_distribution_(generator_)});
       return;
     }
-    if (type == 2 && std::ranges::any_of(interface_.active_orders(), [](auto& pair) { return pair.size() == 0; })) {
-      generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
-      return;
-    }
     generate_replace_order_request(SecurityID{security_id_distribution_(generator_)});
   }
 

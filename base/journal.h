@@ -141,8 +141,6 @@ public:
       return *current_value_;
     }
 
-    bool operator==(const iterator&) const { return false; }
-
     bool operator==(std::default_sentinel_t) const { return is_eof_; }
 
     using BaseType::operator++;
