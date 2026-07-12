@@ -86,9 +86,6 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
   Throughput requests_throughput("requests");
   for (const auto& request_struct : request_journal) {
     processed_count++;
-    if (processed_count < config["calc_stats"]["requests_to_skip"].as<size_t>()) {
-      continue;
-    }
     requests_throughput.tick();
     while (!current_reports.empty() && current_reports.front().timestamp < request_struct.timestamp) {
       current_reports.pop_front();
@@ -104,6 +101,10 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
     while (current_market_events.size() < constMaxStructSize && market_data_iterator != market_data_journal.end()) {
       current_market_events.push_back(*market_data_iterator);
       ++market_data_iterator;
+    }
+
+    if (processed_count <= config["calc_stats"]["requests_to_skip"].as<size_t>()) {
+      continue;
     }
 
     RequestStat stat{

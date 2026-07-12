@@ -158,6 +158,8 @@ private:
     std::array<std::byte, sizeof(value_type)> placeholder;
   };
 
+  static_assert(sizeof(AlignedType) == sizeof(value_type), "AlignedType should have the same size as value_type");
+
   std::vector<AlignedType> queue_;
 
   alignas(constCacheLineSize) std::atomic<size_t> head_ = 0;
