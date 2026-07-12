@@ -14,6 +14,7 @@
 
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
+#include <quill/Backend.h>
 
 #include <iostream>
 
@@ -71,6 +72,7 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
   OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, MatchingEngineSinkType> order_generator(
+      runtime->stop_token(),
       security_storage,
       request_journal,
       market_data_journal,
@@ -100,6 +102,7 @@ int main(int argc, char* argv[]) {
   CPPTRACE_TRY {
     const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
     run_single_threaded_callback_app(runtime, config);
+    quill::Backend::stop();
   }
   CPPTRACE_CATCH(...) {
     try {

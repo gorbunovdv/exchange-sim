@@ -12,14 +12,22 @@
 
 #include <boost/hof/match.hpp>
 
+#include <utility>
+
 namespace exchange_sim {
 
 template<typename SinkType>
 class GeneratorInterface {
 public:
-  explicit GeneratorInterface(
-      SecurityStorage& security_storage, Journal<request::RequestType>& journal, SinkType& sink):
-      security_storage_(security_storage), active_orders_(security_storage.size()), sink_(sink), journal_(journal) {}
+  explicit GeneratorInterface(std::stop_token stop_token,
+      SecurityStorage& security_storage,
+      Journal<request::RequestType>& journal,
+      SinkType& sink):
+      stop_token_(std::move(stop_token)),
+      security_storage_(security_storage),
+      active_orders_(security_storage.size()),
+      sink_(sink),
+      journal_(journal) {}
 
   ClientOrderID send_order_add_request(ClientID client_id,
       SecurityID security_id,
@@ -108,11 +116,12 @@ public:
 
   const auto& active_orders() const { return active_orders_; }
 
-  bool asked_to_stop() const { return false; }
+  bool asked_to_stop() const { return stop_token_.stop_requested(); }
 
 private:
   ClientOrderID generate_client_order_id() { return current_client_order_id_.inc(); }
 
+  std::stop_token stop_token_;
   SecurityStorage& security_storage_;
   StrongTypeIndexedVector<SecurityID, OrderStorage> active_orders_;
   Counter<ClientOrderID> current_client_order_id_;
@@ -124,13 +133,14 @@ template<template<typename> typename OrderGenerator, template<typename> typename
 class OrderGeneratorWrapper {
 public:
   template<typename... Args>
-  explicit OrderGeneratorWrapper(SecurityStorage& security_storage,
+  explicit OrderGeneratorWrapper(std::stop_token stop_token,
+      SecurityStorage& security_storage,
       Journal<request::RequestType>& requests_journal,
       Journal<market_events::EventType>& market_data_journal,
       Journal<report::ReportType>& report_journal,
       SinkType& sink,
       Args&&... args):
-      generator_interface_(security_storage, requests_journal, sink),
+      generator_interface_(stop_token, security_storage, requests_journal, sink),
       generator_(generator_interface_, std::forward<Args>(args)...),
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}

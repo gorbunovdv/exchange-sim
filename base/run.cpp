@@ -9,10 +9,13 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include <iostream>
+#include <signal.h>
 
 namespace exchange_sim {
 
 std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(std::span<char*> args) {
+  block_shutdown_signals();
+
   auto value_or_raise = [](std::string_view type, auto expected) {
     if (!expected.has_value()) {
       throw std::runtime_error(std::format("{} has no correct value", type));

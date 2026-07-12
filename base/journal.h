@@ -8,6 +8,7 @@
 #include "base/throughput.h"
 #include "base/time/rdtsc.h"
 
+#include <boost/stl_interfaces/iterator_interface.hpp>
 #include <cpptrace/from_current.hpp>
 #include <cpptrace/from_current_macros.hpp>
 #include <magic_enum/magic_enum.hpp>
@@ -112,38 +113,39 @@ public:
     return false;
   }
 
-  ~Journal() { thread_.get_stop_source().request_stop(); }
+  ~Journal() {
+    if (thread_.joinable()) {
+      thread_.get_stop_source().request_stop();
+      thread_.join();
+    }
+  }
 
-  class Iterator {
+  template<typename BaseType =
+               boost::stl_interfaces::proxy_iterator_interface<std::input_iterator_tag, Journal::value_type>>
+  class iterator : public BaseType {
   public:
-    using iterator_category = std::input_iterator_tag;
-    using value_type = Journal::value_type;
-    using difference_type = std::ptrdiff_t;
-    using pointer = const value_type*;
-    using reference = const value_type&;
+    explicit iterator(Journal* journal): journal_(journal) {
+      BOOST_STL_INTERFACES_STATIC_ASSERT_CONCEPT(iterator, std::input_iterator);
+      advance();
+    }
 
-    explicit Iterator(Journal* journal): journal_(journal) { advance(); }
-
-    Iterator& operator++() {
+    iterator& operator++() {
       advance();
       return *this;
     }
 
-    pointer operator->() {
-      using ::exchange_sim::get_logger;
-
-      CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
-      return &(*current_value_);
-    }
-
-    reference operator*() {
+    Journal::value_type operator*() const {
       using ::exchange_sim::get_logger;
 
       CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
       return *current_value_;
     }
 
+    bool operator==(const iterator&) const { return false; }
+
     bool operator==(std::default_sentinel_t) const { return is_eof_; }
+
+    using BaseType::operator++;
 
   private:
     void advance() {
@@ -160,7 +162,7 @@ public:
 
   auto begin() {
     CHECK(mode_ == JournalMode::READ, "Mode should be read");
-    return Iterator(this);
+    return iterator<>(this);
   }
 
   auto end() { return std::default_sentinel; }

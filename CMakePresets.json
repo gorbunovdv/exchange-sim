@@ -180,6 +180,10 @@
     {
       "name": "mac-clang-debug-asan",
       "configurePreset": "mac-clang-debug-asan"
+    },
+    {
+      "name": "mac-clang-release",
+      "configurePreset": "mac-clang-release"
     }
   ]
 }
