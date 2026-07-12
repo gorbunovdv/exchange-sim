@@ -135,6 +135,7 @@ public:
           .price = request.price,
           .quantity = request.quantity,
       });
+      current_order.origin_time = request.origin_time;
       current_order.order_id = new_order_id;
       current_order.direction = request.direction;
       current_order.price = request.price;
