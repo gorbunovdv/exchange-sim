@@ -14,6 +14,8 @@ TEST(CoreAllocator, ReturnCoreBackToAllocator) {
   {
     auto lease = allocator.lease_core(CoreType::DEDICATED);
     EXPECT_EQ(lease.type(), CoreType::DEDICATED);
+    auto lease2 = std::move(lease);
+    EXPECT_EQ(lease2.type(), CoreType::DEDICATED);
     EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::SHARED);
   }
   EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::DEDICATED);
