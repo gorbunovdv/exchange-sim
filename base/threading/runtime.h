@@ -4,7 +4,7 @@
 
 namespace exchange_sim {
 
-class Runtime {
+class Runtime : NonMoveable {
 public:
   struct Config {
     CoreAllocator::Config core_allocator_config;
