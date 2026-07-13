@@ -80,10 +80,10 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
   bool first_to_write = true;
 
   Throughput requests_throughput("requests");
-  for (const auto& request_struct : request_journal) {
+  for (const auto& [request_timestamp, request_object] : request_journal) {
     processed_count++;
     requests_throughput.tick();
-    while (!current_reports.empty() && current_reports.front().timestamp < request_struct.timestamp) {
+    while (!current_reports.empty() && current_reports.front().timestamp < request_timestamp) {
       current_reports.pop_front();
     }
     while (current_reports.size() < constMaxStructSize && report_iterator != report_journal.end()) {
@@ -91,7 +91,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       ++report_iterator;
     }
 
-    while (!current_market_events.empty() && current_market_events.front().timestamp < request_struct.timestamp) {
+    while (!current_market_events.empty() && current_market_events.front().timestamp < request_timestamp) {
       current_market_events.pop_front();
     }
     while (current_market_events.size() < constMaxStructSize && market_data_iterator != market_data_journal.end()) {
@@ -103,20 +103,23 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       continue;
     }
 
-    RequestStat stat{.origin_time = request_struct.timestamp.ticks(), .type = [&]() {
-                       return std::visit(
-                           boost::hof::match([](const request::OrderAddRequest&) { return RequestStat::Type::ADD; },
-                               [](const request::OrderCancelRequest&) { return RequestStat::Type::CANCEL; },
-                               [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
-                           request_struct.value);
-                     }()};
+    RequestStat stat{
+        .origin_time = request_timestamp.ticks(),
+        .type =
+            [&]() {
+              return std::visit(
+                  boost::hof::match([](const request::OrderAddRequest&) { return RequestStat::Type::ADD; },
+                      [](const request::OrderCancelRequest&) { return RequestStat::Type::CANCEL; },
+                      [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
+                  request_object);
+            }(),
+    };
 
-    for (const auto& market_event_struct : current_market_events) {
+    for (const auto& [market_event_timestamp, market_event_object] : current_market_events) {
       std::visit(
-          [&](auto&& current_market_event) {
-            if (current_market_event.origin_time.ticks() == stat.origin_time) {
-              auto time_ns =
-                  market_event_struct.timestamp.nanoseconds_distance(current_market_event.origin_time).count();
+          [&](auto&& market_event) {
+            if (market_event.origin_time.ticks() == stat.origin_time) {
+              auto time_ns = market_event_timestamp.nanoseconds_distance(market_event.origin_time).count();
               if (!stat.first_market_event_ns.has_value() || time_ns < stat.first_market_event_ns.value()) {
                 stat.first_market_event_ns = time_ns;
               }
@@ -124,19 +127,19 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
                 stat.last_market_event_ns = time_ns;
               }
               stat.market_events_count++;
-              if constexpr (std::is_same_v<std::remove_cvref_t<decltype(current_market_event)>, market_events::Trade>) {
+              if constexpr (std::is_same_v<std::remove_cvref_t<decltype(market_event)>, market_events::Trade>) {
                 stat.trades_count++;
               }
             }
           },
-          market_event_struct.value);
+          market_event_object);
     }
 
-    for (const auto& report_struct : current_reports) {
+    for (const auto& [report_timestamp, report_object] : current_reports) {
       std::visit(
-          [&](auto&& current_report) {
-            if (current_report.origin_time.ticks() == stat.origin_time) {
-              auto time_ns = report_struct.timestamp.nanoseconds_distance(current_report.origin_time).count();
+          [&](auto&& report) {
+            if (report.origin_time.ticks() == stat.origin_time) {
+              auto time_ns = report_timestamp.nanoseconds_distance(report.origin_time).count();
               if (!stat.first_report_ns.has_value() || time_ns < stat.first_report_ns.value()) {
                 stat.first_report_ns = time_ns;
               }
@@ -146,7 +149,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
               stat.reports_count++;
             }
           },
-          report_struct.value);
+          report_object);
     }
 
     write_buffer.clear();
