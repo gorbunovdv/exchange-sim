@@ -1,6 +1,7 @@
 #include "base/callback_receiver.h"
 #include "base/forward_sink.h"
 #include "base/journal.h"
+#include "base/logging/quill_sinks.h"
 #include "base/run.h"
 
 #include "domain/security.h"

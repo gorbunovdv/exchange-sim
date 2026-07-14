@@ -1,4 +1,5 @@
 #include "base/logging/logging_backend.h"
+#include "base/logging/quill_sinks.h"
 #include "base/run.h"
 
 #include <glaze/glaze.hpp>

@@ -62,7 +62,7 @@ lint-from-scratch preset='clang-debug':
     @just lint {{ preset }}
 
 run *args:
-    systemd-run --scope --slice=hft.slice -p AllowedCPUs=0,2-7 {{ args }}
+    systemd-run --scope --slice=hft.slice -p AllowedCPUs=2-7 {{ args }}
 
 act:
     gh act --container-architecture linux/amd64
