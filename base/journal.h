@@ -172,6 +172,7 @@ private:
     std::span data{queue_.data() + current_tail, queue_.data() + last_head};
     if (!data.empty()) {
       stream_.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(value_type));
+      CHECK(stream_, "Failed to write to journal, name={}", name_);
       throughput_.tick(data.size());
     }
     tail_.store(last_head % queue_.size());
