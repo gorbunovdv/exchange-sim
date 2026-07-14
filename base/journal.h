@@ -59,7 +59,7 @@ public:
           }
           while (!token.stop_requested()) {
             flush();
-            std::this_thread::yield();
+            std::this_thread::sleep_for(10ms);
           }
           while (head_ != tail_) {
             flush();
