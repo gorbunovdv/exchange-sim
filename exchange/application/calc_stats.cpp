@@ -69,7 +69,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
   auto report_iterator = report_journal.begin();
   auto market_data_iterator = market_data_journal.begin();
 
-  static constexpr std::size_t constMaxStructSize = 100;
+  static constexpr std::chrono::nanoseconds constMaxTimeDifference = 100us;
 
   std::fstream output_file(config["calc_stats"]["output_file"].as<std::string>(), std::ios::out);
   std::string write_buffer;
@@ -86,17 +86,33 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
     while (!current_reports.empty() && current_reports.front().timestamp < request_timestamp) {
       current_reports.pop_front();
     }
-    while (current_reports.size() < constMaxStructSize && report_iterator != report_journal.end()) {
+    while (report_iterator != report_journal.end() &&
+        (current_reports.empty() ||
+            current_reports.back().timestamp.nanoseconds_distance(request_timestamp) < constMaxTimeDifference)) {
       current_reports.push_back(*report_iterator);
       ++report_iterator;
+      std::visit(
+          [&request_timestamp](auto&& report) {
+            CHECK(report.origin_time >= request_timestamp,
+                "constMaxTimeDifference is too small, some reports are being missed");
+          },
+          current_reports.back().value);
     }
 
     while (!current_market_events.empty() && current_market_events.front().timestamp < request_timestamp) {
       current_market_events.pop_front();
     }
-    while (current_market_events.size() < constMaxStructSize && market_data_iterator != market_data_journal.end()) {
+    while (market_data_iterator != market_data_journal.end() &&
+        (current_market_events.empty() ||
+            current_market_events.back().timestamp.nanoseconds_distance(request_timestamp) < constMaxTimeDifference)) {
       current_market_events.push_back(*market_data_iterator);
       ++market_data_iterator;
+      std::visit(
+          [&request_timestamp](auto&& market_event) {
+            CHECK(market_event.origin_time >= request_timestamp,
+                "constMaxTimeDifference is too small, some market events are being missed");
+          },
+          current_market_events.back().value);
     }
 
     if (processed_count <= requests_to_skip) {

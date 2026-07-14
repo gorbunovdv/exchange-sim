@@ -71,6 +71,8 @@ public:
 
   friend bool operator<(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ < rhs.ticks_; }
   friend bool operator>(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ > rhs.ticks_; }
+  friend bool operator<=(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ <= rhs.ticks_; }
+  friend bool operator>=(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ >= rhs.ticks_; }
 
 private:
   Underlying ticks_;

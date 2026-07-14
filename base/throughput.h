@@ -46,7 +46,6 @@ private:
         events_processed,
         std::chrono::duration_cast<std::chrono::seconds>(current.nanoseconds_distance(prev_tick_)).count(),
         nanoseconds_per_event,
-        events_per_second,
         events_per_second);
   }
 
