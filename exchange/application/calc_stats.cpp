@@ -94,15 +94,15 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     stat.reports_count++;
   };
 
-  auto update_market_data = [](RequestStat& stat, Ticks market_event_timestamp, const auto& report) {
-    auto time_ns = market_event_timestamp.nanoseconds_distance(report.origin_time).count();
+  auto update_market_data = [](RequestStat& stat, Ticks market_event_timestamp, const auto& market_event) {
+    auto time_ns = market_event_timestamp.nanoseconds_distance(market_event.origin_time).count();
     if (!stat.first_market_event_ns.has_value() || time_ns < stat.first_market_event_ns.value()) {
       stat.first_market_event_ns = time_ns;
     }
     if (!stat.last_market_event_ns.has_value() || time_ns > stat.last_market_event_ns.value()) {
       stat.last_market_event_ns = time_ns;
     }
-    if constexpr (std::is_same_v<std::remove_cvref_t<decltype(report)>, market_events::Trade>) {
+    if constexpr (std::is_same_v<std::remove_cvref_t<decltype(market_event)>, market_events::Trade>) {
       stat.trades_count++;
     }
     stat.market_events_count++;
