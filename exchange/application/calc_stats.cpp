@@ -55,7 +55,9 @@ struct glz::meta<exchange_sim::RequestStat> {
 
 namespace exchange_sim {
 
-void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config) {
+void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
+  auto stop_token = runtime->stop_token();
+
   Journal<market_events::EventType> market_data_journal(
       "Journal<market_events::EventType>", config["journaling"]["market_events"].as<std::string>(), JournalMode::READ);
   Journal<report::ReportType> report_journal(
@@ -69,7 +71,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
   auto report_iterator = report_journal.begin();
   auto market_data_iterator = market_data_journal.begin();
 
-  static constexpr std::chrono::nanoseconds constMaxTimeDifference = 100us;
+  static constexpr std::chrono::nanoseconds constMaxTimeDifference = 1ms;
 
   std::fstream output_file(config["calc_stats"]["output_file"].as<std::string>(), std::ios::out);
   std::string write_buffer;
@@ -79,8 +81,38 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
   auto requests_to_skip = config["calc_stats"]["requests_to_skip"].as<size_t>();
   bool first_to_write = true;
 
+  std::map<Ticks, RequestStat> request_by_origin_time;
+
+  auto update_report = [](RequestStat& stat, Ticks report_timestamp, const auto& report) {
+    auto time_ns = report_timestamp.nanoseconds_distance(report.origin_time).count();
+    if (!stat.first_report_ns.has_value() || time_ns < stat.first_report_ns.value()) {
+      stat.first_report_ns = time_ns;
+    }
+    if (!stat.last_report_ns.has_value() || time_ns > stat.last_report_ns.value()) {
+      stat.last_report_ns = time_ns;
+    }
+    stat.reports_count++;
+  };
+
+  auto update_market_data = [](RequestStat& stat, Ticks market_event_timestamp, const auto& report) {
+    auto time_ns = market_event_timestamp.nanoseconds_distance(report.origin_time).count();
+    if (!stat.first_market_event_ns.has_value() || time_ns < stat.first_market_event_ns.value()) {
+      stat.first_market_event_ns = time_ns;
+    }
+    if (!stat.last_market_event_ns.has_value() || time_ns > stat.last_market_event_ns.value()) {
+      stat.last_market_event_ns = time_ns;
+    }
+    if constexpr (std::is_same_v<std::remove_cvref_t<decltype(report)>, market_events::Trade>) {
+      stat.trades_count++;
+    }
+    stat.market_events_count++;
+  };
+
   Throughput requests_throughput("requests");
   for (const auto& [request_timestamp, request_object] : request_journal) {
+    if (stop_token.stop_requested()) {
+      break;
+    }
     processed_count++;
     requests_throughput.tick();
     while (!current_reports.empty() && current_reports.front().timestamp < request_timestamp) {
@@ -92,7 +124,8 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       current_reports.push_back(*report_iterator);
       ++report_iterator;
       std::visit(
-          [&request_timestamp](auto&& report) {
+          [&](auto&& report) {
+            update_report(request_by_origin_time[report.origin_time], current_reports.back().timestamp, report);
             CHECK(report.origin_time >= request_timestamp,
                 "constMaxTimeDifference is too small, some reports are being missed");
           },
@@ -108,69 +141,34 @@ void run_calc_stats(const std::shared_ptr<Runtime>&, const glz::generic& config)
       current_market_events.push_back(*market_data_iterator);
       ++market_data_iterator;
       std::visit(
-          [&request_timestamp](auto&& market_event) {
+          [&](auto&& market_event) {
+            update_market_data(
+                request_by_origin_time[market_event.origin_time], current_market_events.back().timestamp, market_event);
             CHECK(market_event.origin_time >= request_timestamp,
                 "constMaxTimeDifference is too small, some market events are being missed");
           },
           current_market_events.back().value);
     }
 
+    while (!request_by_origin_time.empty() && request_by_origin_time.begin()->first < request_timestamp) {
+      request_by_origin_time.erase(request_by_origin_time.begin());
+    }
+
     if (processed_count <= requests_to_skip) {
       continue;
     }
 
-    RequestStat stat{
-        .origin_time = request_timestamp.ticks(),
-        .type =
-            [&]() {
-              return std::visit(
-                  boost::hof::match([](const request::OrderAddRequest&) { return RequestStat::Type::ADD; },
-                      [](const request::OrderCancelRequest&) { return RequestStat::Type::CANCEL; },
-                      [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
-                  request_object);
-            }(),
-    };
-
-    for (const auto& [market_event_timestamp, market_event_object] : current_market_events) {
-      std::visit(
-          [&](auto&& market_event) {
-            if (market_event.origin_time.ticks() == stat.origin_time) {
-              auto time_ns = market_event_timestamp.nanoseconds_distance(market_event.origin_time).count();
-              if (!stat.first_market_event_ns.has_value() || time_ns < stat.first_market_event_ns.value()) {
-                stat.first_market_event_ns = time_ns;
-              }
-              if (!stat.last_market_event_ns.has_value() || time_ns > stat.last_market_event_ns.value()) {
-                stat.last_market_event_ns = time_ns;
-              }
-              stat.market_events_count++;
-              if constexpr (std::is_same_v<std::remove_cvref_t<decltype(market_event)>, market_events::Trade>) {
-                stat.trades_count++;
-              }
-            }
-          },
-          market_event_object);
-    }
-
-    for (const auto& [report_timestamp, report_object] : current_reports) {
-      std::visit(
-          [&](auto&& report) {
-            if (report.origin_time.ticks() == stat.origin_time) {
-              auto time_ns = report_timestamp.nanoseconds_distance(report.origin_time).count();
-              if (!stat.first_report_ns.has_value() || time_ns < stat.first_report_ns.value()) {
-                stat.first_report_ns = time_ns;
-              }
-              if (!stat.last_report_ns.has_value() || time_ns > stat.last_report_ns.value()) {
-                stat.last_report_ns = time_ns;
-              }
-              stat.reports_count++;
-            }
-          },
-          report_object);
-    }
-
+    RequestStat& stat = request_by_origin_time.at(request_timestamp);
+    stat.origin_time = request_timestamp.ticks();
+    stat.type = [&]() {
+      return std::visit(boost::hof::match([](const request::OrderAddRequest&) { return RequestStat::Type::ADD; },
+                            [](const request::OrderCancelRequest&) { return RequestStat::Type::CANCEL; },
+                            [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
+          request_object);
+    }();
     write_buffer.clear();
     if (!first_to_write) {
-      output_file << ",";
+      output_file << ",\n";
     } else {
       first_to_write = false;
     }
