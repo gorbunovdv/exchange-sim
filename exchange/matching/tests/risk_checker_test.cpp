@@ -8,7 +8,7 @@ namespace exchange_sim {
 
 static const auto security = Security{
     .security_id = SecurityID{0},
-    .symbol = "A",
+    .symbol = Symbol{"A"},
     .tick_size = Price(0.2),
     .lot_size = Amount(0.1),
     .low_price = Price(1),
