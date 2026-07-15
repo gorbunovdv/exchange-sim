@@ -18,7 +18,7 @@ namespace exchange_sim {
 
 struct RequestStat {
   Ticks::Underlying origin_time;
-  enum class Type : std::uint8_t { ADD = 0, CANCEL = 1, REPLACE = 2 } type;
+  std::string type;
   std::string symbol;
 
   std::optional<std::int64_t> first_report_ns = std::nullopt;
@@ -169,9 +169,9 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     RequestStat& stat = request_by_origin_time.at(request_timestamp);
     stat.origin_time = request_timestamp.ticks();
     stat.type = [&]() {
-      return std::visit(boost::hof::match([](const request::OrderAddRequest&) { return RequestStat::Type::ADD; },
-                            [](const request::OrderCancelRequest&) { return RequestStat::Type::CANCEL; },
-                            [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
+      return std::visit(boost::hof::match([](const request::OrderAddRequest&) { return "ADD"; },
+                            [](const request::OrderCancelRequest&) { return "CANCEL"; },
+                            [](const request::OrderReplaceRequest&) { return "REPLACE"; }),
           request_object);
     }();
     stat.symbol = security_storage

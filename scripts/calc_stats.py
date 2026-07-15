@@ -47,12 +47,6 @@ def main():
 
     latency_fields = ['first_report', 'last_report', 'first_market_event', 'last_market_event']
 
-    type_map = {
-        0: "ADD",
-        1: "CANCEL",
-        2: "REPLACE"
-    }
-
     for item in data:
         msg_type = item.get('type')
         trades_count = item.get('trades_count', 0)
@@ -71,8 +65,7 @@ def main():
         print("-" * 68)
 
         for group_key in sorted(groups.keys()):
-            symbol, msg_type, trades_count = group_key
-            type_label = type_map.get(msg_type, str(msg_type))
+            symbol, type_label, trades_count = group_key
 
             values = groups[group_key][metric]
             if not values:
