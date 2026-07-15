@@ -54,9 +54,10 @@ def main():
     }
 
     for item in data:
-        msg_type = item.get('type', -1)
+        msg_type = item.get('type')
         trades_count = item.get('trades_count', 0)
-        group_key = (msg_type, trades_count)
+        symbol = item.get('symbol')
+        group_key = (symbol, msg_type, trades_count)
 
         for field in latency_fields:
             if field in item:
@@ -66,11 +67,11 @@ def main():
 
     for metric in latency_fields:
         print(f"=== Latency Metric: {metric} ===")
-        print(f"{'Type':<8} | {'Trades Count':<12} | " + " | ".join([f"p{p:<4}" for p in percentiles]) + " | Count")
+        print(f"{'Type':<8} | {'Symbol':<8} | {'Trades Count':<12} | " + " | ".join([f"p{p:<4}" for p in percentiles]) + " | Count")
         print("-" * 68)
 
         for group_key in sorted(groups.keys()):
-            msg_type, trades_count = group_key
+            symbol, msg_type, trades_count = group_key
             type_label = type_map.get(msg_type, str(msg_type))
 
             values = groups[group_key][metric]
@@ -80,7 +81,7 @@ def main():
             results = [calculate_percentile(values, p) for p in percentiles]
             formatted_results = " | ".join([f"{res:<5}" for res in results])
 
-            print(f"{type_label:<8} | {trades_count:<12} | {formatted_results} | {len(values)}")
+            print(f"{type_label:<8} | {symbol:<8} | {trades_count:<12} | {formatted_results} | {len(values)}")
 
         print("\n")
 

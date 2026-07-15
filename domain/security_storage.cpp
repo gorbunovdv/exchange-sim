@@ -6,17 +6,25 @@ namespace exchange_sim {
 
 SecurityStorage::SecurityStorage(const std::vector<SecurityConfig>& securities) {
   securities_.reserve(securities.size());
-  for (SecurityConfig security : securities) {
-    securities_.push_back(Security{
+  for (SecurityConfig security_config : securities) {
+    Security security{
         .security_id = static_cast<SecurityID>(id_by_symbol_.size()),
-        .symbol = security.symbol,
-        .tick_size = security.tick_size,
-        .lot_size = security.lot_size,
-        .low_price = security.low_price,
-        .high_price = security.high_price,
-        .max_amount = security.max_amount,
-    });
-    id_by_symbol_.emplace(security.symbol, id_by_symbol_.size());
+        .symbol = security_config.symbol,
+        .tick_size = security_config.tick_size,
+        .lot_size = security_config.lot_size,
+        .low_price = security_config.low_price,
+        .high_price = security_config.high_price,
+        .max_amount = security_config.max_amount,
+    };
+    securities_.push_back(security);
+    id_by_symbol_.emplace(security_config.symbol, id_by_symbol_.size());
+    INFO("Added security, symbol={} lot_size={} tick_size={} low_price={} high_price={} max_amount={}",
+        std::string(security.symbol),
+        static_cast<double>(security.lot_size),
+        static_cast<double>(security.tick_size),
+        static_cast<double>(security.low_price),
+        static_cast<double>(security.high_price),
+        static_cast<double>(security.max_amount));
   }
   CHECK(size() > 0, "Security storage is empty");
   CHECK(id_by_symbol_.size() == size(), "Security storage is not unique");

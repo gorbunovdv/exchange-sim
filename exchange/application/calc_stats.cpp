@@ -1,6 +1,9 @@
 #include "base/journal.h"
 #include "base/run.h"
 
+#include "domain/security_storage.h"
+
+#include "exchange/application/helpers/generate_securities.h"
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
@@ -16,6 +19,7 @@ namespace exchange_sim {
 struct RequestStat {
   Ticks::Underlying origin_time;
   enum class Type : std::uint8_t { ADD = 0, CANCEL = 1, REPLACE = 2 } type;
+  std::string symbol;
 
   std::optional<std::int64_t> first_report_ns = std::nullopt;
   std::optional<std::int64_t> last_report_ns = std::nullopt;
@@ -37,6 +41,8 @@ struct glz::meta<exchange_sim::RequestStat> {
       &T::origin_time,
       "type",
       &T::type,
+      "symbol",
+      &T::symbol,
       "first_report",
       &T::first_report_ns,
       "last_report",
@@ -57,6 +63,8 @@ namespace exchange_sim {
 
 void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto stop_token = runtime->stop_token();
+
+  SecurityStorage security_storage(generate_securities(config));
 
   Journal<market_events::EventType> market_data_journal(
       "Journal<market_events::EventType>", config["journaling"]["market_events"].as<std::string>(), JournalMode::READ);
@@ -166,6 +174,9 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
                             [](const request::OrderReplaceRequest&) { return RequestStat::Type::REPLACE; }),
           request_object);
     }();
+    stat.symbol = security_storage
+                      .get_security(std::visit([](const auto& request) { return request.security_id; }, request_object))
+                      .symbol;
     write_buffer.clear();
     if (!first_to_write) {
       output_file << ",\n";

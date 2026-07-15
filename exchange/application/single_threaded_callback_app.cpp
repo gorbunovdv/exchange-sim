@@ -28,15 +28,6 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   dedicated_core.pin_thread("run_single_threaded_callback_app");
 
   SecurityStorage security_storage(generate_securities(config));
-  for (Security security : security_storage.securities()) {
-    INFO("Added security, symbol={} lot_size={} tick_size={} low_price={} high_price={} max_amount={}",
-        std::string(security.symbol),
-        static_cast<double>(security.lot_size),
-        static_cast<double>(security.tick_size),
-        static_cast<double>(security.low_price),
-        static_cast<double>(security.high_price),
-        static_cast<double>(security.max_amount));
-  }
 
   static constexpr size_t constJournalSize = 1 << 20;
 

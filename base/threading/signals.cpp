@@ -4,7 +4,6 @@
 #include "base/time/rdtsc.h"
 
 namespace exchange_sim {
-class Ticks;
 
 sigset_t shutdown_signal_set() {
   sigset_t signal_set;
