@@ -37,9 +37,9 @@ public:
     }
   }
 
-  void process(market_events::EventType&& snapshot) {
+  void process(const market_events::EventType& snapshot) {
     std::visit(boost::hof::match(
-                   [this](market_events::BookOrderEntry&& snapshot) {
+                   [this](const market_events::BookOrderEntry& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderEntry"
                          " origin_time={} order_id={} security_id={}"
@@ -51,7 +51,7 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.quantity));
                    },
-                   [this](market_events::BookOrderChange&& snapshot) {
+                   [this](const market_events::BookOrderChange& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderChange"
                          " origin_time={} order_id={} security_id={} direction={} price={} new_quantity={}",
@@ -62,7 +62,7 @@ public:
                          static_cast<double>(snapshot.price),
                          static_cast<double>(snapshot.new_quantity));
                    },
-                   [this](market_events::BookOrderDeletion&& snapshot) {
+                   [this](const market_events::BookOrderDeletion& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderDeletion"
                          " origin_time={} order_id={} security_id={}",
@@ -70,7 +70,7 @@ public:
                          snapshot.order_id,
                          snapshot.security_id.value());
                    },
-                   [this](market_events::Trade&& snapshot) {
+                   [this](const market_events::Trade& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=Trade"
                          " origin_time={} security_id={} price={} quantity={}"
@@ -83,13 +83,13 @@ public:
                          snapshot.aggressor_order_id,
                          snapshot.recipient_order_id);
                    }),
-        std::move(snapshot));
+        snapshot);
   }
 
-  void process(report::ReportType report) {
+  void process(const report::ReportType& report) {
     std::visit(
         boost::hof::match(
-            [this](report::OrderAccepted&& report) {
+            [this](const report::OrderAccepted& report) {
               DEBUG(
                   "Received report, type=OrderAccepted"
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={} time_in_force={}"
@@ -104,7 +104,7 @@ public:
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
             },
-            [this](report::Trade&& report) {
+            [this](const report::Trade& report) {
               DEBUG(
                   "Received report, type=Trade"
                   " origin_time={} security_id={} aggressor_direction={} price={} quantity={}"
@@ -120,7 +120,7 @@ public:
                   report.aggressor_order_id,
                   report.recipient_order_id);
             },
-            [this](report::OrderBookEntry&& report) {
+            [this](const report::OrderBookEntry& report) {
               DEBUG(
                   "Received report, type=OrderBookEntry"
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={}"
@@ -134,7 +134,7 @@ public:
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
             },
-            [this](report::OrderFilled&& report) {
+            [this](const report::OrderFilled& report) {
               DEBUG(
                   "Received report, type=OrderFilled"
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={}"
@@ -148,7 +148,7 @@ public:
                   static_cast<double>(report.price),
                   magic_enum::enum_name(report.type));
             },
-            [this](report::OrderExpired&& report) {
+            [this](const report::OrderExpired& report) {
               DEBUG(
                   "Received report, type=OrderExpired"
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={} reason={}",
@@ -159,7 +159,7 @@ public:
                   report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             },
-            [this](report::OrderCancelled&& report) {
+            [this](const report::OrderCancelled& report) {
               DEBUG(
                   "Received report, type=OrderCancelled"
                   " origin_time={} order_id={} client_id={} client_order_id={} client_cancellation_id={} "
@@ -171,7 +171,7 @@ public:
                   report.client_cancellation_id,
                   report.security_id.value());
             },
-            [this](report::OrderRejected&& report) {
+            [this](const report::OrderRejected& report) {
               DEBUG(
                   "Received report, type=OrderRejected"
                   " origin_time={} security_id={} client_id={} client_order_id={} reason={}",
@@ -181,7 +181,7 @@ public:
                   report.client_order_id,
                   magic_enum::enum_name(report.reason));
             },
-            [this](report::CancellationRejected&& report) {
+            [this](const report::CancellationRejected& report) {
               DEBUG(
                   "Received report, type=CancellationRejected"
                   " origin_time={} client_id={} client_order_id={} client_cancellation_id={} security_id={} reason={}",
@@ -192,7 +192,7 @@ public:
                   report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             },
-            [this](report::ReplacementAccepted&& report) {
+            [this](const report::ReplacementAccepted& report) {
               DEBUG(
                   "Received report, type=ReplacementAccepted"
                   " origin_time={} order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={}"
@@ -208,7 +208,7 @@ public:
                   static_cast<double>(report.price),
                   static_cast<double>(report.quantity));
             },
-            [this](report::ReplacementRejected&& report) {
+            [this](const report::ReplacementRejected& report) {
               DEBUG(
                   "Received report, type=ReplacementRejected"
                   " origin_time={} client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
@@ -219,7 +219,7 @@ public:
                   report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             }),
-        std::move(report));
+        report);
   }
 
 private:

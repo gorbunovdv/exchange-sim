@@ -54,7 +54,7 @@ public:
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(timestamp, std::move(request));
+    journal_.write(timestamp, request);
     return client_order_id;
   }
 
@@ -71,7 +71,7 @@ public:
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(timestamp, std::move(request));
+    journal_.write(timestamp, request);
     return client_cancellation_id;
   }
 
@@ -98,11 +98,11 @@ public:
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(timestamp, std::move(request));
+    journal_.write(timestamp, request);
     return client_replacement_id;
   }
 
-  void handle(report::ReportType report) {
+  void handle(const report::ReportType& report) {
     std::visit(boost::hof::match([](const report::Trade&) {},
                    [this](const auto& report) {
                      if (security_storage_.has_security(report.security_id)) {
@@ -145,17 +145,17 @@ public:
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}
 
-  void process(market_events::EventType&& market_event) {
+  void process(const market_events::EventType& market_event) {
     auto timestamp = Ticks::rdtscp();
     market_data_journal_.write(timestamp, market_event);
-    generator_.process(std::move(market_event));
+    generator_.process(market_event);
   }
 
-  void process(report::ReportType&& report) {
+  void process(const report::ReportType& report) {
     auto timestamp = Ticks::rdtscp();
     report_journal_.write(timestamp, report);
     generator_interface_.handle(report);
-    generator_.process(std::move(report));
+    generator_.process(report);
   }
 
   void run() {

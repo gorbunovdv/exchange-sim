@@ -41,9 +41,9 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   std::vector<report::ReportType> actual_reports;
 
   CallbackSink<market_events::EventType> market_data_sink(
-      [&actual_market_data](market_events::EventType&& event) { actual_market_data.push_back(std::move(event)); });
+      [&actual_market_data](market_events::EventType&& event) { actual_market_data.push_back(event); });
   CallbackSink<report::ReportType> report_generator_sink(
-      [&actual_reports](report::ReportType&& event) { actual_reports.push_back(std::move(event)); });
+      [&actual_reports](report::ReportType&& event) { actual_reports.push_back(event); });
 
   SecurityStorage storage({
       SecurityConfig{
@@ -70,7 +70,7 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   MatchingEngine matching_engine(glz::generic{}, storage, exchange_dispatcher.get_sink());
 
   for (auto request : input.requests) {
-    matching_engine.process(std::move(request));
+    matching_engine.process(request);
   }
 
   ASSERT_EQ(input.expected_market_data.size(), actual_market_data.size());

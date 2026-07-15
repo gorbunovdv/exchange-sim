@@ -104,7 +104,7 @@ public:
       CRITICAL("Encountered error while reading from journal");
     }
     if (stream_ && bytes_read == sizeof(value_type)) {
-      std::forward<Consumer>(consumer)(std::move(*reinterpret_cast<value_type*>(data.data())));
+      std::forward<Consumer>(consumer)(*reinterpret_cast<value_type*>(data.data()));
       return true;
     }
     if (bytes_read != 0) {
@@ -148,8 +148,7 @@ public:
   private:
     void advance() {
       if (!is_eof_ && journal_ && journal_->stream_) {
-        is_eof_ =
-            !journal_->consume_if_available([this](value_type&& value) { current_value_.emplace(std::move(value)); });
+        is_eof_ = !journal_->consume_if_available([this](const value_type& value) { current_value_.emplace(value); });
       }
     }
 

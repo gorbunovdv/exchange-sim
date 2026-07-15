@@ -73,9 +73,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
       config["order_generator"]);
 
   CallbackSink<market_events::EventType> market_data_generator_sink_callback(
-      [&order_generator](market_events::EventType&& snapshot) { order_generator.process(std::move(snapshot)); });
+      [&order_generator](market_events::EventType&& snapshot) { order_generator.process(snapshot); });
   CallbackSink<report::ReportType> report_generator_sink_callback(
-      [&order_generator](report::ReportType&& report) { order_generator.process(std::move(report)); });
+      [&order_generator](report::ReportType&& report) { order_generator.process(report); });
 
   market_data_generator_sink.set_sink(&market_data_generator_sink_callback);
   report_generator_sink.set_sink(&report_generator_sink_callback);
