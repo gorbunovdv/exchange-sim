@@ -40,7 +40,7 @@ def main():
         with open(config['calc_stats']['output_file'], 'r') as f:
             data = json.load(f)
     except FileNotFoundError:
-        print(f"Error: Could not find '{file_path}'", file=sys.stderr)
+        print(f"Error: Could not find '{config['calc_stats']['output_file']}'", file=sys.stderr)
         return
 
     groups = defaultdict(lambda: defaultdict(list))

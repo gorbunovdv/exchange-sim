@@ -41,9 +41,12 @@ build preset='clang-release':
     @just configure "{{ preset }}"
     cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}"
 
-test-from-scratch preset='clang-debug-asan':
+build-from-scratch preset='clang-release':
     @just clean "{{ preset }}"
     @just build "{{ preset }}"
+
+test-from-scratch preset='clang-debug-asan':
+    @just build-from-scratch "{{ preset }}"
     ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
 format:
@@ -62,7 +65,17 @@ lint-from-scratch preset='clang-debug':
     @just lint {{ preset }}
 
 run *args:
-    systemd-run --scope --slice=hft.slice -p AllowedCPUs=2-7 {{ args }}
+    python3 ./scripts/run_isolated.py {{ args }} || true
 
 act:
     gh act --container-architecture linux/amd64
+
+patch config_file:
+    ./scripts/patch_config.py "{{ config_file }}"
+
+benchmark application config_file preset='clang-release':
+    @just build-from-scratch "{{ preset }}"
+    @just patch "{{ config_file }}"
+    @just run timeout -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
+    "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
+    ./scripts/calc_stats.py "{{ config_file }}"
