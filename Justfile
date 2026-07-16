@@ -57,7 +57,7 @@ format-check:
 
 lint preset:
     test -f "cmake-build-{{ preset }}/compile_commands.json"
-    git ls-files -z -- '*.cpp' | xargs -0 -r clang-tidy -p "./cmake-build-{{ preset }}/" --quiet
+    run-clang-tidy -p "./cmake-build-{{ preset }}/" -quiet -j "{{ CPU_COUNT }}" $(git ls-files -- '*.cpp')
 
 lint-from-scratch preset='clang-debug':
     @just clean {{ preset }}
