@@ -30,21 +30,13 @@ class WrapVector {
 public:
   explicit WrapVector(auto&&... args): vector_{std::forward<decltype(args)>(args)...} {}
 
-  void push(auto&&... args) {
-    vector_.push_back(std::forward<decltype(args)>(args)...);
-  }
+  void push(auto&&... args) { vector_.push_back(std::forward<decltype(args)>(args)...); }
 
-  auto begin(this auto&& self) {
-    return std::forward_like<decltype(self)>(self.vector_).begin();
-  }
+  auto begin(this auto&& self) { return std::forward_like<decltype(self)>(self.vector_).begin(); }
 
-  auto end(this auto&& self) {
-    return std::forward_like<decltype(self)>(self.vector_).end();
-  }
+  auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.vector_).end(); }
 
-  void clear() {
-    vector_.clear();
-  }
+  void clear() { vector_.clear(); }
 
 private:
   T vector_;
