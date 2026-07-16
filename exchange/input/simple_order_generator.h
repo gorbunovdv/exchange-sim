@@ -31,12 +31,6 @@ public:
         min_active_orders_by_security_);
   }
 
-  void run() {
-    while (!interface_.asked_to_stop()) {
-      generate_event();
-    }
-  }
-
   void process(const market_events::EventType& snapshot) {
     std::visit(boost::hof::match(
                    [this](const market_events::BookOrderEntry& snapshot) {
@@ -222,7 +216,6 @@ public:
         report);
   }
 
-private:
   void generate_event() {
     if (auto it = std::ranges::find_if(interface_.active_orders(),
             [this](const auto& pair) { return pair.size() >= max_active_orders_by_security_; });
@@ -249,6 +242,7 @@ private:
     generate_replace_order_request(SecurityID{security_id_distribution_(generator_)});
   }
 
+private:
   void generate_new_order_request(SecurityID security_id) {
     const Security& security = interface_.security_storage().get_security(security_id);
     Price price_interval = security.high_price - security.low_price;

@@ -160,7 +160,13 @@ public:
 
   void run() {
     while (!generator_interface_.asked_to_stop()) {
-      generator_.run();
+      generator_.generate_event();
+    }
+  }
+
+  void generate_event() {
+    if (!generator_interface_.asked_to_stop()) {
+      generator_.generate_event();
     }
   }
 
