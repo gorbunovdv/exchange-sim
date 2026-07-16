@@ -26,15 +26,15 @@ public:
     }
   }
 
-  void process(request::RequestType&& request) {
-    std::visit(
-        [this](auto&& request) { this->process_object(std::forward<decltype(request)>(request)); }, std::move(request));
+  void process(const request::RequestType& request) {
+    std::visit([this](const auto& request) { this->process_object(request); }, request);
   }
 
 private:
-  void process_object(request::OrderAddRequest&& request) {
+  void process_object(const request::OrderAddRequest& request) {
     if (!security_storage_.has_security(request.security_id)) {
       sink_.push(engine_events::OrderRejected{
+          .origin_time = request.origin_time,
           .security_id = request.security_id,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
@@ -42,12 +42,13 @@ private:
       });
       return;
     }
-    books_[request.security_id].add(std::move(request), sink_);
+    books_[request.security_id].add(request, sink_);
   }
 
-  void process_object(request::OrderReplaceRequest&& request) {
+  void process_object(const request::OrderReplaceRequest& request) {
     if (!security_storage_.has_security(request.security_id)) {
       sink_.push(engine_events::ReplacementRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_replacement_id = request.client_replacement_id,
@@ -56,12 +57,13 @@ private:
       });
       return;
     }
-    books_[request.security_id].replace(std::move(request), sink_);
+    books_[request.security_id].replace(request, sink_);
   }
 
-  void process_object(request::OrderCancelRequest&& request) {
+  void process_object(const request::OrderCancelRequest& request) {
     if (!security_storage_.has_security(request.security_id)) {
       sink_.push(engine_events::CancellationRejected{
+          .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .client_cancellation_id = request.client_cancellation_id,
@@ -70,7 +72,7 @@ private:
       });
       return;
     }
-    books_[request.security_id].cancel(std::move(request), sink_);
+    books_[request.security_id].cancel(request, sink_);
   }
 
   SecurityStorage& security_storage_;

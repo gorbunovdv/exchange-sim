@@ -16,15 +16,16 @@ public:
     static_assert(engine_events::Processor<ExchangeDispatcher>);
   }
 
-  void process(engine_events::EventType&& event) {
-    std::visit([this](auto&& event) { this->process_event(std::forward<decltype(event)>(event)); }, std::move(event));
+  void process(const engine_events::EventType& event) {
+    std::visit([this](const auto& event) { this->process_event(event); }, event);
   }
 
 private:
-  void process_event(engine_events::OrderAccepted&& event) { report_generator_sink_.push(std::move(event)); }
+  void process_event(const engine_events::OrderAccepted& event) { report_generator_sink_.push(event); }
 
-  void process_event(engine_events::Trade&& event) {
+  void process_event(const engine_events::Trade& event) {
     market_data_sink_.push(market_events::Trade{
+        .origin_time = event.origin_time,
         .security_id = event.security_id,
         .price = event.price,
         .quantity = event.quantity,
@@ -33,6 +34,7 @@ private:
         .recipient_order_id = event.recipient_order_id,
     });
     report_generator_sink_.push(report::Trade{
+        .origin_time = event.origin_time,
         .security_id = event.security_id,
         .aggressor_direction = event.aggressor_direction,
         .price = event.price,
@@ -44,6 +46,7 @@ private:
         .recipient_order_id = event.recipient_order_id,
     });
     report_generator_sink_.push(report::Trade{
+        .origin_time = event.origin_time,
         .security_id = event.security_id,
         .aggressor_direction = event.aggressor_direction,
         .price = event.price,
@@ -56,29 +59,32 @@ private:
     });
   }
 
-  void process_event(engine_events::OrderBookEntry&& event) {
+  void process_event(const engine_events::OrderBookEntry& event) {
     market_data_sink_.push(market_events::BookOrderEntry{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
         .direction = event.direction,
         .price = event.price,
         .quantity = event.quantity,
     });
-    report_generator_sink_.push(std::move(event));
+    report_generator_sink_.push(event);
   }
 
-  void process_event(engine_events::OrderFilled&& event) {
+  void process_event(const engine_events::OrderFilled& event) {
     if (event.type == engine_events::FilledType::PASSIVE_FILL) {
       market_data_sink_.push(market_events::BookOrderDeletion{
+          .origin_time = event.origin_time,
           .order_id = event.order_id,
           .security_id = event.security_id,
       });
     }
-    report_generator_sink_.push(std::move(event));
+    report_generator_sink_.push(event);
   }
 
-  void process_event(engine_events::OrderReduced&& event) {
+  void process_event(const engine_events::OrderReduced& event) {
     market_data_sink_.push(market_events::BookOrderChange{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
         .direction = event.direction,
@@ -87,29 +93,31 @@ private:
     });
   }
 
-  void process_event(engine_events::OrderExpired&& event) { report_generator_sink_.push(std::move(event)); }
+  void process_event(const engine_events::OrderExpired& event) { report_generator_sink_.push(event); }
 
-  void process_event(engine_events::OrderCancelled&& event) {
+  void process_event(const engine_events::OrderCancelled& event) {
     market_data_sink_.push(market_events::BookOrderDeletion{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
     });
-    report_generator_sink_.push(std::move(event));
+    report_generator_sink_.push(event);
   }
 
-  void process_event(engine_events::OrderRejected&& event) { report_generator_sink_.push(std::move(event)); }
+  void process_event(const engine_events::OrderRejected& event) { report_generator_sink_.push(event); }
 
-  void process_event(engine_events::CancellationRejected&& event) { report_generator_sink_.push(std::move(event)); }
+  void process_event(const engine_events::CancellationRejected& event) { report_generator_sink_.push(event); }
 
-  void process_event(engine_events::ReplacementAccepted&& event) {
+  void process_event(const engine_events::ReplacementAccepted& event) {
     market_data_sink_.push(market_events::BookOrderDeletion{
+        .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
     });
-    report_generator_sink_.push(std::move(event));
+    report_generator_sink_.push(event);
   }
 
-  void process_event(engine_events::ReplacementRejected&& event) { report_generator_sink_.push(std::move(event)); }
+  void process_event(const engine_events::ReplacementRejected& event) { report_generator_sink_.push(event); }
 
   MDSinkType& market_data_sink_;
   ORSinkType& report_generator_sink_;

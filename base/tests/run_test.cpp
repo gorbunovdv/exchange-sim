@@ -29,6 +29,10 @@ TEST(Run, MissingLoggingType) {
 
   static constexpr std::string_view constJsonConfigFormat = R"custom_delimiter(
     {{
+      "cpu_cores": {{
+        "shared_core": 0,
+        "dedicated_cores": []
+      }},
       "logging": {{
         "log_level": "info",
         "path": "{}",
@@ -55,6 +59,10 @@ TEST(Run, IncorrectLogLevel) {
 
   static constexpr std::string_view constJsonConfigFormat = R"custom_delimiter(
     {{
+      "cpu_cores": {{
+        "shared_core": 0,
+        "dedicated_cores": []
+      }},
       "logging": {{
         "type": "file",
         "log_level": "info1",
@@ -83,6 +91,10 @@ TEST(Run, BasicTest) {
 
   static constexpr std::string_view constJsonConfigFormat = R"custom_delimiter(
     {{
+      "cpu_cores": {{
+        "shared_core": 0,
+        "dedicated_cores": []
+      }},
       "logging": {{
         "type": "file",
         "log_level": "info",
@@ -97,7 +109,7 @@ TEST(Run, BasicTest) {
 
   char* argv[] = {nullptr, config_file_path_string.data()};
 
-  auto config = read_config_and_initialize_logging(std::span(argv, argv + 2));
+  auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + 2));
   ASSERT_TRUE(config.contains("logging"));
   EXPECT_EQ(config["logging"]["type"].as<std::string>(), "file");
   EXPECT_EQ(config["logging"]["log_level"].as<std::string>(), "info");
@@ -115,7 +127,7 @@ TEST(Run, BasicTest) {
   EXPECT_EQ(lines[0], "INFO root Initialized logging backend");
 
   static constexpr std::string_view constLine1Format =
-      R"custom_delimiter(INFO root config={{"logging":{{"type":"file","log_level":"info","path":"{}","format":"%(log_level) %(logger) %(message)"}}}})custom_delimiter";
+      R"custom_delimiter(INFO root config={{"cpu_cores":{{"shared_core":0,"dedicated_cores":[]}},"logging":{{"type":"file","log_level":"info","path":"{}","format":"%(log_level) %(logger) %(message)"}}}})custom_delimiter";
 
   EXPECT_EQ(lines[1], std::vformat(constLine1Format, std::make_format_args(log_file_path_string)));
 

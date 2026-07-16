@@ -32,7 +32,9 @@ const uint64_t& rdtsc_frequency();
 
 class Ticks {
 public:
-  explicit Ticks(uint64_t ticks = 0): ticks_(ticks) {}
+  using Underlying = std::uint64_t;
+
+  constexpr explicit Ticks(uint64_t ticks = 0): ticks_(ticks) {}
 
   static Ticks rdtsc() noexcept { return Ticks(__rdtsc()); }
 
@@ -53,6 +55,8 @@ public:
 
   uint64_t ticks() const { return ticks_; }
 
+  bool operator==(const Ticks& other) const = default;
+
   friend Ticks operator+(const Ticks& lhs, const Ticks& rhs) { return Ticks(lhs.ticks_ + rhs.ticks_); }
 
   friend Ticks operator-(const Ticks& lhs, const Ticks& rhs) { return Ticks(lhs.ticks_ - rhs.ticks_); }
@@ -65,8 +69,13 @@ public:
     return Ticks(lhs.ticks_ - rhs.count() * rdtsc_frequency() / 1000);
   }
 
+  friend bool operator<(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ < rhs.ticks_; }
+  friend bool operator>(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ > rhs.ticks_; }
+  friend bool operator<=(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ <= rhs.ticks_; }
+  friend bool operator>=(const Ticks& lhs, const Ticks& rhs) { return lhs.ticks_ >= rhs.ticks_; }
+
 private:
-  uint64_t ticks_;
+  Underlying ticks_;
 };
 
 }  // namespace exchange_sim

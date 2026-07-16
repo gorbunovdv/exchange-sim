@@ -34,6 +34,29 @@ Early work in progress. Current milestone (MVP): single-threaded matching engine
 
     just build
 
+## Benchmark
+
+Use the release preset and a config:
+
+    just benchmark single_threaded_callback_app configs/dmitrys-ubuntu.json
+
+The recipe rebuilds all the code from scratch, runs the config patch step, starts the
+application for up to 60 seconds via `systemd-run` using the CPU settings from
+the config, then runs both statistics calculators. Journal files and calculated
+latencies of each request are written to the paths from the config, by default under
+`./results/`. Script prints the results to the console.
+
+To use another CMake preset pass it as the third argument:
+
+    just benchmark single_threaded_callback_app configs/default.json clang-release
+
+For stable measurements run this on Linux after applying CPU isolation and
+performance settings:
+
+    sudo just apply-core-isol-and-perf
+
+The benchmark must be run on a machine with isolated cores and performance settings applied.
+
 ## Restrictions
 
 - Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. It will not be tested in CI and it should be used for development purposes only.

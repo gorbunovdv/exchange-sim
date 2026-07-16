@@ -9,9 +9,9 @@ include(GoogleTest)
 
 add_executable(loggable_class_test tests/test_loggable_class.cpp)
 target_link_libraries(loggable_class_test PUBLIC logging gtest::gtest)
-gtest_discover_tests(loggable_class_test)
+gtest_discover_tests(loggable_class_test DISCOVERY_MODE PRE_TEST)
 
 add_executable(logging_backend_test tests/test_logging_backend.cpp)
 target_link_libraries(logging_backend_test PUBLIC logging gtest::gtest)
-gtest_discover_tests(logging_backend_test)
+gtest_discover_tests(logging_backend_test DISCOVERY_MODE PRE_TEST)
 

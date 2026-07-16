@@ -2,6 +2,7 @@
 
 #include "base/processor.h"
 #include "base/sink.h"
+#include "base/time/rdtsc.h"
 
 #include "domain/security.h"
 #include "domain/types.h"
@@ -13,6 +14,7 @@
 namespace exchange_sim::engine_events {
 
 struct OrderAccepted {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -26,6 +28,7 @@ struct OrderAccepted {
 };
 
 struct Trade {
+  Ticks origin_time;
   SecurityID security_id;
   Direction aggressor_direction;
   Price price;
@@ -42,6 +45,7 @@ struct Trade {
 };
 
 struct OrderBookEntry {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -56,6 +60,7 @@ struct OrderBookEntry {
 enum class FilledType : std::uint8_t { PASSIVE_FILL, AGGRESSIVE_FILL };
 
 struct OrderFilled {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -68,6 +73,7 @@ struct OrderFilled {
 };
 
 struct OrderReduced {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -82,6 +88,7 @@ struct OrderReduced {
 enum class ExpirationReason : std::uint8_t { IOC_REMAINDER_EXPIRED };
 
 struct OrderExpired {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -92,6 +99,7 @@ struct OrderExpired {
 };
 
 struct OrderCancelled {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -111,6 +119,7 @@ enum class OrderRejectedReason : std::uint8_t {
 };
 
 struct OrderRejected {
+  Ticks origin_time;
   SecurityID security_id;
   ClientID client_id;
   ClientOrderID client_order_id;
@@ -122,6 +131,7 @@ struct OrderRejected {
 enum class CancellationRejectedReason : std::uint8_t { SECURITY_NOT_FOUND, ORDER_NOT_FOUND };
 
 struct CancellationRejected {
+  Ticks origin_time;
   ClientID client_id;
   ClientOrderID client_order_id;
   ClientOrderID client_cancellation_id;
@@ -142,6 +152,7 @@ enum class ReplacementRejectedReason : std::uint8_t {
 };
 
 struct ReplacementAccepted {
+  Ticks origin_time;
   ExchangeOrderID order_id;
   ExchangeOrderID new_order_id;
   ClientID client_id;
@@ -156,6 +167,7 @@ struct ReplacementAccepted {
 };
 
 struct ReplacementRejected {
+  Ticks origin_time;
   ClientID client_id;
   ClientOrderID client_order_id;
   ClientOrderID client_replacement_id;

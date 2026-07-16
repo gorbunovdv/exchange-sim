@@ -3,4 +3,4 @@ target_link_libraries(simple_order_generator PUBLIC base domain)
 
 add_executable(order_storage_test tests/order_storage_test.cpp)
 target_link_libraries(order_storage_test PUBLIC simple_order_generator gtest::gtest)
-gtest_discover_tests(order_storage_test)
+gtest_discover_tests(order_storage_test DISCOVERY_MODE PRE_TEST)

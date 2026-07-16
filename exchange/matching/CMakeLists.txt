@@ -5,8 +5,8 @@ target_link_libraries(matching PUBLIC base domain)
 
 add_executable(risk_checker_test tests/risk_checker_test.cpp)
 target_link_libraries(risk_checker_test PUBLIC matching gtest::gtest)
-gtest_discover_tests(risk_checker_test)
+gtest_discover_tests(risk_checker_test DISCOVERY_MODE PRE_TEST)
 
 add_executable(matching_engine_test tests/matching_engine_test.cpp)
 target_link_libraries(matching_engine_test PUBLIC matching gtest::gtest)
-gtest_discover_tests(matching_engine_test)
+gtest_discover_tests(matching_engine_test DISCOVERY_MODE PRE_TEST)

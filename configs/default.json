@@ -1,4 +1,8 @@
 {
+  "cpu_cores": {
+    "shared_core": 0,
+    "dedicated_cores": [1]
+  },
   "securities": [
     {
       "symbol": "EURUSD",
@@ -27,12 +31,17 @@
     "min_active_orders_by_security": 1,
     "max_active_orders_by_security": 5
   },
+  "journaling": {
+    "market_events": "./results/market_data.bin",
+    "requests": "./results/requests.bin",
+    "reports": "./results/reports.bin"
+  },
   "matching_engine": {
   },
-  "market_data_generator": {
-  },
-  "report_generator": {
-  },
   "exchange_dispatcher": {
+  },
+  "calc_stats": {
+    "output_file": "./results/stats.json",
+    "requests_to_skip": 1000
   }
 }

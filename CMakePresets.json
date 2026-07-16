@@ -35,6 +35,17 @@
         "CONAN_BUILD_PROFILE": "${sourceDir}/conan/profiles/gcc.profile"
       }
     },
+    {
+      "name": "mac-clang",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CONAN_HOST_PROFILE": "${sourceDir}/conan/profiles/mac-clang.profile",
+        "CONAN_BUILD_PROFILE": "${sourceDir}/conan/profiles/mac-clang.profile"
+      }
+    },
 
     {
       "name": "clang-debug",
@@ -112,7 +123,7 @@
     {
       "name": "mac-clang-debug-asan",
       "displayName": "Mac Clang Debug + ASan/UBSan",
-      "inherits": "base",
+      "inherits": "mac-clang",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
         "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
@@ -120,6 +131,15 @@
         "CONAN_BUILD_PROFILE": "${sourceDir}/conan/profiles/mac-clang.profile",
         "CMAKE_BUILD_TYPE": "Debug",
         "SANITIZER": "address"
+      }
+    },
+    {
+      "name": "mac-clang-release",
+      "displayName": "Mac Clang Release",
+      "inherits": "mac-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SANITIZER": "none"
       }
     }
   ],
@@ -160,6 +180,10 @@
     {
       "name": "mac-clang-debug-asan",
       "configurePreset": "mac-clang-debug-asan"
+    },
+    {
+      "name": "mac-clang-release",
+      "configurePreset": "mac-clang-release"
     }
   ]
 }
