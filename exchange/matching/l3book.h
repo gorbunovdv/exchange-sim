@@ -7,19 +7,71 @@
 #include "exchange/domain/requests.h"
 #include "exchange/matching/risk_checker.h"
 
-#include <magic_enum/magic_enum_containers.hpp>
-
-#include <list>
-#include <map>
-
 namespace exchange_sim {
 
-class SimpleL3Book {
+template<template<typename> class BookContainerType>
+class L3Book {
 public:
-  explicit SimpleL3Book(
-      const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter);
+  explicit L3Book(
+      const Security& security, Counter<ExchangeOrderID>& order_id_counter, Counter<ExchangeTradeID>& trade_id_counter):
+      security_(security),
+      risk_checker_(security),
+      order_id_counter_(order_id_counter),
+      trade_id_counter_(trade_id_counter) {}
 
   void add(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
+    if (request.direction == Direction::BUY) {
+      add_impl<Direction::BUY>(request, sink);
+    } else {
+      add_impl<Direction::SELL>(request, sink);
+    }
+  }
+
+  void replace(const request::OrderReplaceRequest& request, engine_events::Sink auto& sink) {
+    if (request.direction == Direction::BUY) {
+      replace_impl<Direction::BUY>(request, sink);
+    } else {
+      replace_impl<Direction::SELL>(request, sink);
+    }
+  }
+
+  void cancel(const request::OrderCancelRequest& request, engine_events::Sink auto& sink) {
+    if (auto order_opt = book_container_.extract_order(request.client_id, request.client_order_id);
+        order_opt.has_value()) {
+      auto order = order_opt.value();
+      sink.push(engine_events::OrderCancelled{
+          .origin_time = request.origin_time,
+          .order_id = order.order_id,
+          .client_id = request.client_id,
+          .client_order_id = order.client_order_id,
+          .client_cancellation_id = request.client_cancellation_id,
+          .security_id = security_.security_id,
+      });
+    } else {
+      sink.push(engine_events::CancellationRejected{
+          .origin_time = request.origin_time,
+          .client_id = request.client_id,
+          .client_order_id = request.client_order_id,
+          .client_cancellation_id = request.client_cancellation_id,
+          .security_id = security_.security_id,
+          .reason = engine_events::CancellationRejectedReason::ORDER_NOT_FOUND,
+      });
+    }
+  }
+
+private:
+  struct ActiveOrder {
+    Ticks origin_time;
+    Direction direction;
+    ExchangeOrderID order_id;
+    ClientID client_id;
+    ClientOrderID client_order_id;
+    Price price;
+    Amount quantity;
+  };
+
+  template<Direction current_order_direction>
+  void add_impl(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_events::OrderRejected{
           .origin_time = request.origin_time,
@@ -30,7 +82,7 @@ public:
       });
       return;
     }
-    if (active_orders_.contains(std::make_pair(request.client_id, request.client_order_id))) {
+    if (book_container_.contains(request.client_id, request.client_order_id)) {
       sink.push(engine_events::OrderRejected{
           .origin_time = request.origin_time,
           .security_id = security_.security_id,
@@ -60,7 +112,7 @@ public:
         .price = current_order.price,
         .quantity = current_order.quantity,
     });
-    current_order = fill_order_and_place_in_book(current_order, request.time_in_force, sink);
+    current_order = fill_order_and_place_in_book<current_order_direction>(current_order, request.time_in_force, sink);
     if (current_order.quantity != 0 && request.time_in_force != OrderTimeInForce::IOC) {
       sink.push(engine_events::OrderBookEntry{
           .origin_time = request.origin_time,
@@ -95,7 +147,8 @@ public:
     }
   }
 
-  void replace(const request::OrderReplaceRequest& request, engine_events::Sink auto& sink) {
+  template<Direction current_order_direction>
+  void replace_impl(const request::OrderReplaceRequest& request, engine_events::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
       sink.push(engine_events::ReplacementRejected{
           .origin_time = request.origin_time,
@@ -108,7 +161,7 @@ public:
       return;
     }
     if (request.client_order_id != request.client_replacement_id &&
-        active_orders_.contains(std::make_pair(request.client_id, request.client_replacement_id))) {
+        book_container_.contains(request.client_id, request.client_replacement_id)) {
       sink.push(engine_events::ReplacementRejected{
           .origin_time = request.origin_time,
           .client_id = request.client_id,
@@ -119,7 +172,7 @@ public:
       });
       return;
     }
-    if (auto current_order_opt = extract_order(request.client_id, request.client_order_id);
+    if (auto current_order_opt = book_container_.extract_order(request.client_id, request.client_order_id);
         current_order_opt.has_value()) {
       auto current_order = current_order_opt.value();
       ExchangeOrderID new_order_id = generate_order_id();
@@ -141,7 +194,8 @@ public:
       current_order.price = request.price;
       current_order.quantity = request.quantity;
       current_order.client_order_id = request.client_replacement_id;
-      current_order = fill_order_and_place_in_book(current_order, OrderTimeInForce::LIMIT, sink);
+      current_order =
+          fill_order_and_place_in_book<current_order_direction>(current_order, OrderTimeInForce::LIMIT, sink);
       if (current_order.quantity != 0) {
         sink.push(engine_events::OrderBookEntry{
             .origin_time = request.origin_time,
@@ -177,76 +231,30 @@ public:
     }
   }
 
-  void cancel(const request::OrderCancelRequest& request, engine_events::Sink auto& sink) {
-    if (auto order_opt = extract_order(request.client_id, request.client_order_id); order_opt.has_value()) {
-      auto order = order_opt.value();
-      sink.push(engine_events::OrderCancelled{
-          .origin_time = request.origin_time,
-          .order_id = order.order_id,
-          .client_id = request.client_id,
-          .client_order_id = order.client_order_id,
-          .client_cancellation_id = request.client_cancellation_id,
-          .security_id = security_.security_id,
-      });
-    } else {
-      sink.push(engine_events::CancellationRejected{
-          .origin_time = request.origin_time,
-          .client_id = request.client_id,
-          .client_order_id = request.client_order_id,
-          .client_cancellation_id = request.client_cancellation_id,
-          .security_id = security_.security_id,
-          .reason = engine_events::CancellationRejectedReason::ORDER_NOT_FOUND,
-      });
-    }
-  }
-
-private:
-  struct ActiveOrder {
-    Ticks origin_time;
-    Direction direction;
-    ExchangeOrderID order_id;
-    ClientID client_id;
-    ClientOrderID client_order_id;
-    Price price;
-    Amount quantity;
-  };
-
-  std::optional<ActiveOrder> extract_order(ClientID client_id, ClientOrderID client_order_id);
-
+  template<Direction current_order_direction>
   ActiveOrder fill_order_and_place_in_book(
       ActiveOrder current_order, OrderTimeInForce time_in_force, engine_events::Sink auto& sink) {
-    Direction opposite_direction = current_order.direction == Direction::BUY ? Direction::SELL : Direction::BUY;
-    auto& direction_book = book_[current_order.direction];
-    auto& opposite_direction_book = book_[opposite_direction];
-    if (current_order.direction == Direction::BUY) {
-      while (current_order.quantity > 0 && !opposite_direction_book.empty() &&
-          opposite_direction_book.begin()->first <= current_order.price) {
-        current_order = fill_order_with_level(current_order, opposite_direction_book.begin()->second, sink);
-        if (opposite_direction_book.begin()->second.empty()) {
-          opposite_direction_book.erase(opposite_direction_book.begin());
-        }
-      }
-    } else if (current_order.direction == Direction::SELL) {
-      while (current_order.quantity > 0 && !opposite_direction_book.empty() &&
-          opposite_direction_book.rbegin()->first >= current_order.price) {
-        current_order = fill_order_with_level(current_order, opposite_direction_book.rbegin()->second, sink);
-        if (opposite_direction_book.rbegin()->second.empty()) {
-          opposite_direction_book.erase(std::prev(opposite_direction_book.end()));
-        }
+    constexpr Direction opposite_current_order_direction =
+        current_order_direction == Direction::BUY ? Direction::SELL : Direction::BUY;
+    auto& opposite_direction_book = book_container_.template opposite_half<current_order_direction>();
+    while (current_order.quantity > 0 && !opposite_direction_book.empty() &&
+        !opposite_direction_book.key_comp()(current_order.price, opposite_direction_book.begin()->first)) {
+      current_order = fill_order_with_level<opposite_current_order_direction>(
+          current_order, opposite_direction_book.begin()->second, sink);
+      if (opposite_direction_book.begin()->second.empty()) {
+        opposite_direction_book.erase(opposite_direction_book.begin());
       }
     }
     if (current_order.quantity != 0 && time_in_force != OrderTimeInForce::IOC) {
-      direction_book[current_order.price].emplace_back(current_order);
-      active_orders_.emplace(std::make_pair(current_order.client_id, current_order.client_order_id),
-          std::prev(direction_book.at(current_order.price).end()));
+      book_container_.template push_back<current_order_direction>(current_order);
     }
     return current_order;
   }
 
+  template<Direction opposite_current_order_direction>
   [[nodiscard]]
-  ActiveOrder fill_order_with_level(ActiveOrder current_order,
-      std::list<ActiveOrder>& opposite_direction_book_level,
-      engine_events::Sink auto& sink) {
+  ActiveOrder fill_order_with_level(
+      ActiveOrder current_order, auto& opposite_direction_book_level, engine_events::Sink auto& sink) {
     while (current_order.quantity > 0 && !opposite_direction_book_level.empty()) {
       auto& opposite_order = opposite_direction_book_level.front();
       Amount quantity_to_fill = std::min(current_order.quantity, opposite_order.quantity);
@@ -277,9 +285,7 @@ private:
             .price = opposite_order.price,
             .type = engine_events::FilledType::PASSIVE_FILL,
         });
-        active_orders_.erase(std::make_pair(
-            opposite_direction_book_level.front().client_id, opposite_direction_book_level.front().client_order_id));
-        opposite_direction_book_level.pop_front();
+        book_container_.template erase_front<opposite_current_order_direction>();
       } else {
         sink.push(engine_events::OrderReduced{
             .origin_time = current_order.origin_time,
@@ -290,7 +296,6 @@ private:
             .direction = opposite_order.direction,
             .price = opposite_order.price,
             .remaining_quantity = opposite_order.quantity,
-
         });
       }
     }
@@ -303,13 +308,7 @@ private:
 
   const Security& security_;
   RiskChecker risk_checker_;
-  magic_enum::containers::array<Direction, std::map<Price, std::list<ActiveOrder>>> book_;
-
-  using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-    return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
-  });
-
-  std::unordered_map<std::pair<ClientID, ClientOrderID>, std::list<ActiveOrder>::iterator, PairHash> active_orders_;
+  BookContainerType<ActiveOrder> book_container_;
 
   Counter<ExchangeOrderID>& order_id_counter_;
   Counter<ExchangeTradeID>& trade_id_counter_;

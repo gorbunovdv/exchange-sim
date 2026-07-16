@@ -7,13 +7,13 @@
 
 #include "exchange/domain/engine_events.h"
 #include "exchange/domain/requests.h"
-#include "exchange/matching/simple_l3book.h"
+#include "exchange/matching/l3book.h"
 
 #include <glaze/glaze.hpp>
 
 namespace exchange_sim {
 
-template<engine_events::Sink SinkType>
+template<template<typename> class BookContainer, engine_events::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
   explicit MatchingEngine(const glz::generic&, SecurityStorage& security_storage, SinkType& sink):
@@ -77,7 +77,7 @@ private:
 
   SecurityStorage& security_storage_;
   SinkType& sink_;
-  StrongTypeIndexedVector<SecurityID, SimpleL3Book> books_;
+  StrongTypeIndexedVector<SecurityID, L3Book<BookContainer>> books_;
 
   Counter<ExchangeOrderID> order_id_counter_;
   Counter<ExchangeTradeID> trade_id_counter_;
