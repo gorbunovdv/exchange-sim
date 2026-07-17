@@ -1,6 +1,11 @@
 #pragma once
 
+#include "domain/types.h"
+
+#include "exchange/domain/types.h"
+
 #include <list>
+#include <map>
 
 namespace exchange_sim {
 
