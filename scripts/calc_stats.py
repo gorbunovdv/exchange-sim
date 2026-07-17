@@ -25,7 +25,7 @@ def load_config(config_path):
     try:
         with open(config_path, 'r') as f:
             return json.load(f)
-    except FileNotFoundError, e:
+    except FileNotFoundError as e:
         print(f"Error: Could not find '{config_path}'", file=sys.stderr)
         raise e
 
