@@ -46,7 +46,7 @@ def patch_config(path, shared, dedicated, dry_run):
         print("No changes needed")
         return
 
-    data["isolated"] = desired
+    data["cpu_cores"] = desired
     print("Desired isolated CPUs:", json.dumps(desired))
 
     if dry_run:
