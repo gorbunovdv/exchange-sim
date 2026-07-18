@@ -5,11 +5,23 @@
 #include "domain/security.h"
 
 #include "exchange/domain/requests.h"
+#include "exchange/matching/book_container_concept.h"
 #include "exchange/matching/risk_checker.h"
 
 namespace exchange_sim {
 
+struct ActiveOrder {
+  Ticks origin_time;
+  Direction direction;
+  ExchangeOrderID order_id;
+  ClientID client_id;
+  ClientOrderID client_order_id;
+  Price price;
+  Amount quantity;
+};
+
 template<template<typename> class BookContainerType>
+  requires BookContainer<BookContainerType<ActiveOrder>>
 class L3Book {
 public:
   explicit L3Book(
@@ -60,16 +72,6 @@ public:
   }
 
 private:
-  struct ActiveOrder {
-    Ticks origin_time;
-    Direction direction;
-    ExchangeOrderID order_id;
-    ClientID client_id;
-    ClientOrderID client_order_id;
-    Price price;
-    Amount quantity;
-  };
-
   template<Direction current_order_direction>
   void add_impl(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {

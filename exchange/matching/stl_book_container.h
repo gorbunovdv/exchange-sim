@@ -12,13 +12,14 @@ namespace exchange_sim {
 template<typename ActiveOrder>
 class StlL3BookLevel {
 public:
-  using iterator = std::list<ActiveOrder>::iterator;
+  using OrderType = ActiveOrder;
+  using iterator = std::list<OrderType>::iterator;
 
   bool empty() const { return level_.empty(); }
 
   auto& front() { return level_.front(); }
 
-  iterator push_back(const ActiveOrder& order) {
+  iterator push_back(const OrderType& order) {
     level_.push_back(order);
     return std::prev(level_.end());
   }
@@ -28,19 +29,20 @@ public:
   void erase(iterator iterator) { level_.erase(iterator); }
 
 private:
-  std::list<ActiveOrder> level_;
+  std::list<OrderType> level_;
 };
 
 template<typename ActiveOrder>
 class StlL3BookContainer {
 public:
-  using BookLevel = StlL3BookLevel<ActiveOrder>;
+  using OrderType = ActiveOrder;
+  using BookLevelType = StlL3BookLevel<ActiveOrder>;
 
   template<typename Comparator>
-  using HalfBook = std::map<Price, BookLevel, Comparator>;
+  using HalfBookType = std::map<Price, BookLevelType, Comparator>;
 
-  using BuyBook = HalfBook<std::greater<Price>>;
-  using SellBook = HalfBook<std::less<Price>>;
+  using BuyBook = HalfBookType<std::greater<Price>>;
+  using SellBook = HalfBookType<std::less<Price>>;
 
   bool contains(ClientID client_id, ClientOrderID order_id) const {
     return active_orders_.contains(std::make_pair(client_id, order_id));
@@ -65,7 +67,7 @@ public:
   }
 
   template<Direction direction>
-  void push_back(const ActiveOrder& order) {
+  void push_back(const OrderType& order) {
     active_orders_.emplace(
         std::make_pair(order.client_id, order.client_order_id), half<direction>()[order.price].push_back(order));
   }
@@ -78,13 +80,13 @@ public:
     current_level.erase_front();
   }
 
-  std::optional<ActiveOrder> extract_order(ClientID client_id, ClientOrderID order_id) {
+  std::optional<OrderType> extract_order(ClientID client_id, ClientOrderID order_id) {
     auto iterator = active_orders_.find(std::make_pair(client_id, order_id));
     if (iterator == active_orders_.end()) {
       return std::nullopt;
     }
     auto order_iterator = iterator->second;
-    ActiveOrder current_order = *order_iterator;
+    OrderType current_order = *order_iterator;
     active_orders_.erase(iterator);
     if (current_order.direction == Direction::BUY) {
       erase_from_level<Direction::BUY>(current_order.price, order_iterator);
@@ -100,7 +102,7 @@ private:
   });
 
   template<Direction direction>
-  void erase_from_level(Price price, StlL3BookLevel<ActiveOrder>::iterator iterator) {
+  void erase_from_level(Price price, StlL3BookLevel<OrderType>::iterator iterator) {
     auto it = half<direction>().find(price);
     it->second.erase(iterator);
     if (it->second.empty()) {
@@ -110,7 +112,7 @@ private:
 
   BuyBook buy_;
   SellBook sell_;
-  std::unordered_map<std::pair<ClientID, ClientOrderID>, typename BookLevel::iterator, PairHash> active_orders_;
+  std::unordered_map<std::pair<ClientID, ClientOrderID>, typename BookLevelType::iterator, PairHash> active_orders_;
 };
 
 }  // namespace exchange_sim
