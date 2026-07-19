@@ -1,4 +1,5 @@
 #pragma once
+#include "base/indexed_map.h"
 #include "base/logging/logging_backend.h"
 
 #include "domain/security_storage.h"
@@ -7,7 +8,6 @@
 #include "exchange/domain/requests.h"
 #include "exchange/domain/types.h"
 
-#include <list>
 #include <ranges>
 
 namespace exchange_sim {
@@ -20,6 +20,7 @@ struct Order {
   enum class State : std::uint8_t { SENT, ACCEPTED, ACTIVE, CANCEL_SENT, REPLACE_SENT };
 
   State state;
+  bool filled;
 };
 
 constexpr std::string_view format_as(Order::State state) {
@@ -43,35 +44,25 @@ public:
   void handle(const report::ReplacementAccepted& report);
   void handle(const report::ReplacementRejected& report);
 
-  bool empty() const { return size() == 0; }
-
-  size_t size() const {
-    return std::ranges::count_if(orders_, [](const auto& order) { return order.state == Order::State::ACTIVE; });
-  }
-
-  size_t pending_transactions() const {
-    return std::ranges::count_if(orders_, [](const auto& order) {
-      return order.state == Order::State::SENT || order.state == Order::State::ACCEPTED ||
-          order.state == Order::State::CANCEL_SENT || order.state == Order::State::REPLACE_SENT;
-    });
-  }
-
-  const Order& operator[](size_t index) const;
+  size_t pending_transactions() const { return pending_transactions_count_; }
 
   const auto& orders() const { return orders_; }
 
+  const auto& active_orders() const { return active_orders_; }
+
 private:
-  std::list<Order>::iterator find_order_or_end(ClientID client_id, ClientOrderID client_order_id);
-
-  std::list<Order>::iterator find_order(ClientID client_id, ClientOrderID client_order_id);
-
-  std::list<Order> orders_;
-
   using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
     return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
   });
 
-  std::unordered_map<std::pair<ClientID, ClientOrderID>, decltype(orders_)::iterator, PairHash> order_map_;
+  using OrderContainer = std::unordered_map<std::pair<ClientID, ClientOrderID>, Order, PairHash>;
+  using ActiveOrderContainer = IndexedMap<std::pair<ClientID, ClientOrderID>, Order, PairHash>;
+
+  OrderContainer::iterator find_order(ClientID client_id, ClientOrderID client_order_id);
+
+  size_t pending_transactions_count_ = 0;
+  OrderContainer orders_;
+  ActiveOrderContainer active_orders_;
 };
 
 }  // namespace exchange_sim

@@ -237,7 +237,7 @@ TEST_P(OrderStorageTransitionTest, TransitionApplication) {
                                           expected.order.value().state == Order::State::CANCEL_SENT ||
                                           expected.order.value().state == Order::State::REPLACE_SENT) :
                                       0);
-    EXPECT_EQ(active_orders, storage.size());
+    EXPECT_EQ(active_orders, storage.active_orders().size());
     EXPECT_EQ(pending_transactions, storage.pending_transactions());
     if (expected.order) {
       ASSERT_TRUE(storage.orders().size() == 1);
@@ -493,12 +493,6 @@ INSTANTIATE_TEST_SUITE_P(OrderStorageTransitionFailures,
         },
         TransitionTestInput{
             .initial_state = Order::State::CANCEL_SENT,
-            .event = report::ReportType{convert_to<report::OrderFilled>(constOrderAddRequest)},
-            .expected_storage = {},
-            .test_name = "CancelSent_OrderFilled",
-        },
-        TransitionTestInput{
-            .initial_state = Order::State::CANCEL_SENT,
             .event = report::ReportType{convert_to<report::OrderExpired>(constOrderAddRequest)},
             .expected_storage = {},
             .test_name = "CancelSent_OrderExpired",
@@ -533,12 +527,6 @@ INSTANTIATE_TEST_SUITE_P(OrderStorageTransitionFailures,
             .event = report::ReportType{convert_to<report::OrderBookEntry>(constOrderAddRequest)},
             .expected_storage = {},
             .test_name = "ReplaceSent_OrderBookEntry",
-        },
-        TransitionTestInput{
-            .initial_state = Order::State::REPLACE_SENT,
-            .event = report::ReportType{convert_to<report::OrderFilled>(constOrderAddRequest)},
-            .expected_storage = {},
-            .test_name = "ReplaceSent_OrderFilled",
         },
         TransitionTestInput{
             .initial_state = Order::State::REPLACE_SENT,
