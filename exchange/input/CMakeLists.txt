@@ -1,5 +1,10 @@
 add_library(simple_order_generator order_storage.cpp order_generator_wrapper.h simple_order_generator.h)
-target_link_libraries(simple_order_generator PUBLIC base domain)
+target_link_libraries(simple_order_generator PUBLIC base exchange_domain)
+target_sources(simple_order_generator PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS ${PROJECT_SOURCE_DIR}
+    FILES order_generator_wrapper.h order_storage.h simple_order_generator.h
+)
 
 add_executable(order_storage_test tests/order_storage_test.cpp)
 target_link_libraries(order_storage_test PUBLIC simple_order_generator gtest::gtest)

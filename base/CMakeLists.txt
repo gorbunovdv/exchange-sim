@@ -8,8 +8,15 @@ add_subdirectory(logging)
 add_subdirectory(config)
 add_subdirectory(time)
 
-add_library(base run.cpp callback_sink.h counter.h macros.h noncopyable.h read_file.h callback_receiver.h temporary.h)
+add_library(base run.cpp)
 target_link_libraries(base PUBLIC config logging time threading Boost::boost cpptrace::cpptrace)
+target_sources(base PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS ${PROJECT_SOURCE_DIR}
+    FILES callback_receiver.h callback_sink.h counter.h forward_sink.h journal.h macros.h noncopyable.h processor.h
+        read_file.h run.h sink.h strong_type.h temporary.h throughput.h
+)
+
 
 add_executable(run_test tests/run_test.cpp)
 target_link_libraries(run_test PUBLIC base gtest::gtest)

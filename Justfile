@@ -41,13 +41,21 @@ build preset='clang-release':
     @just configure "{{ preset }}"
     cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}"
 
+verify-headers preset='clang-debug':
+    @just configure "{{ preset }}"
+    cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}" --target all_verify_interface_header_sets
+
 build-from-scratch preset='clang-release':
     @just clean "{{ preset }}"
     @just build "{{ preset }}"
 
-test-from-scratch preset='clang-debug-asan':
-    @just build-from-scratch "{{ preset }}"
+test preset='clang-debug-asan':
+    @just build "{{ preset }}"
     ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
+
+test-from-scratch preset='clang-debug-asan':
+    @just clean "{{ preset }}"
+    @just test "{{ preset }}"
 
 format:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file -i
@@ -56,13 +64,13 @@ format-check:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
 
 lint preset:
+    @just build "{{ preset }}"
     test -f "cmake-build-{{ preset }}/compile_commands.json"
     run-clang-tidy -p "./cmake-build-{{ preset }}/" -quiet -j "{{ CPU_COUNT }}" $(git ls-files -- '*.cpp')
 
 lint-from-scratch preset='clang-debug':
-    @just clean {{ preset }}
-    @just build {{ preset }}
-    @just lint {{ preset }}
+    @just clean "{{ preset }}"
+    @just lint "{{ preset }}"
 
 run *args:
     python3 ./scripts/run_isolated.py {{ args }} || true

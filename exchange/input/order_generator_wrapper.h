@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/counter.h"
+#include "base/journal.h"
 #include "base/throughput.h"
 
 #include "domain/security_storage.h"

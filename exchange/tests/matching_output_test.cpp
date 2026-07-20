@@ -2,6 +2,7 @@
 #include "base/callback_sink.h"
 
 #include "exchange/matching/matching_engine.h"
+#include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
 
 #include <gtest/gtest.h>
@@ -67,7 +68,8 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   CallbackReceiver<engine_events::EventType,
       ExchangeDispatcher<CallbackSink<market_events::EventType>, CallbackSink<report::ReportType>>>
       exchange_dispatcher(glz::generic{}, market_data_sink, report_generator_sink);
-  MatchingEngine matching_engine(glz::generic{}, storage, exchange_dispatcher.get_sink());
+  MatchingEngine<StlL3BookContainer, std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>> matching_engine(
+      glz::generic{}, storage, exchange_dispatcher.get_sink());
 
   for (auto request : input.requests) {
     matching_engine.process(request);
