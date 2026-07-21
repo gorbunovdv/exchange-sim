@@ -3,7 +3,7 @@
 #include "base/callback_sink.h"
 #include "base/processor.h"
 
-#include <__thread/jthread.h>
+#include <thread>
 #include <functional>
 
 namespace exchange_sim {
@@ -14,13 +14,10 @@ class ThreadReceiver {
 public:
   template<typename... Args>
   explicit ThreadReceiver(size_t queue_size, Args&&... args):
-      base_class_(std::forward<Args>(args)...),
-      sink_(queue_size, std::monostate{}),
-      thread_([this](std::stop_token stop_token) {
+      base_class_(std::forward<Args>(args)...), sink_(queue_size), thread_([this](std::stop_token stop_token) {
         while (!stop_token.stop_requested()) {
-          while (sink_.consume([this](ArgumentClass& object) {
-            base_class_.process(std::move(object));
-          })) {}
+          while (sink_.consume([this](ArgumentClass& object) { base_class_.process(std::move(object)); })) {
+          }
         }
       }) {}
 

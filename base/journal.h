@@ -85,8 +85,7 @@ public:
 
   void write(Ticks timestamp, const POD& value) {
     CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
-    queue_.produce(
-        [&](AlignedType& place) { std::construct_at(reinterpret_cast<value_type*>(&place), timestamp, value); });
+    queue_.emplace(timestamp, value);
   }
 
   template<typename Consumer>
@@ -161,7 +160,7 @@ public:
 
 private:
   void flush() {
-    queue_.consume_span([this](std::span<AlignedType> data) {
+    queue_.consume_span([this](std::span<value_type> data) {
       if (!data.empty()) {
         stream_.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(value_type));
         CHECK(stream_, "Failed to write to journal, name={}", name_);
@@ -176,7 +175,7 @@ private:
   std::fstream stream_;
   JournalMode mode_;
 
-  SPSCQueue<AlignedType> queue_;
+  SPSCQueue<value_type> queue_;
 
   Throughput throughput_;
 

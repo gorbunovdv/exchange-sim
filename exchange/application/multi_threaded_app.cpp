@@ -12,6 +12,7 @@
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/matching/matching_engine.h"
+#include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
 #include "helpers/generate_securities.h"
 
@@ -54,15 +55,15 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   using MarketDataSinkType = SPSCQueue<market_events::EventType>;
   using ReportSinkType = SPSCQueue<report::ReportType>;
 
-  MarketDataSinkType market_data_generator_sink(constQueueSize, std::monostate{});
-  ReportSinkType report_generator_sink(constQueueSize, std::monostate{});
+  MarketDataSinkType market_data_generator_sink(constQueueSize);
+  ReportSinkType report_generator_sink(constQueueSize);
 
-  ThreadReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>>
-      exchange_dispatcher(constQueueSize, config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
+  ThreadReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>> exchange_dispatcher(
+      constQueueSize, config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
 
   using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
 
-  ThreadReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine(
+  ThreadReceiver<request::RequestType, MatchingEngine<StlL3BookContainer, ExchangeDispatcherSinkType>> matching_engine(
       constQueueSize, config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
 
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
@@ -77,12 +78,10 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       config["order_generator"]);
 
   while (!stop_token.stop_requested()) {
-    bool event_consumed = market_data_generator_sink.consume([&](const market_events::EventType& event) {
-      order_generator.process(event);
-    });
-    event_consumed |= report_generator_sink.consume([&](const report::ReportType& report) {
-      order_generator.process(report);
-    });
+    bool event_consumed = market_data_generator_sink.consume(
+        [&](const market_events::EventType& event) { order_generator.process(event); });
+    event_consumed |=
+        report_generator_sink.consume([&](const report::ReportType& report) { order_generator.process(report); });
     if (!event_consumed) {
       order_generator.generate_event();
     }
