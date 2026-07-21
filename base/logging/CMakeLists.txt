@@ -3,6 +3,11 @@ find_package(magic_enum REQUIRED)
 
 add_library(logging loggable_class.cpp logging_backend.cpp)
 target_link_libraries(logging PUBLIC quill::quill magic_enum::magic_enum)
+target_sources(logging PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS ${PROJECT_SOURCE_DIR}
+    FILES loggable_class.h logging_backend.h quill_sinks.h
+)
 
 find_package(GTest REQUIRED)
 include(GoogleTest)

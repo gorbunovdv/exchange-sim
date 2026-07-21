@@ -11,6 +11,7 @@
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/matching/matching_engine.h"
+#include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
 #include "helpers/generate_securities.h"
 
@@ -87,7 +88,8 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
       report_journal,
       request_sink,
       config["order_generator"]);
-  MatchingEngine matching_engine(config["matching_engine"], security_storage, engine_event_sink);
+  MatchingEngine<StlL3BookContainer, EngineEventSinkType> matching_engine(
+      config["matching_engine"], security_storage, engine_event_sink);
   ExchangeDispatcher event_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
 
   while (!stop_token.stop_requested()) {

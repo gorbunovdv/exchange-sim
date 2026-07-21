@@ -1,16 +1,16 @@
 find_package(cpptrace REQUIRED)
 
 add_executable(single_threaded_callback_app single_threaded_callback_app.cpp)
-target_link_libraries(single_threaded_callback_app PUBLIC base domain simple_order_generator matching exchange_dispatcher)
+target_link_libraries(single_threaded_callback_app PUBLIC base exchange_domain simple_order_generator matching exchange_dispatcher)
 
 add_executable(single_threaded_event_loop_app single_threaded_event_loop_app.cpp)
-target_link_libraries(single_threaded_event_loop_app PUBLIC base domain simple_order_generator matching exchange_dispatcher)
+target_link_libraries(single_threaded_event_loop_app PUBLIC base exchange_domain simple_order_generator matching exchange_dispatcher)
 
 add_executable(empty_app empty_app.cpp)
-target_link_libraries(empty_app PUBLIC base domain simple_order_generator matching exchange_dispatcher)
+target_link_libraries(empty_app PUBLIC base exchange_domain simple_order_generator matching exchange_dispatcher)
 
 add_executable(multi_threaded_app multi_threaded_app.cpp)
 target_link_libraries(multi_threaded_app PUBLIC base domain simple_order_generator matching exchange_dispatcher)
 
 add_executable(calc_stats calc_stats.cpp)
-target_link_libraries(calc_stats PUBLIC base domain)
+target_link_libraries(calc_stats PUBLIC base exchange_domain)

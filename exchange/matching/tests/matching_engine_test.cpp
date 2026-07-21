@@ -1,6 +1,7 @@
 #include "base/callback_sink.h"
 
 #include "exchange/matching/matching_engine.h"
+#include "exchange/matching/stl_book_container.h"
 
 #include <glaze/glaze.hpp>
 #include <gtest/gtest.h>
@@ -26,7 +27,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
           .max_amount = Amount(1000),
       },
   });
-  MatchingEngine engine(glz::generic{}, storage, event_sink);
+  MatchingEngine<StlL3BookContainer, decltype(event_sink)> engine(glz::generic{}, storage, event_sink);
   engine.process(request::OrderAddRequest{
       .origin_time = Ticks{0},
       .client_id = ClientID{0},
