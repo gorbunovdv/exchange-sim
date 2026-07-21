@@ -203,10 +203,12 @@ report::ReplacementRejected convert_to<report::ReplacementRejected>(const reques
   };
 }
 
-void apply_event(OrderStorage& storage, const report::ReportType& event) {
-  std::visit(
-      boost::hof::match([](const report::Trade&) {}, [&](const auto& typed_event) { storage.handle(typed_event); }),
-      event);
+void apply_events(OrderStorage& storage, const std::vector<report::ReportType>& events) {
+  for (const auto& event : events) {
+    std::visit(
+        boost::hof::match([](const report::Trade&) {}, [&](const auto& typed_event) { storage.handle(typed_event); }),
+        event);
+  }
 }
 
 struct ExpectedOrder {
@@ -254,9 +256,7 @@ TEST_P(OrderStorageTransitionTest, TransitionApplication) {
 
   bring_order_to_state(storage, constOrderAddRequest, input.initial_state);
 
-  for (const auto& event : input.events) {
-    apply_event(storage, event);
-  }
+  apply_events(storage, input.events);
   expect_storage(storage, input.expected_storage);
 }
 
@@ -268,7 +268,7 @@ TEST_P(OrderStorageTransitionFailureTest, TransitionFailure) {
 
   bring_order_to_state(storage, constOrderAddRequest, input.initial_state);
 
-  ASSERT_THROW(apply_event(storage, input.events.front()), std::runtime_error);
+  ASSERT_THROW(apply_events(storage, input.events), std::runtime_error);
 }
 
 template<typename EventType, Order::State State, Order::State ExpectedState>
