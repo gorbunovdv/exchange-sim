@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(
-    "$<$<CONFIG:Debug>:-Og;-g>"
+    "$<$<CONFIG:Debug>:-O0;-g>"
     "$<$<CONFIG:Release>:-O3;-march=native>"
     "$<$<CONFIG:RelWithDebInfo>:-O3;-g;-march=native;-fno-omit-frame-pointer>"
 )
