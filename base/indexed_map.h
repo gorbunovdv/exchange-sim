@@ -1,37 +1,63 @@
 #pragma once
 
-#include <limits>
+#include <boost/stl_interfaces/iterator_interface.hpp>
+#include <boost/stl_interfaces/sequence_container_interface.hpp>
+
 #include <unordered_map>
 #include <vector>
 
 namespace exchange_sim {
 
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
-class IndexedMap {
+class IndexedMap : public boost::stl_interfaces::sequence_container_interface<IndexedMap<Key, Value, Hasher>> {
 public:
+  using Base = boost::stl_interfaces::sequence_container_interface<IndexedMap>;
+
   using value_type = std::pair<Key, Value>;
+  using size_type = size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
 
-  class iterator {
+  class iterator : public boost::stl_interfaces::iterator_interface<std::random_access_iterator_tag, value_type> {
   public:
-    explicit iterator(IndexedMap* container, size_t index): container_(container), index_(index) {}
-
-    value_type& operator*() const { return container_->key_value_pairs_[index_]; }
-
-    value_type* operator->() { return &(container_->key_value_pairs_[index_]); }
-
-    friend bool operator==(const iterator& a, const iterator& b) {
-      return a.container_ == b.container_ && a.index_ == b.index_;
+    iterator() {
+      BOOST_STL_INTERFACES_STATIC_ASSERT_CONCEPT(iterator, std::random_access_iterator);
+      BOOST_STL_INTERFACES_STATIC_ASSERT_ITERATOR_TRAITS(iterator,
+          std::random_access_iterator_tag,
+          std::random_access_iterator,
+          value_type,
+          reference,
+          pointer,
+          difference_type);
     }
+
+    explicit iterator(const IndexedMap* container, size_t index): container_(container), index_(index) {}
+
+    value_type& operator*() { return container_->key_value_pairs_[index_]; }
+    const value_type& operator*() const { return container_->key_value_pairs_[index_]; }
+
+    iterator& operator+=(difference_type n) {
+      index_ += n;
+      return *this;
+    }
+
+    friend difference_type operator-(const iterator& a, const iterator& b) { return a.index_ - b.index_; }
 
     friend class IndexedMap;
 
   private:
-    IndexedMap* container_;
-    size_t index_;
+    const IndexedMap* container_ = nullptr;
+    size_t index_ = 0;
   };
 
-  bool empty() const { return size() == 0; }
+  using const_iterator = iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = reverse_iterator;
 
+  bool empty() const { return size() == 0; }
   size_t size() const { return key_value_pairs_.size(); }
 
   iterator find(const Key& key) {
@@ -48,20 +74,17 @@ public:
     map_[key] = key_value_pairs_.size() - 1;
   }
 
-  void erase(const Key& key) { erase(map_.at(key)); }
+  void erase(const Key& key) { erase_at(map_.at(key)); }
+  void erase(iterator iterator) { erase_at(iterator.index_); }
 
-  void erase(iterator iterator) { erase(iterator.index_); }
+  iterator begin() const { return iterator(this, 0); }
+  iterator end() const { return iterator(this, size()); }
 
-  const Value& front() const { return key_value_pairs_.front().second; }
-
+  Value& operator[](size_t index) { return key_value_pairs_[index].second; }
   const Value& operator[](size_t index) const { return key_value_pairs_[index].second; }
 
-  auto begin() { return iterator(this, 0); }
-
-  auto end() { return iterator(this, std::numeric_limits<size_t>::max()); }
-
 private:
-  void erase(size_t index) {
+  void erase_at(size_t index) {
     map_.erase(key_value_pairs_[index].first);
     if (index < key_value_pairs_.size()) {
       std::swap(key_value_pairs_[index], key_value_pairs_.back());
