@@ -3,13 +3,14 @@
 #include "base/callback_sink.h"
 #include "base/processor.h"
 
-#include <thread>
 #include <functional>
+#include <thread>
 
 namespace exchange_sim {
 
 template<typename ArgumentClass, typename BaseClass>
   requires ProcessorOf<BaseClass, ArgumentClass>
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class ThreadReceiver {
 public:
   template<typename... Args>

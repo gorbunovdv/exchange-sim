@@ -73,8 +73,8 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
   Journal<request::RequestType> request_journal(
       "Journal<request::RequestType>", config["journaling"]["requests"].as<std::string>(), JournalMode::READ);
 
-  std::deque<typename decltype(report_journal)::value_type> current_reports;
-  std::deque<typename decltype(market_data_journal)::value_type> current_market_events;
+  std::deque<decltype(report_journal)::value_type> current_reports;
+  std::deque<decltype(market_data_journal)::value_type> current_market_events;
 
   auto report_iterator = report_journal.begin();
   auto market_data_iterator = market_data_journal.begin();

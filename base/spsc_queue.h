@@ -9,6 +9,7 @@
 namespace exchange_sim {
 
 template<typename ObjectType>
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class SPSCQueue {
 public:
   explicit SPSCQueue(size_t size): size_(size), queue_(std::allocator<ObjectType>().allocate(size)) {}
@@ -47,9 +48,7 @@ public:
     return true;
   }
 
-  bool try_push(ObjectType&& object) {
-    return try_emplace(std::move(object));
-  }
+  bool try_push(ObjectType&& object) { return try_emplace(std::move(object)); }
 
   void push(ObjectType&& object) { CHECK(try_push(std::move(object)), "Push failed, queue is full"); }
 
