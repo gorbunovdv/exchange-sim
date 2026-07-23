@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/logging/logging_backend.h"
+
 #include <boost/stl_interfaces/iterator_interface.hpp>
 #include <boost/stl_interfaces/sequence_container_interface.hpp>
 
@@ -69,9 +71,17 @@ public:
 
   bool contains(const Key& key) const { return map_.contains(key); }
 
-  void emplace(const Key& key, const Value& value) {
+  std::pair<iterator, bool> try_emplace(const Key& key, const Value& value) {
+    auto [it, added] = map_.try_emplace(key, key_value_pairs_.size());
+    if (!added) {
+      return {end(), false};
+    }
     key_value_pairs_.push_back({key, value});
-    map_[key] = key_value_pairs_.size() - 1;
+    return {iterator(this, it->second), true};
+  }
+
+  void emplace(const Key& key, const Value& value) {
+    CHECK(try_emplace(key, value).second, "Key emplaced already exists");
   }
 
   void erase(const Key& key) { erase_at(map_.at(key)); }
