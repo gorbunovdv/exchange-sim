@@ -96,7 +96,7 @@ public:
 private:
   void erase_at(size_t index) {
     map_.erase(key_value_pairs_[index].first);
-    if (index < key_value_pairs_.size()) {
+    if (index + 1 < key_value_pairs_.size()) {
       std::swap(key_value_pairs_[index], key_value_pairs_.back());
       map_[key_value_pairs_[index].first] = index;
     }
