@@ -26,7 +26,7 @@ public:
       SinkType& sink):
       stop_token_(std::move(stop_token)),
       security_storage_(security_storage),
-      active_orders_(security_storage.size()),
+      order_storage_(security_storage.size()),
       sink_(sink),
       journal_(journal) {}
 
@@ -50,7 +50,7 @@ public:
         .quantity = quantity,
     };
     if (security_storage_.has_security(security_id)) {
-      active_orders_[security_id].handle(request);
+      order_storage_[security_id].handle(request);
     }
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
@@ -67,7 +67,7 @@ public:
         .client_cancellation_id = client_cancellation_id,
         .security_id = security_id};
     if (security_storage_.has_security(security_id)) {
-      active_orders_[security_id].handle(request);
+      order_storage_[security_id].handle(request);
     }
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
@@ -94,7 +94,7 @@ public:
         .quantity = quantity,
     };
     if (security_storage_.has_security(security_id)) {
-      active_orders_[security_id].handle(request);
+      order_storage_[security_id].handle(request);
     }
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
@@ -107,7 +107,7 @@ public:
     std::visit(boost::hof::match([](const report::Trade&) {},
                    [this](const auto& report) {
                      if (security_storage_.has_security(report.security_id)) {
-                       active_orders_[report.security_id].handle(report);
+                       order_storage_[report.security_id].handle(report);
                      }
                    }),
         report);
@@ -115,7 +115,7 @@ public:
 
   const auto& security_storage() const { return security_storage_; }
 
-  const auto& active_orders() const { return active_orders_; }
+  const auto& order_storage() const { return order_storage_; }
 
   bool asked_to_stop() const { return stop_token_.stop_requested(); }
 
@@ -124,7 +124,7 @@ private:
 
   std::stop_token stop_token_;
   SecurityStorage& security_storage_;
-  StrongTypeIndexedVector<SecurityID, OrderStorage> active_orders_;
+  StrongTypeIndexedVector<SecurityID, OrderStorage> order_storage_;
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;
   Journal<request::RequestType>& journal_;

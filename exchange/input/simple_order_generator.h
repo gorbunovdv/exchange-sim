@@ -220,16 +220,16 @@ public:
   }
 
   void generate_event() {
-    if (auto it = std::ranges::find_if(interface_.active_orders(),
-            [this](const auto& pair) { return pair.size() >= max_active_orders_by_security_; });
-        it != interface_.active_orders().end()) {
-      generate_cancel_order_request(static_cast<SecurityID>(it - interface_.active_orders().begin()));
+    if (auto it = std::ranges::find_if(interface_.order_storage(),
+            [this](const auto& pair) { return pair.active_orders().size() >= max_active_orders_by_security_; });
+        it != interface_.order_storage().end()) {
+      generate_cancel_order_request(static_cast<SecurityID>(it - interface_.order_storage().begin()));
       return;
     }
-    if (auto it = std::ranges::find_if(
-            interface_.active_orders(), [this](auto& pair) { return pair.size() < min_active_orders_by_security_; });
-        it != interface_.active_orders().end()) {
-      generate_new_order_request(static_cast<SecurityID>(it - interface_.active_orders().begin()));
+    if (auto it = std::ranges::find_if(interface_.order_storage(),
+            [this](auto& pair) { return pair.active_orders().size() < min_active_orders_by_security_; });
+        it != interface_.order_storage().end()) {
+      generate_new_order_request(static_cast<SecurityID>(it - interface_.order_storage().begin()));
       return;
     }
 
@@ -265,20 +265,20 @@ private:
   }
 
   void generate_cancel_order_request(SecurityID security_id) {
-    CHECK(!interface_.active_orders()[security_id].empty(),
+    CHECK(!interface_.order_storage()[security_id].active_orders().empty(),
         "Active orders must not be empty for cancellation query, security_id={}",
         security_id.value());
-    const auto& active_orders = interface_.active_orders().at(security_id);
+    const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
     size_t order_to_cancel_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
 
     interface_.send_order_cancel_request(0, active_orders[order_to_cancel_index].client_order_id, security_id);
   }
 
   void generate_replace_order_request(SecurityID security_id) {
-    CHECK(!interface_.active_orders()[security_id].empty(),
+    CHECK(!interface_.order_storage()[security_id].active_orders().empty(),
         "Active orders must not be empty for replacement query, security_id={}",
         security_id.value());
-    const auto& active_orders = interface_.active_orders().at(security_id);
+    const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
     size_t order_to_replace_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
 
     const Security& security = interface_.security_storage().get_security(security_id);
