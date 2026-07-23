@@ -3,7 +3,6 @@
 #include "base/logging/logging_backend.h"
 
 #include <boost/stl_interfaces/iterator_interface.hpp>
-#include <boost/stl_interfaces/sequence_container_interface.hpp>
 
 #include <unordered_map>
 #include <vector>
@@ -11,10 +10,8 @@
 namespace exchange_sim {
 
 template<typename Key, typename Value, typename Hasher = std::hash<Key>>
-class IndexedMap : public boost::stl_interfaces::sequence_container_interface<IndexedMap<Key, Value, Hasher>> {
+class IndexedMap {
 public:
-  using Base = boost::stl_interfaces::sequence_container_interface<IndexedMap>;
-
   using value_type = std::pair<Key, Value>;
   using size_type = size_t;
   using difference_type = std::ptrdiff_t;
@@ -36,7 +33,7 @@ public:
           difference_type);
     }
 
-    explicit iterator(const IndexedMap* container, size_t index): container_(container), index_(index) {}
+    explicit iterator(IndexedMap* container, size_t index): container_(container), index_(index) {}
 
     value_type& operator*() { return container_->key_value_pairs_[index_]; }
     const value_type& operator*() const { return container_->key_value_pairs_[index_]; }
@@ -51,7 +48,7 @@ public:
     friend class IndexedMap;
 
   private:
-    const IndexedMap* container_ = nullptr;
+    IndexedMap* container_ = nullptr;
     size_t index_ = 0;
   };
 
@@ -74,7 +71,7 @@ public:
   std::pair<iterator, bool> try_emplace(const Key& key, const Value& value) {
     auto [it, added] = map_.try_emplace(key, key_value_pairs_.size());
     if (!added) {
-      return {end(), false};
+      return {begin(), false};
     }
     key_value_pairs_.push_back({key, value});
     return {iterator(this, it->second), true};
@@ -87,7 +84,9 @@ public:
   void erase(const Key& key) { erase_at(map_.at(key)); }
   void erase(iterator iterator) { erase_at(iterator.index_); }
 
+  iterator begin() { return iterator(this, 0); }
   iterator begin() const { return iterator(this, 0); }
+  iterator end() { return iterator(this, size()); }
   iterator end() const { return iterator(this, size()); }
 
   Value& operator[](size_t index) { return key_value_pairs_[index].second; }
