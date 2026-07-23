@@ -119,6 +119,12 @@ public:
 
   bool asked_to_stop() const { return stop_token_.stop_requested(); }
 
+  size_t pending_transactions() const {
+    return std::ranges::fold_left(order_storage_, size_t{0}, [](auto current, const auto& order_storage) {
+      return current + order_storage.pending_transactions();
+    });
+  }
+
 private:
   ClientOrderID generate_client_order_id() { return current_client_order_id_.inc(); }
 
