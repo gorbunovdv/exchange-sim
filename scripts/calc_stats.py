@@ -2,8 +2,10 @@
 
 import sys
 import json
+import ijson
 import math
 from collections import defaultdict
+from tqdm import tqdm
 
 import argparse
 
@@ -36,26 +38,24 @@ def main():
 
     config = load_config(args.config_path)
 
-    try:
-        with open(config['calc_stats']['output_file'], 'r') as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Could not find '{config['calc_stats']['output_file']}'", file=sys.stderr)
-        return
-
     groups = defaultdict(lambda: defaultdict(list))
 
     latency_fields = ['first_report', 'last_report', 'first_market_event', 'last_market_event']
 
-    for item in data:
-        msg_type = item.get('type')
-        trades_count = item.get('trades_count', 0)
-        symbol = item.get('symbol')
-        group_key = (symbol, msg_type, trades_count)
+    try:
+        with open(config['calc_stats']['output_file'], 'r') as f:
+            for item in tqdm(ijson.items(f, 'item'), mininterval=10, maxinterval=10, desc='Parsing initial json'):
+                msg_type = item.get('type')
+                trades_count = item.get('trades_count', 0)
+                symbol = item.get('symbol')
+                group_key = (symbol, msg_type, trades_count)
 
-        for field in latency_fields:
-            if field in item:
-                groups[group_key][field].append(item[field])
+                for field in latency_fields:
+                    if field in item:
+                        groups[group_key][field].append(item[field])
+    except FileNotFoundError:
+        print(f"Error: Could not find '{config['calc_stats']['output_file']}'", file=sys.stderr)
+        return
 
     percentiles = [50, 75, 90, 99]
 
