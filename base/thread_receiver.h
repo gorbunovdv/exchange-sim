@@ -17,7 +17,7 @@ public:
   explicit ThreadReceiver(
       std::string name, size_t queue_size, CoreLease lease, std::stop_source stop_source, Args&&... args):
       LoggableClass(name),
-      name_(name),
+      name_(std::move(name)),
       lease_(std::move(lease)),
       stop_source_(std::move(stop_source)),
       base_class_(std::forward<Args>(args)...),
@@ -39,7 +39,7 @@ public:
   bool ready_to_receive() { return ready_to_receive_; }
 
 private:
-  void run(std::stop_token stop_token) {
+  void run(const std::stop_token& stop_token) {
     CPPTRACE_TRY {
       auto consumer = [this](auto&& event) {
         base_class_.process(std::forward<decltype(event)>(event));
