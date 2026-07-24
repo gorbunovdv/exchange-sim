@@ -59,12 +59,22 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   ReportSinkType report_generator_sink(constQueueSize);
 
   ThreadReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>> exchange_dispatcher(
-      constQueueSize, config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
+      "ExchangeDispatcher",
+      constQueueSize,
+      runtime->core_allocator().lease_core(CoreType::DEDICATED),
+      config["exchange_dispatcher"],
+      market_data_generator_sink,
+      report_generator_sink);
 
   using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
 
   ThreadReceiver<request::RequestType, MatchingEngine<StlL3BookContainer, ExchangeDispatcherSinkType>> matching_engine(
-      constQueueSize, config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
+      "MatchingEngine",
+      constQueueSize,
+      runtime->core_allocator().lease_core(CoreType::DEDICATED),
+      config["matching_engine"],
+      security_storage,
+      exchange_dispatcher.get_sink());
 
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
@@ -76,6 +86,14 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       report_journal,
       matching_engine.get_sink(),
       config["order_generator"]);
+
+  while (!exchange_dispatcher.ready_to_receive()) {
+    std::this_thread::sleep_for(100ms);
+  }
+
+  while (!matching_engine.ready_to_receive()) {
+    std::this_thread::sleep_for(100ms);
+  }
 
   while (!stop_token.stop_requested()) {
     bool event_consumed = market_data_generator_sink.consume(
