@@ -25,8 +25,8 @@
 namespace exchange_sim {
 
 void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
-  auto dedicated_core = runtime->core_allocator().lease_core(CoreType::SHARED);
-  dedicated_core.pin_thread("run_single_threaded_callback_app");
+  auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
+  dedicated_core.pin_thread("run_multi_threaded_app");
 
   SecurityStorage security_storage(generate_securities(config));
 
@@ -50,6 +50,7 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
 
   static constexpr size_t constQueueSize = 1024;
 
+  auto stop_source = runtime->stop_source();
   auto stop_token = runtime->stop_token();
 
   using MarketDataSinkType = SPSCQueue<market_events::EventType>;
@@ -62,6 +63,7 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       "ExchangeDispatcher",
       constQueueSize,
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
+      runtime->stop_source(),
       config["exchange_dispatcher"],
       market_data_generator_sink,
       report_generator_sink);
@@ -72,6 +74,7 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       "MatchingEngine",
       constQueueSize,
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
+      runtime->stop_source(),
       config["matching_engine"],
       security_storage,
       exchange_dispatcher.get_sink());
@@ -95,13 +98,24 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
     std::this_thread::sleep_for(100ms);
   }
 
+  auto consumer = [&](auto&& event) {
+    return order_generator.process(std::forward<decltype(event)>(event));
+  };
+
+  auto consume = [&] {
+    return market_data_generator_sink.consume(consumer) || report_generator_sink.consume(consumer);
+  };
+
   while (!stop_token.stop_requested()) {
-    bool event_consumed = market_data_generator_sink.consume(
-        [&](const market_events::EventType& event) { order_generator.process(event); });
-    event_consumed |=
-        report_generator_sink.consume([&](const report::ReportType& report) { order_generator.process(report); });
-    if (!event_consumed) {
+    if (!consume()) {
       order_generator.generate_event();
+    }
+  }
+
+  Ticks latest_event = Ticks::rdtsc();
+  while (latest_event.nanoseconds_till_now() < 100ms) {
+    if (consume()) {
+      latest_event = Ticks::rdtsc();
     }
   }
 }

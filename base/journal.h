@@ -165,7 +165,9 @@ private:
         stream_.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(value_type));
         CHECK(stream_, "Failed to write to journal, name={}", name_);
         throughput_.tick(data.size());
+        return true;
       }
+      return false;
     });
   }
 

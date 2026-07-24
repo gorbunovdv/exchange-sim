@@ -16,6 +16,8 @@ public:
 
   std::stop_token stop_token() const { return stop_source_.get_token(); }
 
+  std::stop_source stop_source() const { return stop_source_; }
+
 private:
   CoreAllocator core_allocator_;
   std::stop_source stop_source_;

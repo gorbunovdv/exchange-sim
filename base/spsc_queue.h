@@ -30,11 +30,14 @@ public:
   }
 
   template<typename Consumer>
-  void consume_span(Consumer&& consumer) {
+  auto consume_span(Consumer&& consumer) {
     size_t current_head = head_.load(), current_tail = tail_.load();
     size_t last_head = current_tail <= current_head ? current_head : size_;
-    std::forward<Consumer>(consumer)(std::span{queue_ + current_tail, queue_ + last_head});
-    tail_.store(last_head % size_);
+    auto result = std::forward<Consumer>(consumer)(std::span{queue_ + current_tail, queue_ + last_head});
+    if (current_tail != last_head) {
+      tail_.store(last_head % size_);
+    }
+    return result;
   }
 
   template<typename Consumer>
