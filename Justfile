@@ -9,7 +9,7 @@ default:
 
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-pip pipx -y
+    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-pip pipx python3-ijson python3-tqdm -y
     pipx ensurepath
     pipx install conan
 
@@ -22,7 +22,7 @@ apply-core-isol-and-perf:
     apt install linux-cpupower -y
     cpupower frequency-set -g performance
 
-    echo 1 | tee /sys/devices/system/cpu/intel_pstate/no_turbo
+    echo 0 | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 
     apt install linux-tools-generic -y
     echo 'kernel.perf_event_paranoid=1' | tee /etc/sysctl.d/99-perf.conf
@@ -38,24 +38,24 @@ configure preset='clang-release':
     cmake --preset "{{ preset }}"
 
 build preset='clang-release':
-    @just configure "{{ preset }}"
+    just configure "{{ preset }}"
     cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}"
 
 verify-headers preset='clang-debug':
-    @just configure "{{ preset }}"
+    just configure "{{ preset }}"
     cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}" --target all_verify_interface_header_sets
 
 build-from-scratch preset='clang-release':
-    @just clean "{{ preset }}"
-    @just build "{{ preset }}"
+    just clean "{{ preset }}"
+    just build "{{ preset }}"
 
 test preset='clang-debug-asan':
-    @just build "{{ preset }}"
+    just build "{{ preset }}"
     ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
 test-from-scratch preset='clang-debug-asan':
-    @just clean "{{ preset }}"
-    @just test "{{ preset }}"
+    just clean "{{ preset }}"
+    just test "{{ preset }}"
 
 format:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file -i
@@ -64,13 +64,13 @@ format-check:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
 
 lint preset:
-    @just build "{{ preset }}"
+    just build "{{ preset }}"
     test -f "cmake-build-{{ preset }}/compile_commands.json"
     run-clang-tidy -p "./cmake-build-{{ preset }}/" -quiet -j "{{ CPU_COUNT }}" $(git ls-files -- '*.cpp')
 
 lint-from-scratch preset='clang-debug':
-    @just clean "{{ preset }}"
-    @just lint "{{ preset }}"
+    just clean "{{ preset }}"
+    just lint "{{ preset }}"
 
 run *args:
     python3 ./scripts/run_isolated.py {{ args }} || true
@@ -82,8 +82,8 @@ patch config_file:
     ./scripts/patch_config.py "{{ config_file }}"
 
 benchmark application config_file preset='clang-release':
-    @just build-from-scratch "{{ preset }}"
-    @just patch "{{ config_file }}"
-    @just run timeout -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
-    "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
+    just build-from-scratch "{{ preset }}"
+    just patch "{{ config_file }}"
+    just run timeout -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
+    just run "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
     ./scripts/calc_stats.py "{{ config_file }}"
