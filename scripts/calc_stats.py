@@ -2,25 +2,12 @@
 
 import argparse
 import json
-import math
+import numpy
 from collections import defaultdict
 
 import ijson
 from helpers.config import load_config
 from tqdm import tqdm
-
-
-def calculate_percentile(data, percentile):
-    if not data:
-        return 0
-    sorted_data = sorted(data)
-
-    if percentile == 0:
-        return sorted_data[0]
-
-    index = math.ceil((percentile / 100.0) * len(sorted_data)) - 1
-
-    return sorted_data[max(0, min(index, len(sorted_data) - 1))]
 
 
 latency_fields = [
@@ -60,7 +47,7 @@ def calculate_groups(path):
 
 def calculate_metrics(groups):
     results = []
-    for metric in latency_fields:
+    for metric in tqdm(latency_fields, mininterval=10, maxinterval=10, desc="Calculating metrics"):
         for group_key in sorted(groups.keys()):
             symbol, type_label, trades_count = group_key
 
@@ -68,7 +55,7 @@ def calculate_metrics(groups):
             if not values:
                 continue
 
-            current_results = [calculate_percentile(values, p) for p in percentiles]
+            current_results = numpy.percentile(values, percentiles, method="inverted_cdf").tolist()
 
             results.append(
                 {

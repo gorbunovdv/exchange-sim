@@ -90,8 +90,8 @@ act:
 
 benchmark application config_file preset='clang-release':
     just build-from-scratch "{{ preset }}"
-    ./scripts/patch_config.py "{{ config_file }}"
-    ./scripts/write_metadata.py "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
+    python3 ./scripts/patch_config.py "{{ config_file }}"
+    python3 ./scripts/write_metadata.py "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
     just run timeout -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
     just run "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
-    ./scripts/calc_stats.py "{{ config_file }}"
+    python3 ./scripts/calc_stats.py "{{ config_file }}"

@@ -47,5 +47,6 @@
   "calc_stats": {
     "output_file": "./results/requests_info.json",
     "requests_to_skip": 1000
-  }
+  },
+  "benchmark_path": "./results/bench/"
 }
