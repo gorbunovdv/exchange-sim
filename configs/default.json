@@ -36,12 +36,16 @@
     "requests": "./results/requests.bin",
     "reports": "./results/reports.bin"
   },
+  "results": {
+    "stats": "./results/stats.json",
+    "metadata": "./results/metadata.json"
+  },
   "matching_engine": {
   },
   "exchange_dispatcher": {
   },
   "calc_stats": {
-    "output_file": "./results/stats.json",
+    "output_file": "./results/requests_info.json",
     "requests_to_skip": 1000
   }
 }

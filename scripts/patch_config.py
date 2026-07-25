@@ -4,6 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
+from helpers.config import load_config
+
 SYS_ISOLATED = Path("/sys/devices/system/cpu/isolated")
 
 
@@ -31,11 +33,7 @@ def read_isolated():
 
 
 def patch_config(path, shared, dedicated, dry_run):
-    original_text = path.read_text()
-    try:
-        data = json.loads(original_text)
-    except json.JSONDecodeError as e:
-        raise Exception("Invalid JSON in config file") from e
+    data = load_config(path)
 
     current = data.get("cpu_cores")
     if current is None:

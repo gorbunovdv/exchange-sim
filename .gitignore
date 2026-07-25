@@ -5,3 +5,5 @@ build/
 results/
 .DS_Store
 .venv/
+.ruff_cache/
+**/__pycache__/
