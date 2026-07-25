@@ -19,9 +19,7 @@ def calculate_percentile(data, percentile):
 
     index = math.ceil((percentile / 100.0) * len(sorted_data)) - 1
 
-    index = max(0, min(index, len(sorted_data) - 1))
-
-    return sorted_data[index]
+    return sorted_data[max(0, min(index, len(sorted_data) - 1))]
 
 def load_config(config_path):
     try:

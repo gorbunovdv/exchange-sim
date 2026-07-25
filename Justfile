@@ -2,16 +2,21 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set export
 
 ROOT_DIR := justfile_directory()
+PATH := ROOT_DIR + "/.venv/bin:" + env_var("PATH")
 CPU_COUNT := num_cpus()
 
 default:
     @just --list
 
+venv:
+    python3 -m venv .venv
+    pip install --upgrade pip
+    pip install -r requirements.txt
+
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-pip pipx python3-ijson python3-tqdm -y
-    pipx ensurepath
-    pipx install conan
+    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
+    just venv
 
 # todo(dgorbunov): Create prerequisites check script & move to separate area
 apply-core-isol-and-perf:
