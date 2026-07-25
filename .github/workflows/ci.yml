@@ -43,9 +43,13 @@ jobs:
           path: ~/.conan2
           key: conan-${{ runner.os }}-${{ hashFiles('**/conanfile.*') }}
 
-      - name: Check clang-format
+      - name: Check format
         run: |
           just format-check
+
+      - name: Run pylint
+        run: |
+          just pylint
 
       - name: Verify compilation
         run: |

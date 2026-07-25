@@ -64,9 +64,14 @@ test-from-scratch preset='clang-debug-asan':
 
 format:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file -i
+    git ls-files -z -- '*.py' | xargs -0 -r ruff format
 
 format-check:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
+    git ls-files -z -- '*.py' | xargs -0 -r ruff format --check
+
+pylint:
+    git ls-files -z -- '*.py' | xargs -0 -r ruff check
 
 lint preset:
     just build "{{ preset }}"

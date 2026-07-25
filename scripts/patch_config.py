@@ -6,6 +6,7 @@ from pathlib import Path
 
 SYS_ISOLATED = Path("/sys/devices/system/cpu/isolated")
 
+
 def parse_cpulist(text):
     cpus = set()
     text = text.strip()
@@ -15,24 +16,26 @@ def parse_cpulist(text):
         part = part.strip()
         if not part:
             continue
-        if '-' in part:
-            first, last = map(int, part.split('-'))
+        if "-" in part:
+            first, last = map(int, part.split("-"))
             cpus.update(range(first, last + 1))
         else:
             cpus.add(int(part))
-    return list(sorted(cpus))
+    return sorted(cpus)
+
 
 def read_isolated():
     if not SYS_ISOLATED.exists():
         raise Exception("Isolated CPUs file not found")
     return parse_cpulist(SYS_ISOLATED.read_text())
 
+
 def patch_config(path, shared, dedicated, dry_run):
     original_text = path.read_text()
     try:
         data = json.loads(original_text)
-    except json.JSONDecodeError:
-        raise Exception("Invalid JSON in config file")
+    except json.JSONDecodeError as e:
+        raise Exception("Invalid JSON in config file") from e
 
     current = data.get("cpu_cores")
     if current is None:
@@ -59,8 +62,8 @@ def patch_config(path, shared, dedicated, dry_run):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('config_file', help='Path to the config file')
-    parser.add_argument('--dry-run', action='store_true', help='Do not apply changes')
+    parser.add_argument("config_file", help="Path to the config file")
+    parser.add_argument("--dry-run", action="store_true", help="Do not apply changes")
     args = parser.parse_args()
 
     cores = read_isolated()
