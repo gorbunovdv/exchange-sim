@@ -2,13 +2,12 @@
 
 import argparse
 import json
-import numpy
 from collections import defaultdict
 
 import ijson
+import numpy
 from helpers.config import load_config
 from tqdm import tqdm
-
 
 latency_fields = [
     "first_report",

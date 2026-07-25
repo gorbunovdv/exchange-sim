@@ -1,13 +1,11 @@
 #!/usr/bin/python3
 import argparse
-import os
 import shutil
 from pathlib import Path
 
 import plumbum
-
-from helpers.root_path import ROOT_PATH
 from helpers.config import load_config
+from helpers.root_path import ROOT_PATH
 from write_metadata import git_metadata
 
 
@@ -17,7 +15,7 @@ def make_single_run(config_path, config, preset, label, current_rep, app):
         plumbum.local["just"]["benchmark"][app][config_path][preset] & plumbum.FG
     dest_path = ROOT_PATH / Path(config["benchmark_path"]) / label / app / f"run_{current_rep:02d}"
     plumbum.local["mkdir"]["-p"][dest_path] & plumbum.FG
-    for _, path in config["results"].items():
+    for path in config["results"].values():
         shutil.copy(path, dest_path)
 
 
