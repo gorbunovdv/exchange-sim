@@ -113,6 +113,11 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   exchange_dispatcher.stop();
   while (consume()) {
   }
+
+  CHECK(market_data_generator_sink.empty(), "MarketDataSink must be empty");
+  CHECK(report_generator_sink.empty(), "ReportGeneratorSink must be empty");
+  CHECK(matching_engine.get_sink().empty(), "MatchingEngineSink must be empty");
+  CHECK(exchange_dispatcher.get_sink().empty(), "ExchangeDispatcherSink must be empty");
 }
 
 }  // namespace exchange_sim
