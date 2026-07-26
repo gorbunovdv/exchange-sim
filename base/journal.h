@@ -49,37 +49,7 @@ public:
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
     if (mode == JournalMode::WRITE) {
-      thread_ = std::jthread([this](const std::stop_token& token) {
-        CPPTRACE_TRY {
-          if (core_lease_.has_value()) {
-            core_lease_.value().pin_thread(name_);
-          } else {
-            WARNING("Not pinning journal thread as core lease is empty");
-          }
-          while (!token.stop_requested()) {
-            flush();
-            std::this_thread::sleep_for(10ms);
-          }
-          while (!queue_.empty()) {
-            flush();
-          }
-        }
-        CPPTRACE_CATCH(...) {
-          try {
-            try {
-              throw;
-            } catch (const std::exception& e) {
-              ERROR("Exception occurred: {}", e.what());
-            } catch (...) {
-              ERROR("Unknown exception occurred");
-            }
-            ERROR("\nStacktrace:");
-            ERROR("{}", cpptrace::from_current_exception().to_string());
-          } catch (...) {
-            std::cerr << "Logger threw during handling another exception" << '\n';
-          }
-        }
-      });
+      thread_ = std::jthread([this](const std::stop_token& token) { run(token); });
     }
   }
 
@@ -105,13 +75,6 @@ public:
       ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
     }
     return false;
-  }
-
-  ~Journal() {
-    if (thread_.joinable()) {
-      thread_.get_stop_source().request_stop();
-      thread_.join();
-    }
   }
 
   template<typename BaseType =
@@ -169,6 +132,35 @@ private:
       }
       return false;
     });
+  }
+
+  void run(const std::stop_token& token) {
+    CPPTRACE_TRY {
+      if (core_lease_.has_value()) {
+        core_lease_.value().pin_thread(name_);
+      } else {
+        WARNING("Not pinning journal thread as core lease is empty");
+      }
+      while (!token.stop_requested()) {
+        flush();
+        std::this_thread::sleep_for(10ms);
+      }
+      while (!queue_.empty()) {
+        flush();
+      }
+    }
+    CPPTRACE_CATCH(...) {
+      try {
+        throw;
+      } catch (const std::exception& e) {
+        ERROR("Exception occurred: {}", e.what());
+      } catch (...) {
+        ERROR("Unknown exception occurred");
+      }
+      ERROR("\nStacktrace:");
+      ERROR("{}", cpptrace::from_current_exception().to_string());
+      throw;
+    }
   }
 
   std::string name_;

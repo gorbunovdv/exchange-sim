@@ -50,7 +50,6 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
 
   static constexpr size_t constQueueSize = 1024;
 
-  auto stop_source = runtime->stop_source();
   auto stop_token = runtime->stop_token();
 
   using MarketDataSinkType = SPSCQueue<market_events::EventType>;
@@ -63,7 +62,6 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       "ExchangeDispatcher",
       constQueueSize,
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
-      runtime->stop_source(),
       config["exchange_dispatcher"],
       market_data_generator_sink,
       report_generator_sink);
@@ -74,7 +72,6 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       "MatchingEngine",
       constQueueSize,
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
-      runtime->stop_source(),
       config["matching_engine"],
       security_storage,
       exchange_dispatcher.get_sink());
