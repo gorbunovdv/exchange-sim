@@ -1,7 +1,13 @@
 #pragma once
 
-#include "base/callback_sink.h"
+#include "base/logging/loggable_class.h"
 #include "base/processor.h"
+#include "base/spsc_queue.h"
+#include "base/threading/core_allocator.h"
+#include "base/time/rdtsc.h"
+
+#include <cpptrace/cpptrace.hpp>
+#include <cpptrace/from_current.hpp>
 
 #include <functional>
 #include <thread>
