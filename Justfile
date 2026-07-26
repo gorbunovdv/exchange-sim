@@ -83,7 +83,7 @@ lint-from-scratch preset='clang-debug':
     just lint "{{ preset }}"
 
 run *args:
-    python3 ./scripts/run_isolated.py {{ args }} || true
+    python3 ./scripts/run_isolated.py {{ args }}
 
 act:
     gh act --container-architecture linux/amd64
@@ -92,6 +92,6 @@ benchmark application config_file preset='clang-release':
     just build-from-scratch "{{ preset }}"
     python3 ./scripts/patch_config.py "{{ config_file }}"
     python3 ./scripts/write_metadata.py "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
-    just run timeout -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
+    just run timeout --preserve-status -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
     just run "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
     python3 ./scripts/calc_stats.py "{{ config_file }}"

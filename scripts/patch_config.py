@@ -32,7 +32,7 @@ def read_isolated():
     return parse_cpulist(SYS_ISOLATED.read_text())
 
 
-def patch_config(path, shared, dedicated, dry_run):
+def patch_config(*, path, shared, dedicated, dry_run):
     data = load_config(path)
 
     current = data.get("cpu_cores")
@@ -66,7 +66,7 @@ def main():
 
     cores = read_isolated()
     shared, dedicated = cores[0], cores[1:]
-    patch_config(Path(args.config_file), shared, dedicated, dry_run=args.dry_run)
+    patch_config(path=Path(args.config_file), shared=shared, dedicated=dedicated, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

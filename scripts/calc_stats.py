@@ -56,18 +56,22 @@ def calculate_metrics(groups):
 
             current_results = numpy.percentile(values, percentiles, method="inverted_cdf").tolist()
 
-            results.append(
+            results.extend(
                 {
+                    "metric": metric,
                     "symbol": symbol,
                     "type": type_label,
                     "trades_count": trades_count,
-                    "percentiles": {str(percentiles[i]): current_results[i] for i in range(len(percentiles))},
+                    "events_count": len(values),
+                    "percentile": str(percentiles[i]),
+                    "value": current_results[i],
                 }
+                for i in range(len(percentiles))
             )
     return results
 
 
-def calc_stats(input_file, output_file, quiet):
+def calc_stats(*, input_file, output_file, quiet):
     groups = calculate_groups(input_file)
 
     current_results = calculate_metrics(groups)

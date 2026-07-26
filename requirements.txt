@@ -4,3 +4,4 @@ conan==2.31.1
 ruff==0.16.0
 plumbum==2.0.2
 numpy==2.5.1
+tabulate==0.10.0
