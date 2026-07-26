@@ -35,6 +35,12 @@ public:
 
   bool ready_to_receive() { return ready_to_receive_; }
 
+  void stop() {
+    CHECK(thread_.joinable(), "Thread is not joinable");
+    thread_.request_stop();
+    thread_.join();
+  }
+
 private:
   void run(const std::stop_token& stop_token) {
     CPPTRACE_TRY {

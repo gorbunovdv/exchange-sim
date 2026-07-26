@@ -48,7 +48,7 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
 
-  static constexpr size_t constQueueSize = 1024;
+  static constexpr size_t constQueueSize = 1 << 14;
 
   auto stop_token = runtime->stop_token();
 
@@ -109,11 +109,9 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
     }
   }
 
-  Ticks latest_event = Ticks::rdtsc();
-  while (latest_event.nanoseconds_till_now() < 100ms) {
-    if (consume()) {
-      latest_event = Ticks::rdtsc();
-    }
+  matching_engine.stop();
+  exchange_dispatcher.stop();
+  while (consume()) {
   }
 }
 
