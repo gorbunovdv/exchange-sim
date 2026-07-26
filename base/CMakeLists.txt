@@ -14,7 +14,7 @@ target_sources(base PUBLIC
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
     FILES callback_receiver.h callback_sink.h counter.h forward_sink.h journal.h macros.h noncopyable.h processor.h
-        read_file.h run.h sink.h strong_type.h temporary.h throughput.h indexed_map.h one_of.h thread_receiver.h
+        read_file.h run.h sink.h strong_type.h temporary.h throughput.h indexed_map.h one_of.h thread_receiver.h spsc_queue.h
 )
 
 

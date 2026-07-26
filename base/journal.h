@@ -159,6 +159,7 @@ private:
       }
       ERROR("\nStacktrace:");
       ERROR("{}", cpptrace::from_current_exception().to_string());
+      flush_log();
       throw;
     }
   }
