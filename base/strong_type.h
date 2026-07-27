@@ -10,7 +10,7 @@ public:
   using UnderlyingType = Underlying;
   using TagType = Tag;
 
-  explicit constexpr StrongType(UnderlyingType value): value_(value) {}
+  explicit constexpr StrongType(UnderlyingType value) noexcept: value_(value) {}
 
   constexpr UnderlyingType value() const { return value_; }
 

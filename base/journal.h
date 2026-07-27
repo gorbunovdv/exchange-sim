@@ -3,7 +3,7 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
 #include "base/noncopyable.h"
-#include "base/threading/cache_line.h"
+#include "base/spsc_queue.h"
 #include "base/threading/core_allocator.h"
 #include "base/throughput.h"
 #include "base/time/rdtsc.h"
@@ -49,49 +49,13 @@ public:
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
     if (mode == JournalMode::WRITE) {
-      CHECK(!queue_.empty(), "Must have non-zero queue size to start writing journal");
-      thread_ = std::jthread([this](const std::stop_token& token) {
-        CPPTRACE_TRY {
-          if (core_lease_.has_value()) {
-            core_lease_.value().pin_thread(name_);
-          } else {
-            WARNING("Not pinning journal thread as core lease is empty");
-          }
-          while (!token.stop_requested()) {
-            flush();
-            std::this_thread::sleep_for(10ms);
-          }
-          while (head_ != tail_) {
-            flush();
-          }
-        }
-        CPPTRACE_CATCH(...) {
-          try {
-            try {
-              throw;
-            } catch (const std::exception& e) {
-              ERROR("Exception occurred: {}", e.what());
-            } catch (...) {
-              ERROR("Unknown exception occurred");
-            }
-            ERROR("\nStacktrace:");
-            ERROR("{}", cpptrace::from_current_exception().to_string());
-          } catch (...) {
-            std::cerr << "Logger threw during handling another exception" << '\n';
-          }
-        }
-      });
+      thread_ = std::jthread([this](const std::stop_token& token) { run(token); });
     }
   }
 
   void write(Ticks timestamp, const POD& value) {
     CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
-    // todo(gorbunovdv): Use correct memory order
-    size_t current_tail = tail_.load(), current_head = head_.load();
-    size_t next_head = (current_head + 1) % queue_.size();
-    CHECK(next_head != current_tail, "Queue is fully filled");
-    std::construct_at(reinterpret_cast<value_type*>(queue_.data() + current_head), timestamp, value);
-    head_.store(next_head);
+    queue_.emplace(timestamp, value);
   }
 
   template<typename Consumer>
@@ -111,13 +75,6 @@ public:
       ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
     }
     return false;
-  }
-
-  ~Journal() {
-    if (thread_.joinable()) {
-      thread_.get_stop_source().request_stop();
-      thread_.join();
-    }
   }
 
   template<typename BaseType =
@@ -166,15 +123,45 @@ public:
 
 private:
   void flush() {
-    size_t current_head = head_.load(), current_tail = tail_.load();
-    size_t last_head = current_tail <= current_head ? current_head : queue_.size();
-    std::span data{queue_.data() + current_tail, queue_.data() + last_head};
-    if (!data.empty()) {
-      stream_.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(value_type));
-      CHECK(stream_, "Failed to write to journal, name={}", name_);
-      throughput_.tick(data.size());
+    queue_.consume_span([this](std::span<value_type> data) {
+      if (!data.empty()) {
+        stream_.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(value_type));
+        CHECK(stream_, "Failed to write to journal, name={}", name_);
+        throughput_.tick(data.size());
+        return true;
+      }
+      return false;
+    });
+  }
+
+  void run(const std::stop_token& token) {
+    CPPTRACE_TRY {
+      if (core_lease_.has_value()) {
+        core_lease_.value().pin_thread(name_);
+      } else {
+        WARNING("Not pinning journal thread as core lease is empty");
+      }
+      while (!token.stop_requested()) {
+        flush();
+        std::this_thread::sleep_for(10ms);
+      }
+      while (!queue_.empty()) {
+        flush();
+      }
     }
-    tail_.store(last_head % queue_.size());
+    CPPTRACE_CATCH(...) {
+      try {
+        throw;
+      } catch (const std::exception& e) {
+        ERROR("Exception occurred: {}", e.what());
+      } catch (...) {
+        ERROR("Unknown exception occurred");
+      }
+      ERROR("\nStacktrace:");
+      ERROR("{}", cpptrace::from_current_exception().to_string());
+      flush_log();
+      throw;
+    }
   }
 
   std::string name_;
@@ -183,16 +170,7 @@ private:
   std::fstream stream_;
   JournalMode mode_;
 
-  struct alignas(value_type) AlignedType {
-    std::array<std::byte, sizeof(value_type)> placeholder;
-  };
-
-  static_assert(sizeof(AlignedType) == sizeof(value_type), "AlignedType should have the same size as value_type");
-
-  std::vector<AlignedType> queue_;
-
-  alignas(constCacheLineSize) std::atomic<size_t> head_ = 0;
-  alignas(constCacheLineSize) std::atomic<size_t> tail_ = 0;
+  SPSCQueue<value_type> queue_;
 
   Throughput throughput_;
 

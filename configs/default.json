@@ -29,7 +29,8 @@
   "order_generator": {
     "seed": 0,
     "min_active_orders_by_security": 1,
-    "max_active_orders_by_security": 5
+    "max_active_orders_by_security": 5,
+    "max_pending_transactions": 300
   },
   "journaling": {
     "market_events": "./results/market_data.bin",
