@@ -23,6 +23,7 @@ public:
       interface_(interface),
       min_active_orders_by_security_(config["min_active_orders_by_security"].as<std::uint32_t>()),
       max_active_orders_by_security_(config["max_active_orders_by_security"].as<std::uint32_t>()),
+      max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       generator_(config["seed"].as<std::uint32_t>()),
       security_id_distribution_(0, interface_.security_storage().size() - 1) {
     CHECK(min_active_orders_by_security_ <= max_active_orders_by_security_,
@@ -220,6 +221,9 @@ public:
   }
 
   void generate_event() {
+    if (interface_.pending_transactions() > max_pending_transactions_) {
+      return;
+    }
     if (auto it = std::ranges::find_if(interface_.order_storage(),
             [this](const auto& pair) { return pair.active_orders().size() >= max_active_orders_by_security_; });
         it != interface_.order_storage().end()) {
@@ -315,6 +319,7 @@ private:
 
   const uint32_t min_active_orders_by_security_;
   const uint32_t max_active_orders_by_security_;
+  const uint32_t max_pending_transactions_;
 
   std::mt19937 generator_;
   std::uniform_int_distribution<std::uint32_t> type_distribution_{0, 2};
