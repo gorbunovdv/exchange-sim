@@ -72,6 +72,7 @@ format-check:
 
 pylint *args:
     git ls-files -z -- '*.py' | xargs -0 -r ruff check {{ args }}
+    mypy
 
 lint preset:
     just build "{{ preset }}"

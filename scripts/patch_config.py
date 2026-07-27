@@ -10,7 +10,7 @@ SYS_ISOLATED = Path("/sys/devices/system/cpu/isolated")
 
 
 def parse_cpulist(text):
-    cpus = set()
+    cpus: set[int] = set()
     text = text.strip()
     if not text:
         return []

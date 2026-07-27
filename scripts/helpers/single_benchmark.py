@@ -58,7 +58,9 @@ class SingleBenchmark:
                 results_by_group[
                     self.Group(result["symbol"], result["type"], result["trades_count"], float(result["percentile"]))
                 ].append(result)
-        results_by_group_by_percentile = defaultdict(dict)
+        results_by_group_by_percentile: defaultdict[tuple[str, str, int], dict[float, tuple[int, int, int, int]]] = (
+            defaultdict(dict)
+        )
         for group, values in sorted(results_by_group.items()):
             values.sort(key=lambda j: j.value)
             median = values[len(values) // 2].value

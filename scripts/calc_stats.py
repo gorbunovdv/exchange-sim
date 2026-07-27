@@ -21,7 +21,7 @@ percentiles = [50, 75, 90, 99, 99.9]
 
 
 def calculate_groups(path):
-    groups = defaultdict(lambda: defaultdict(list))
+    groups: defaultdict[tuple[str, str, int], defaultdict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
     try:
         with open(path) as f:
             for item in tqdm(
@@ -45,7 +45,7 @@ def calculate_groups(path):
 
 
 def calculate_metrics(groups):
-    results = []
+    results: list[dict[str, str | int | float]] = []
     for metric in tqdm(latency_fields, mininterval=10, maxinterval=10, desc="Calculating metrics"):
         for group_key in sorted(groups.keys()):
             symbol, type_label, trades_count = group_key

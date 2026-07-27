@@ -19,7 +19,7 @@ def main():
         "-p",
         "AllowedCPUs={}".format(",".join(map(str, cores))),
         *cmd,
-        config,
+        str(config),
     ]
     print(f"Running command: {cmd}")
     try:
