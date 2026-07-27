@@ -5,8 +5,8 @@ from pathlib import Path
 
 import plumbum
 from helpers.config import load_config
+from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
-from write_metadata import Metadata
 
 
 def make_single_run(config_path, config, preset, label, current_rep, app):

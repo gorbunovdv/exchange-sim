@@ -1,7 +1,7 @@
 import argparse
 
 from calc_stats import latency_fields, percentiles
-from evaluate_single_run import SingleBenchmark
+from helpers.single_benchmark import SingleBenchmark
 from tabulate import tabulate
 
 
