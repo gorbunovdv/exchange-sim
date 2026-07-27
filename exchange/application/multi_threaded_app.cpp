@@ -118,7 +118,7 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       current = Ticks::rdtsc();
     }
   }
-  
+
   matching_engine.stop();
   exchange_dispatcher.stop();
   while (consume()) {
