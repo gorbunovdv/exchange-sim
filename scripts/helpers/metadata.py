@@ -65,6 +65,12 @@ class Metadata:
             "dirty": bool(self._run_cmd(plumbum.local["git"]["status"]["--porcelain"])),
         }
 
+    def encode_label(self):
+        metadata = self.git_metadata()
+        branch = metadata["branch"].replace("/", "__")
+        sha = metadata["sha"][:6]
+        return f"{branch}-{sha}" + ("-dirty" if metadata["dirty"] else "")
+
     def _parse_cmake_cache(self):
         cache_path = self.build_dir / "CMakeCache.txt"
         if not cache_path.exists():

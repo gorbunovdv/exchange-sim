@@ -19,19 +19,13 @@ def make_single_run(config_path, config, preset, label, current_rep, app):
         shutil.copy(path, dest_path)
 
 
-def encode_label(metadata):
-    branch = metadata["branch"].replace("/", "__")
-    sha = metadata["sha"][:6]
-    return f"{branch}-{sha}" + ("-dirty" if metadata["dirty"] else "")
-
-
 def benchmark(*, preset, label, reps, apps, config_path):
     with plumbum.local.cwd(ROOT_PATH):
         plumbum.local["just"]["build"][preset] & plumbum.FG
     config = load_config(config_path)
     metadata = Metadata(ROOT_PATH, preset, config_path)
     if not label:
-        label = encode_label(metadata.git_metadata())
+        label = metadata.encode_label()
         print(f"No label provided, using label={label}")
     if not apps:
         apps = list(metadata.app_targets().keys())

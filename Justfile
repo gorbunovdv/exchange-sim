@@ -70,8 +70,8 @@ format-check:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
     git ls-files -z -- '*.py' | xargs -0 -r ruff format --check
 
-pylint:
-    git ls-files -z -- '*.py' | xargs -0 -r ruff check
+pylint *args:
+    git ls-files -z -- '*.py' | xargs -0 -r ruff check {{ args }}
 
 lint preset:
     just build "{{ preset }}"
@@ -90,11 +90,11 @@ act:
 
 benchmark-one application config_file preset='clang-release':
     just build-from-scratch "{{ preset }}"
-    python3 ./scripts/patch_config.py "{{ config_file }}"
-    python3 ./scripts/write_metadata.py "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
+    python3 ./scripts/patch_config.py "{{ config_file }}" --quiet
+    python3 ./scripts/write_metadata.py --quiet "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
     just run timeout --preserve-status -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
     just run "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
-    python3 ./scripts/calc_stats.py "{{ config_file }}"
+    python3 ./scripts/calc_stats.py --quiet "{{ config_file }}"
 
 benchmark *args:
     python3 ./scripts/benchmark.py {{ args }}
