@@ -109,6 +109,16 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
     }
   }
 
+  matching_engine.ask_to_stop();
+  exchange_dispatcher.ask_to_stop();
+
+  Ticks current = Ticks::rdtsc();
+  while (current.nanoseconds_till_now() < 100ms) {
+    if (consume()) {
+      current = Ticks::rdtsc();
+    }
+  }
+  
   matching_engine.stop();
   exchange_dispatcher.stop();
   while (consume()) {
