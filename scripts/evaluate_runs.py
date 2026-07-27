@@ -8,7 +8,7 @@ from tabulate import tabulate
 def print_metric_table_comparison(rbgbp1, rbgbp2, metric):
     metrics_table = []
     common_groups = rbgbp1.keys() & rbgbp2.keys()
-    for group in common_groups:
+    for group in sorted(common_groups):
         pct_dict1 = rbgbp1[group]
         pct_dict2 = rbgbp2[group]
         if sorted(pct_dict1.keys()) != sorted(percentiles):
@@ -21,9 +21,9 @@ def print_metric_table_comparison(rbgbp1, rbgbp2, metric):
                 f"Not all of percentiles are available for group in run1,"
                 f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
             )
-        pct1_items = (j[1] for j in sorted(pct_dict1.items()))
-        pct2_items = (j[1] for j in sorted(pct_dict2.items()))
-        row = [group.symbol, group.type, group.trades_count, min(next(iter(pct1_items))[0], next(iter(pct2_items))[0])]
+        pct1_items = [j[1] for j in sorted(pct_dict1.items())]
+        pct2_items = [j[1] for j in sorted(pct_dict2.items())]
+        row = [group.symbol, group.type, group.trades_count, min(pct1_items[0][0], pct2_items[0][0])]
         for item1, item2 in zip(pct1_items, pct2_items, strict=True):
             median_difference = item2[1] - item1[1]
             rel_difference = abs(median_difference) / item1[1] * 100
@@ -38,14 +38,16 @@ def print_metric_table_comparison(rbgbp1, rbgbp2, metric):
 
 def print_metric_table(rbgbp, metric):
     metrics_table = []
-    for group, pct_dict in rbgbp.items():
+    for group in sorted(rbgbp.keys()):
+        pct_dict = rbgbp[group]
         if sorted(pct_dict.keys()) != sorted(percentiles):
             raise Exception(
                 f"Not all of percentiles are available for group,"
                 f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
             )
-        row = [group.symbol, group.type, group.trades_count, next(iter(pct_dict.items()))[1][0]]
-        for item in (j[1] for j in sorted(pct_dict.items())):
+        pct_items = [j[1] for j in sorted(pct_dict.items())]
+        row = [group.symbol, group.type, group.trades_count, pct_items[0][0]]
+        for item in pct_items:
             row.extend([item[1], item[2], item[3]])
         metrics_table.append(row)
     headers = ["symbol", "type", "trades_count", "events_count"]
