@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 import plumbum
+
 from helpers.config import load_config
 from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
@@ -38,7 +39,7 @@ def make_single_run(config_path, config, preset, label, current_rep, app):
 
 def benchmark(*, preset, label, reps, apps, config_path):
     with plumbum.local.cwd(ROOT_PATH):
-        plumbum.local["just"]["build"][preset] & plumbum.FG
+        plumbum.local["just"]["build-from-scratch"][preset] & plumbum.FG
     config = load_config(config_path)
     metadata = Metadata(ROOT_PATH, preset, config_path)
     if not label:

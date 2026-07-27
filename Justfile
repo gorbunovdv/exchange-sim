@@ -90,8 +90,7 @@ act:
     gh act --container-architecture linux/amd64
 
 benchmark-one application config_file preset='clang-release':
-    just build-from-scratch "{{ preset }}"
-    python3 ./scripts/patch_config.py "{{ config_file }}" --quiet
+    python3 ./scripts/patch_config.py "{{ config_file }}" --quiet --dry-run
     python3 ./scripts/write_metadata.py --quiet "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
     just run timeout --preserve-status -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
     just run "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"

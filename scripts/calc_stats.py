@@ -6,8 +6,9 @@ from collections import defaultdict
 
 import ijson
 import numpy
-from helpers.config import load_config
 from tqdm import tqdm
+
+from helpers.config import load_config
 
 latency_fields = [
     "first_report",

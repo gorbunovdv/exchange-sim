@@ -1,8 +1,9 @@
 import argparse
 
 from calc_stats import latency_fields, percentiles
-from helpers.single_benchmark import SingleBenchmark
 from tabulate import tabulate
+
+from helpers.single_benchmark import SingleBenchmark
 
 
 def print_metric_table_comparison(rbgbp1, rbgbp2, metric):

@@ -15,4 +15,4 @@ select = [
 ]
 
 [lint.isort]
-known-first-party = ["common", "summarize"]
+known-first-party = ["helpers", "scripts"]
