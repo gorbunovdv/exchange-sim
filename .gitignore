@@ -3,6 +3,7 @@ cmake-build-*
 CMakeUserPresets.json
 build/
 results/
+result*
 .DS_Store
 .venv/
 .ruff_cache/

@@ -33,7 +33,7 @@ class Metadata:
         self.preset = preset
         self.build_dir = repo_root / f"cmake-build-{preset}"
         self.compilation_commands_path = self.build_dir / "compile_commands.json"
-        self.config_path = config_path
+        self.config_path = self.repo_root / config_path
         self.config = load_config(self.config_path)
 
     def _flags_from_command(self, cmd):
