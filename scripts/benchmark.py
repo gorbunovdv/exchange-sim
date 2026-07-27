@@ -12,7 +12,7 @@ from helpers.root_path import ROOT_PATH
 def make_single_run(config_path, config, preset, label, current_rep, app):
     print(f"Running current_rep={current_rep} app={app} preset={preset}")
     with plumbum.local.cwd(ROOT_PATH):
-        plumbum.local["just"]["benchmark"][app][config_path][preset] & plumbum.FG
+        plumbum.local["just"]["benchmark-one"][app][config_path][preset] & plumbum.FG
     dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{current_rep:02d}"
     dest_path.mkdir(parents=True, exist_ok=True)
     for path in config["results"].values():
