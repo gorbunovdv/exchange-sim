@@ -35,6 +35,8 @@ public:
 
   bool ready_to_receive() { return ready_to_receive_; }
 
+  void ask_to_stop() { thread_.request_stop(); }
+
   void stop() {
     CHECK(thread_.joinable(), "Thread is not joinable");
     thread_.request_stop();
