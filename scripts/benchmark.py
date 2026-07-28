@@ -48,6 +48,11 @@ def benchmark(*, preset, label, reps, apps, config_path):
     if not apps:
         apps = list(metadata.app_targets().keys())
         print(f"Apps are empty, using current list of apps={apps}")
+    for app in apps:
+        dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label
+        if dest_path.exists():
+            raise Exception(f"Path {dest_path} already exists, please back it up or remove it")
+        dest_path.mkdir(parents=True, exist_ok=False)
     for rep in range(1, reps + 1):
         for app in apps:
             make_single_run(
