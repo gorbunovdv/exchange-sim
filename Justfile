@@ -2,16 +2,21 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set export
 
 ROOT_DIR := justfile_directory()
+PATH := ROOT_DIR + "/.venv/bin:" + env_var("PATH")
 CPU_COUNT := num_cpus()
 
 default:
     @just --list
 
+venv:
+    python3 -m venv .venv
+    pip install --upgrade pip
+    pip install -r requirements.txt
+
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-pip pipx python3-ijson python3-tqdm -y
-    pipx ensurepath
-    pipx install conan
+    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
+    just venv
 
 # todo(dgorbunov): Create prerequisites check script & move to separate area
 apply-core-isol-and-perf:
@@ -59,9 +64,15 @@ test-from-scratch preset='clang-debug-asan':
 
 format:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file -i
+    git ls-files -z -- '*.py' | xargs -0 -r ruff format
 
 format-check:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
+    git ls-files -z -- '*.py' | xargs -0 -r ruff format --check
+
+pylint *args:
+    git ls-files -z -- '*.py' | xargs -0 -r ruff check {{ args }}
+    mypy
 
 lint preset:
     just build "{{ preset }}"
@@ -73,17 +84,20 @@ lint-from-scratch preset='clang-debug':
     just lint "{{ preset }}"
 
 run *args:
-    python3 ./scripts/run_isolated.py {{ args }} || true
+    python3 ./scripts/run_isolated.py {{ args }}
 
 act:
     gh act --container-architecture linux/amd64
 
-patch config_file:
-    ./scripts/patch_config.py "{{ config_file }}"
-
-benchmark application config_file preset='clang-release':
-    just build-from-scratch "{{ preset }}"
-    just patch "{{ config_file }}"
-    just run timeout -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
+benchmark-one application config_file preset='clang-release':
+    python3 ./scripts/patch_config.py "{{ config_file }}" --quiet --dry-run
+    python3 ./scripts/write_metadata.py --quiet "{{ config_file }}" --preset "{{ preset }}" --application "{{ application }}"
+    just run timeout --preserve-status -k 5s 60s "./cmake-build-{{ preset }}/exchange/application/{{ application }}" "{{ config_file }}"
     just run "./cmake-build-{{ preset }}/exchange/application/calc_stats" "{{ config_file }}"
-    ./scripts/calc_stats.py "{{ config_file }}"
+    python3 ./scripts/calc_stats.py --quiet "{{ config_file }}"
+
+benchmark *args:
+    python3 ./scripts/benchmark.py {{ args }}
+
+evaluate *args:
+    python3 ./scripts/evaluate_runs.py {{ args }}

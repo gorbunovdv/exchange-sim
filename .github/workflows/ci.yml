@@ -29,7 +29,6 @@ jobs:
       - name: Bootstrap requirements
         run: |
           DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC just bootstrap
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Cache ccache
         uses: actions/cache@v4
@@ -44,9 +43,13 @@ jobs:
           path: ~/.conan2
           key: conan-${{ runner.os }}-${{ hashFiles('**/conanfile.*') }}
 
-      - name: Check clang-format
+      - name: Check format
         run: |
           just format-check
+
+      - name: Run pylint
+        run: |
+          just pylint
 
       - name: Verify compilation
         run: |

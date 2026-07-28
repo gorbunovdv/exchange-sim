@@ -19,14 +19,15 @@ def main():
         "-p",
         "AllowedCPUs={}".format(",".join(map(str, cores))),
         *cmd,
-        config
+        str(config),
     ]
-    print("Running command: {}".format(cmd))
+    print(f"Running command: {cmd}")
     try:
         os.execvp(cmd[0], cmd)
     except Exception as e:
         print(e)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

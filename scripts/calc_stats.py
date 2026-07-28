@@ -1,69 +1,53 @@
 #!/usr/bin/env python3
 
-import sys
+import argparse
 import json
-import ijson
-import math
 from collections import defaultdict
+
+import ijson
+import numpy
 from tqdm import tqdm
 
-import argparse
+from helpers.config import load_config
 
-def calculate_percentile(data, percentile):
-    if not data:
-        return 0
-    sorted_data = sorted(data)
+latency_fields = [
+    "first_report",
+    "last_report",
+    "first_market_event",
+    "last_market_event",
+]
 
-    if percentile == 0:
-        return sorted_data[0]
 
-    index = math.ceil((percentile / 100.0) * len(sorted_data)) - 1
+percentiles = [50, 75, 90, 99, 99.9]
 
-    index = max(0, min(index, len(sorted_data) - 1))
 
-    return sorted_data[index]
-
-def load_config(config_path):
+def calculate_groups(path):
+    groups: defaultdict[tuple[str, str, int], defaultdict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
     try:
-        with open(config_path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError as e:
-        print(f"Error: Could not find '{config_path}'", file=sys.stderr)
-        raise e
-
-def main():
-    parser = argparse.ArgumentParser(description='Calculate percentiles from latency data.')
-    parser.add_argument('config_path', type=str, help='Path to the JSON config file')
-    args = parser.parse_args()
-
-    config = load_config(args.config_path)
-
-    groups = defaultdict(lambda: defaultdict(list))
-
-    latency_fields = ['first_report', 'last_report', 'first_market_event', 'last_market_event']
-
-    try:
-        with open(config['calc_stats']['output_file'], 'r') as f:
-            for item in tqdm(ijson.items(f, 'item'), mininterval=10, maxinterval=10, desc='Parsing initial json'):
-                msg_type = item.get('type')
-                trades_count = item.get('trades_count', 0)
-                symbol = item.get('symbol')
+        with open(path) as f:
+            for item in tqdm(
+                ijson.items(f, "item"),
+                mininterval=10,
+                maxinterval=10,
+                desc="Parsing initial json",
+            ):
+                msg_type = item.get("type")
+                trades_count = item.get("trades_count", 0)
+                symbol = item.get("symbol")
                 group_key = (symbol, msg_type, trades_count)
 
                 for field in latency_fields:
                     if field in item:
                         groups[group_key][field].append(item[field])
-    except FileNotFoundError:
-        print(f"Error: Could not find '{config['calc_stats']['output_file']}'", file=sys.stderr)
-        return
+    except FileNotFoundError as e:
+        raise Exception(f"Error: Could not open '{path}'") from e
 
-    percentiles = [50, 75, 90, 99]
+    return groups
 
-    for metric in latency_fields:
-        print(f"=== Latency Metric: {metric} ===")
-        print(f"{'Type':<8} | {'Symbol':<8} | {'Trades Count':<12} | " + " | ".join([f"p{p:<4}" for p in percentiles]) + " | Count")
-        print("-" * 68)
 
+def calculate_metrics(groups):
+    results: list[dict[str, str | int | float]] = []
+    for metric in tqdm(latency_fields, mininterval=10, maxinterval=10, desc="Calculating metrics"):
         for group_key in sorted(groups.keys()):
             symbol, type_label, trades_count = group_key
 
@@ -71,12 +55,45 @@ def main():
             if not values:
                 continue
 
-            results = [calculate_percentile(values, p) for p in percentiles]
-            formatted_results = " | ".join([f"{res:<5}" for res in results])
+            current_results = numpy.percentile(values, percentiles, method="inverted_cdf").tolist()
 
-            print(f"{type_label:<8} | {symbol:<8} | {trades_count:<12} | {formatted_results} | {len(values)}")
+            results.extend(
+                {
+                    "metric": metric,
+                    "symbol": symbol,
+                    "type": type_label,
+                    "trades_count": trades_count,
+                    "events_count": len(values),
+                    "percentile": str(percentiles[i]),
+                    "value": current_results[i],
+                }
+                for i in range(len(percentiles))
+            )
+    return results
 
-        print("\n")
+
+def calc_stats(*, input_file, output_file, quiet):
+    groups = calculate_groups(input_file)
+
+    current_results = calculate_metrics(groups)
+
+    with open(output_file, "w") as f:
+        print(json.dumps(current_results, indent=2), file=f)
+
+    if not quiet:
+        print(json.dumps(current_results, indent=2))
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Calculate percentiles from latency data.")
+    parser.add_argument("config_path", type=str, help="Path to the JSON config file")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode")
+    args = parser.parse_args()
+
+    config = load_config(args.config_path)
+
+    calc_stats(input_file=config["calc_stats"]["output_file"], output_file=config["results"]["stats"], quiet=args.quiet)
+
 
 if __name__ == "__main__":
     main()

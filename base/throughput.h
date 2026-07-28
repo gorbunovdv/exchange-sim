@@ -14,7 +14,9 @@ public:
 
   ~Throughput() {
     try {
-      print_info(Ticks::rdtsc());
+      if (prev_tick_ != Ticks{0}) {
+        print_info(Ticks::rdtsc());
+      }
     } catch (...) {
       std::cerr << "Failed to print throughput info" << '\n';
     }

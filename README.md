@@ -36,19 +36,21 @@ Early work in progress. Current milestone (MVP): single-threaded matching engine
 
 ## Benchmark
 
-Use the release preset and a config:
+    just benchmark ./configs/dmitrys-ubuntu.json --apps single_threaded_event_loop_app --reps 10
 
-    just benchmark single_threaded_callback_app configs/dmitrys-ubuntu.json
+Each run executes in a fresh systemd-run scope pinned to isolated cores with the dirty page cache drained between runs.
+Runs are archived under a label `(git_revision[:6] + ('-dirty' if dirty))` with full metadata (git revision, binary hashes, compiler flags, config hash),
+while comparisons refuse mismatched fingerprints by default.
 
-The recipe rebuilds all the code from scratch, runs the config patch step, starts the
-application for up to 60 seconds via `systemd-run` using the CPU settings from
-the config, then runs both statistics calculators. Journal files and calculated
-latencies of each request are written to the paths from the config, by default under
-`./results/`. Script prints the results to the console.
+    just evaluate ./configs/dmitrys-ubuntu.json --apps <app1> <app2> --labels <label> --percentiles 50 99
 
-To use another CMake preset pass it as the third argument:
+Or:
 
-    just benchmark single_threaded_callback_app configs/default.json clang-release
+    just evaluate ./configs/dmitrys-ubuntu.json --apps <app2> --labels <label1> <label2> --percentiles 50 99
+
+For a single application this reports median +- max drift per bucket and flags anomalous between-runs
+drift (INCONSISTENT), for two applications/labels it reports median differences with the combined noise floor
+in every row and a verdict (IMPROVED / REGRESSED / -).
 
 For stable measurements run this on Linux after applying CPU isolation and
 performance settings:
