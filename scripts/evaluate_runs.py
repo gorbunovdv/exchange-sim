@@ -84,7 +84,7 @@ class MultiRunEvaluation:
                 _, median1, abs_diff1, _ = item1
                 _, median2, abs_diff2, _ = item2
                 median_difference = median2 - median1
-                rel_difference = abs(median_difference) / item1[1] * 100
+                rel_difference = abs(median_difference) / median1 * 100
                 row.extend(
                     [
                         f"{median1}",
