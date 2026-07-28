@@ -22,71 +22,83 @@ def is_significant_pair(pct1, pct2, rel_threshold, abs_threshold):
     return "-"
 
 
-def print_metric_table_comparison(rbgbp1, rbgbp2, metric, percentiles, rel_threshold, abs_threshold):
-    metrics_table = []
-    common_groups = rbgbp1.keys() & rbgbp2.keys()
-    for group in sorted(common_groups):
-        pct_dict1 = rbgbp1[group]
-        pct_dict2 = rbgbp2[group]
-        if not all(percentile in pct_dict1 for percentile in percentiles):
-            raise Exception(
-                f"Not all of percentiles are available for group in run1,"
-                f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
-            )
-        if not all(percentile in pct_dict2 for percentile in percentiles):
-            raise Exception(
-                f"Not all of percentiles are available for group in run2,"
-                f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
-            )
-        pct1_items = [pct_dict1[percentile] for percentile in percentiles]
-        pct2_items = [pct_dict2[percentile] for percentile in percentiles]
-        row = [group.symbol, group.type, group.trades_count, min(pct1_items[0][0], pct2_items[0][0])]
-        for item1, item2 in zip(pct1_items, pct2_items, strict=True):
-            _, median1, abs_diff1, _ = item1
-            _, median2, abs_diff2, _ = item2
-            median_difference = median2 - median1
-            rel_difference = abs(median_difference) / item1[1] * 100
-            row.extend(
-                [
-                    f"{median1}",
-                    f"{median2}",
-                    f"{median_difference:.02f} +- {abs_diff1 + abs_diff2:.02f} ({rel_difference:.02f}%)",
-                    is_significant_pair(item1, item2, rel_threshold, abs_threshold),
-                ]
-            )
-        metrics_table.append(tuple(row))
-    headers = ["symbol", "type", "trades_count", "events_count"]
-    for percentile in percentiles:
-        headers.extend(("median1", "median2", f"pct {percentile} median diff +- diff (rel_diff%)", "actual type"))
-    print(f"======={metric}=======")
-    print(tabulate(metrics_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
+class SingleRunEvaluation:
+    def __init__(self, percentiles, relative_threshold, absolute_threshold):
+        self.percentiles = percentiles
+        self.relative_threshold = relative_threshold
+        self.absolute_threshold = absolute_threshold
+
+    def print_metric_table(self, metric, rbgbp):
+        metrics_table = []
+        for group in sorted(rbgbp.keys()):
+            pct_dict = rbgbp[group]
+            if not all(percentile in pct_dict for percentile in self.percentiles):
+                raise Exception(
+                    f"Not all of percentiles are available for group,"
+                    f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
+                )
+            pct_items = [pct_dict[percentile] for percentile in self.percentiles]
+            row = [group.symbol, group.type, group.trades_count, pct_items[0][0]]
+            for item in pct_items:
+                _, median, abs_diff, rel_diff = item
+                row.extend(
+                    [
+                        f"{median:.02f} +- {abs_diff:.02f} ({rel_diff:.02f}%)",
+                        is_significant_single(item, self.relative_threshold, self.absolute_threshold),
+                    ]
+                )
+            metrics_table.append(row)
+        headers = ["symbol", "type", "trades_count", "events_count"]
+        for percentile in self.percentiles:
+            headers.extend((f"pct {percentile} median +- max drift (rel drift %)", "actual type"))
+        print(f"======={metric}========")
+        print(tabulate(metrics_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
 
 
-def print_metric_table(rbgbp, metric, percentiles, relative_threshold, absolute_threshold):
-    metrics_table = []
-    for group in sorted(rbgbp.keys()):
-        pct_dict = rbgbp[group]
-        if not all(percentile in pct_dict for percentile in percentiles):
-            raise Exception(
-                f"Not all of percentiles are available for group,"
-                f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
-            )
-        pct_items = [pct_dict[percentile] for percentile in percentiles]
-        row = [group.symbol, group.type, group.trades_count, pct_items[0][0]]
-        for item in pct_items:
-            _, median, abs_diff, rel_diff = item
-            row.extend(
-                [
-                    f"{median:.02f} +- {abs_diff:.02f} ({rel_diff:.02f}%)",
-                    is_significant_single(item, relative_threshold, absolute_threshold),
-                ]
-            )
-        metrics_table.append(row)
-    headers = ["symbol", "type", "trades_count", "events_count"]
-    for percentile in percentiles:
-        headers.extend((f"pct {percentile} median +- max drift (rel drift %)", "actual type"))
-    print(f"======={metric}========")
-    print(tabulate(metrics_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
+class MultiRunEvaluation:
+    def __init__(self, percentiles, rel_threshold, abs_threshold):
+        self.percentiles = percentiles
+        self.rel_threshold = rel_threshold
+        self.abs_threshold = abs_threshold
+
+    def print_metric_table_comparison(self, metric, rbgbp1, rbgbp2):
+        metrics_table = []
+        common_groups = rbgbp1.keys() & rbgbp2.keys()
+        for group in sorted(common_groups):
+            pct_dict1 = rbgbp1[group]
+            pct_dict2 = rbgbp2[group]
+            if not all(percentile in pct_dict1 for percentile in self.percentiles):
+                raise Exception(
+                    f"Not all of percentiles are available for group in run1,"
+                    f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
+                )
+            if not all(percentile in pct_dict2 for percentile in self.percentiles):
+                raise Exception(
+                    f"Not all of percentiles are available for group in run2,"
+                    f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
+                )
+            pct1_items = [pct_dict1[percentile] for percentile in self.percentiles]
+            pct2_items = [pct_dict2[percentile] for percentile in self.percentiles]
+            row = [group.symbol, group.type, group.trades_count, min(pct1_items[0][0], pct2_items[0][0])]
+            for item1, item2 in zip(pct1_items, pct2_items, strict=True):
+                _, median1, abs_diff1, _ = item1
+                _, median2, abs_diff2, _ = item2
+                median_difference = median2 - median1
+                rel_difference = abs(median_difference) / item1[1] * 100
+                row.extend(
+                    [
+                        f"{median1}",
+                        f"{median2}",
+                        f"{median_difference:.02f} +- {abs_diff1 + abs_diff2:.02f} ({rel_difference:.02f}%)",
+                        is_significant_pair(item1, item2, self.rel_threshold, self.abs_threshold),
+                    ]
+                )
+            metrics_table.append(tuple(row))
+        headers = ["symbol", "type", "trades_count", "events_count"]
+        for percentile in self.percentiles:
+            headers.extend(("median1", "median2", f"pct {percentile} median diff +- diff (rel_diff%)", "actual type"))
+        print(f"======={metric}=======")
+        print(tabulate(metrics_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
 
 
 def evaluate_runs(
@@ -99,27 +111,21 @@ def evaluate_runs(
     label2,
     percentiles,
     no_fingerprint_check,
-    relative_threshold,
-    absolute_threshold,
+    rel_threshold,
+    abs_threshold,
 ):
     if app1 == app2 and label1 == label2:
         sb = SingleBenchmark(config_path, preset, app1, label1, no_fingerprint_check)
+        es = SingleRunEvaluation(percentiles, rel_threshold, abs_threshold)
         for metric in latency_fields:
-            print_metric_table(
-                sb.results_by_group_by_percentile(metric), metric, percentiles, relative_threshold, absolute_threshold
-            )
+            es.print_metric_table(metric, sb.results_by_group_by_percentile(metric))
     else:
         sb1 = SingleBenchmark(config_path, preset, app1, label1, no_fingerprint_check)
         sb2 = SingleBenchmark(config_path, preset, app2, label2, no_fingerprint_check)
-
+        em = MultiRunEvaluation(percentiles, rel_threshold, abs_threshold)
         for metric in latency_fields:
-            print_metric_table_comparison(
-                sb1.results_by_group_by_percentile(metric),
-                sb2.results_by_group_by_percentile(metric),
-                metric,
-                percentiles,
-                relative_threshold,
-                absolute_threshold,
+            em.print_metric_table_comparison(
+                metric, sb1.results_by_group_by_percentile(metric), sb2.results_by_group_by_percentile(metric)
             )
 
 
@@ -160,8 +166,8 @@ def main():
         label2=label2,
         no_fingerprint_check=args.no_fingerprint_check,
         percentiles=args.percentiles,
-        relative_threshold=args.relative_threshold,
-        absolute_threshold=args.absolute_threshold,
+        rel_threshold=args.relative_threshold,
+        abs_threshold=args.absolute_threshold,
     )
 
 
