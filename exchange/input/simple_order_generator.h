@@ -43,29 +43,29 @@ public:
                          " origin_time={} order_id={} security_id={}"
                          " direction={} price={} quantity={}",
                          snapshot.origin_time.ticks(),
-                         snapshot.order_id,
+                         snapshot.order_id.value(),
                          snapshot.security_id.value(),
                          format_as(snapshot.direction),
-                         static_cast<double>(snapshot.price),
-                         static_cast<double>(snapshot.quantity));
+                         static_cast<double>(snapshot.price.value()),
+                         static_cast<double>(snapshot.quantity.value()));
                    },
                    [this](const market_events::BookOrderChange& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderChange"
                          " origin_time={} order_id={} security_id={} direction={} price={} new_quantity={}",
                          snapshot.origin_time.ticks(),
-                         snapshot.order_id,
+                         snapshot.order_id.value(),
                          snapshot.security_id.value(),
                          format_as(snapshot.direction),
-                         static_cast<double>(snapshot.price),
-                         static_cast<double>(snapshot.new_quantity));
+                         static_cast<double>(snapshot.price.value()),
+                         static_cast<double>(snapshot.new_quantity.value()));
                    },
                    [this](const market_events::BookOrderDeletion& snapshot) {
                      DEBUG(
                          "Received market data snapshot, type=BookOrderDeletion"
                          " origin_time={} order_id={} security_id={}",
                          snapshot.origin_time.ticks(),
-                         snapshot.order_id,
+                         snapshot.order_id.value(),
                          snapshot.security_id.value());
                    },
                    [this](const market_events::Trade& snapshot) {
@@ -75,11 +75,11 @@ public:
                          " trade_id={} aggressor_order_id={} recipient_order_id={}",
                          snapshot.origin_time.ticks(),
                          snapshot.security_id.value(),
-                         static_cast<double>(snapshot.price),
-                         static_cast<double>(snapshot.quantity),
-                         snapshot.trade_id,
-                         snapshot.aggressor_order_id,
-                         snapshot.recipient_order_id);
+                         static_cast<double>(snapshot.price.value()),
+                         static_cast<double>(snapshot.quantity.value()),
+                         snapshot.trade_id.value(),
+                         snapshot.aggressor_order_id.value(),
+                         snapshot.recipient_order_id.value());
                    }),
         snapshot);
   }
@@ -93,14 +93,14 @@ public:
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={} time_in_force={}"
                   " direction={} price={} quantity={}",
                   report.origin_time.ticks(),
-                  report.order_id,
-                  report.client_id,
-                  report.client_order_id,
+                  report.order_id.value(),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
                   report.security_id.value(),
                   format_as(report.time_in_force),
                   format_as(report.direction),
-                  static_cast<double>(report.price),
-                  static_cast<double>(report.quantity));
+                  static_cast<double>(report.price.value()),
+                  static_cast<double>(report.quantity.value()));
             },
             [this](const report::Trade& report) {
               DEBUG(
@@ -110,13 +110,13 @@ public:
                   report.origin_time.ticks(),
                   report.security_id.value(),
                   format_as(report.aggressor_direction),
-                  static_cast<double>(report.price),
-                  static_cast<double>(report.quantity),
-                  report.client_id,
-                  report.client_order_id,
-                  report.trade_id,
-                  report.aggressor_order_id,
-                  report.recipient_order_id);
+                  static_cast<double>(report.price.value()),
+                  static_cast<double>(report.quantity.value()),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
+                  report.trade_id.value(),
+                  report.aggressor_order_id.value(),
+                  report.recipient_order_id.value());
             },
             [this](const report::OrderBookEntry& report) {
               DEBUG(
@@ -124,13 +124,13 @@ public:
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={}"
                   " direction={} price={} quantity={}",
                   report.origin_time.ticks(),
-                  report.order_id,
-                  report.client_id,
-                  report.client_order_id,
+                  report.order_id.value(),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
                   report.security_id.value(),
                   format_as(report.direction),
-                  static_cast<double>(report.price),
-                  static_cast<double>(report.quantity));
+                  static_cast<double>(report.price.value()),
+                  static_cast<double>(report.quantity.value()));
             },
             [this](const report::OrderFilled& report) {
               DEBUG(
@@ -138,12 +138,12 @@ public:
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={}"
                   " direction={} price={} type={}",
                   report.origin_time.ticks(),
-                  report.order_id,
-                  report.client_id,
-                  report.client_order_id,
+                  report.order_id.value(),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
                   report.security_id.value(),
                   format_as(report.direction),
-                  static_cast<double>(report.price),
+                  static_cast<double>(report.price.value()),
                   magic_enum::enum_name(report.type));
             },
             [this](const report::OrderExpired& report) {
@@ -151,9 +151,9 @@ public:
                   "Received report, type=OrderExpired"
                   " origin_time={} order_id={} client_id={} client_order_id={} security_id={} reason={}",
                   report.origin_time.ticks(),
-                  report.order_id,
-                  report.client_id,
-                  report.client_order_id,
+                  report.order_id.value(),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
                   report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             },
@@ -163,10 +163,10 @@ public:
                   " origin_time={} order_id={} client_id={} client_order_id={} client_cancellation_id={} "
                   "security_id={}",
                   report.origin_time.ticks(),
-                  report.order_id,
-                  report.client_id,
-                  report.client_order_id,
-                  report.client_cancellation_id,
+                  report.order_id.value(),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
+                  report.client_cancellation_id.value(),
                   report.security_id.value());
             },
             [this](const report::OrderRejected& report) {
@@ -175,8 +175,8 @@ public:
                   " origin_time={} security_id={} client_id={} client_order_id={} reason={}",
                   report.origin_time.ticks(),
                   report.security_id.value(),
-                  report.client_id,
-                  report.client_order_id,
+                  report.client_id.value(),
+                  report.client_order_id.value(),
                   magic_enum::enum_name(report.reason));
             },
             [this](const report::CancellationRejected& report) {
@@ -184,9 +184,9 @@ public:
                   "Received report, type=CancellationRejected"
                   " origin_time={} client_id={} client_order_id={} client_cancellation_id={} security_id={} reason={}",
                   report.origin_time.ticks(),
-                  report.client_id,
-                  report.client_order_id,
-                  report.client_cancellation_id,
+                  report.client_id.value(),
+                  report.client_order_id.value(),
+                  report.client_cancellation_id.value(),
                   report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             },
@@ -196,24 +196,24 @@ public:
                   " origin_time={} order_id={} new_order_id={} client_id={} client_order_id={} client_replacement_id={}"
                   " security_id={} direction={} price={} quantity={}",
                   report.origin_time.ticks(),
-                  report.order_id,
-                  report.new_order_id,
-                  report.client_id,
-                  report.client_order_id,
-                  report.client_replacement_id,
+                  report.order_id.value(),
+                  report.new_order_id.value(),
+                  report.client_id.value(),
+                  report.client_order_id.value(),
+                  report.client_replacement_id.value(),
                   report.security_id.value(),
                   format_as(report.direction),
-                  static_cast<double>(report.price),
-                  static_cast<double>(report.quantity));
+                  static_cast<double>(report.price.value()),
+                  static_cast<double>(report.quantity.value()));
             },
             [this](const report::ReplacementRejected& report) {
               DEBUG(
                   "Received report, type=ReplacementRejected"
                   " origin_time={} client_id={} client_order_id={} client_replacement_id={} security_id={} reason={}",
                   report.origin_time.ticks(),
-                  report.client_id,
-                  report.client_order_id,
-                  report.client_replacement_id,
+                  report.client_id.value(),
+                  report.client_order_id.value(),
+                  report.client_replacement_id.value(),
                   report.security_id.value(),
                   magic_enum::enum_name(report.reason));
             }),
@@ -265,7 +265,7 @@ private:
     Direction direction = random_enum_value<Direction>(generator_);
 
     interface_.send_order_add_request(
-        0, security_id, time_in_force, OrderType::LIMIT, direction, resulting_price, resulting_amount);
+        ClientID{0}, security_id, time_in_force, OrderType::LIMIT, direction, resulting_price, resulting_amount);
   }
 
   void generate_cancel_order_request(SecurityID security_id) {
@@ -275,7 +275,8 @@ private:
     const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
     size_t order_to_cancel_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
 
-    interface_.send_order_cancel_request(0, active_orders[order_to_cancel_index].client_order_id, security_id);
+    interface_.send_order_cancel_request(
+        ClientID{0}, active_orders[order_to_cancel_index].client_order_id, security_id);
   }
 
   void generate_replace_order_request(SecurityID security_id) {
@@ -298,7 +299,7 @@ private:
 
     Direction direction = random_enum_value<Direction>(generator_);
 
-    interface_.send_order_replace_request(0,
+    interface_.send_order_replace_request(ClientID{0},
         active_orders[order_to_replace_index].client_order_id,
         security_id,
         direction,

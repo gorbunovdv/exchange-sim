@@ -17,7 +17,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
   }
   storage.handle(report::OrderAccepted{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id,
+      .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
@@ -34,7 +34,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
   } else {
     storage.handle(report::OrderBookEntry{
         .origin_time = request.origin_time,
-        .order_id = request.client_order_id,
+        .order_id = ExchangeOrderID{request.client_order_id.value()},
         .client_id = request.client_id,
         .client_order_id = request.client_order_id,
         .security_id = request.security_id,
@@ -50,7 +50,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
           .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_cancellation_id = request.client_order_id + 1,
+          .client_cancellation_id = ClientOrderID{request.client_order_id.value() + 1},
           .security_id = request.security_id,
       });
     } else if (state == Order::State::REPLACE_SENT) {
@@ -58,7 +58,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
           .origin_time = request.origin_time,
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
-          .client_replacement_id = request.client_order_id + 1,
+          .client_replacement_id = ClientOrderID{request.client_order_id.value() + 1},
           .security_id = request.security_id,
           .direction = request.direction,
           .price = request.price,
@@ -89,7 +89,7 @@ template<>
 report::OrderAccepted convert_to<report::OrderAccepted>(const request::OrderAddRequest& request) {
   return report::OrderAccepted{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id,
+      .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
@@ -104,7 +104,7 @@ template<>
 report::OrderBookEntry convert_to<report::OrderBookEntry>(const request::OrderAddRequest& request) {
   return report::OrderBookEntry{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id,
+      .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
@@ -118,7 +118,7 @@ template<>
 report::OrderFilled convert_to<report::OrderFilled>(const request::OrderAddRequest& request) {
   return report::OrderFilled{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id,
+      .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
@@ -132,7 +132,7 @@ template<>
 report::OrderExpired convert_to<report::OrderExpired>(const request::OrderAddRequest& request) {
   return report::OrderExpired{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id,
+      .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
@@ -144,10 +144,10 @@ template<>
 report::OrderCancelled convert_to<report::OrderCancelled>(const request::OrderAddRequest& request) {
   return report::OrderCancelled{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id,
+      .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
-      .client_cancellation_id = request.client_order_id + 1,
+      .client_cancellation_id = ClientOrderID{request.client_order_id.value() + 1},
       .security_id = request.security_id,
   };
 }
@@ -167,11 +167,11 @@ template<>
 report::ReplacementAccepted convert_to<report::ReplacementAccepted>(const request::OrderAddRequest& request) {
   return report::ReplacementAccepted{
       .origin_time = request.origin_time,
-      .order_id = request.client_order_id + 1,
-      .new_order_id = request.client_order_id + 1,
+      .order_id = ExchangeOrderID{request.client_order_id.value() + 1},
+      .new_order_id = ExchangeOrderID{request.client_order_id.value() + 1},
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
-      .client_replacement_id = request.client_order_id + 1,
+      .client_replacement_id = ClientOrderID{request.client_order_id.value() + 1},
       .security_id = request.security_id,
       .direction = request.direction,
       .price = request.price,
@@ -185,7 +185,7 @@ report::CancellationRejected convert_to<report::CancellationRejected>(const requ
       .origin_time = request.origin_time,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
-      .client_cancellation_id = request.client_order_id + 1,
+      .client_cancellation_id = ClientOrderID{request.client_order_id.value() + 1},
       .security_id = request.security_id,
       .reason = engine_events::CancellationRejectedReason::SECURITY_NOT_FOUND,
   };
@@ -197,7 +197,7 @@ report::ReplacementRejected convert_to<report::ReplacementRejected>(const reques
       .origin_time = request.origin_time,
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
-      .client_replacement_id = request.client_order_id + 1,
+      .client_replacement_id = ClientOrderID{request.client_order_id.value() + 1},
       .security_id = request.security_id,
       .reason = engine_events::ReplacementRejectedReason::SECURITY_NOT_FOUND,
   };

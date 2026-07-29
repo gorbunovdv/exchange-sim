@@ -115,7 +115,7 @@ private:
         .quantity = current_order.quantity,
     });
     current_order = fill_order_and_place_in_book<current_order_direction>(current_order, request.time_in_force, sink);
-    if (current_order.quantity != 0 && request.time_in_force != OrderTimeInForce::IOC) {
+    if (current_order.quantity != Amount{0} && request.time_in_force != OrderTimeInForce::IOC) {
       sink.push(engine_events::OrderBookEntry{
           .origin_time = request.origin_time,
           .order_id = current_order.order_id,
@@ -126,7 +126,7 @@ private:
           .price = request.price,
           .quantity = current_order.quantity,
       });
-    } else if (current_order.quantity == 0) {
+    } else if (current_order.quantity == Amount{0}) {
       sink.push(engine_events::OrderFilled{
           .origin_time = request.origin_time,
           .order_id = current_order.order_id,
@@ -198,7 +198,7 @@ private:
       current_order.client_order_id = request.client_replacement_id;
       current_order =
           fill_order_and_place_in_book<current_order_direction>(current_order, OrderTimeInForce::LIMIT, sink);
-      if (current_order.quantity != 0) {
+      if (current_order.quantity != Amount{0}) {
         sink.push(engine_events::OrderBookEntry{
             .origin_time = request.origin_time,
             .order_id = current_order.order_id,
@@ -239,7 +239,7 @@ private:
     constexpr Direction opposite_current_order_direction =
         current_order_direction == Direction::BUY ? Direction::SELL : Direction::BUY;
     auto& opposite_direction_book = book_container_.template opposite_half<current_order_direction>();
-    while (current_order.quantity > 0 && !opposite_direction_book.empty() &&
+    while (current_order.quantity > Amount{0} && !opposite_direction_book.empty() &&
         !opposite_direction_book.key_comp()(current_order.price, opposite_direction_book.begin()->first)) {
       current_order = fill_order_with_level<opposite_current_order_direction>(
           current_order, opposite_direction_book.begin()->second, sink);
@@ -247,7 +247,7 @@ private:
         opposite_direction_book.erase(opposite_direction_book.begin());
       }
     }
-    if (current_order.quantity != 0 && time_in_force != OrderTimeInForce::IOC) {
+    if (current_order.quantity != Amount{0} && time_in_force != OrderTimeInForce::IOC) {
       book_container_.template push_back<current_order_direction>(current_order);
     }
     return current_order;
@@ -257,7 +257,7 @@ private:
   [[nodiscard]]
   ActiveOrder fill_order_with_level(
       ActiveOrder current_order, auto& opposite_direction_book_level, engine_events::Sink auto& sink) {
-    while (current_order.quantity > 0 && !opposite_direction_book_level.empty()) {
+    while (current_order.quantity > Amount{0} && !opposite_direction_book_level.empty()) {
       auto& opposite_order = opposite_direction_book_level.front();
       Amount quantity_to_fill = std::min(current_order.quantity, opposite_order.quantity);
       current_order.quantity -= quantity_to_fill;
@@ -276,7 +276,7 @@ private:
           .recipient_client_id = opposite_order.client_id,
           .recipient_client_order_id = opposite_order.client_order_id,
       });
-      if (opposite_order.quantity == 0) {
+      if (opposite_order.quantity == Amount{0}) {
         sink.push(engine_events::OrderFilled{
             .origin_time = current_order.origin_time,
             .order_id = opposite_order.order_id,

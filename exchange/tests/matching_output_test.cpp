@@ -48,7 +48,7 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
 
   SecurityStorage storage({
       SecurityConfig{
-          .symbol = "A",
+          .symbol = Symbol{"A"},
           .tick_size = Price(1),
           .lot_size = Amount(1),
           .low_price = Price(0),
@@ -56,7 +56,7 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
           .max_amount = Amount(1000),
       },
       SecurityConfig{
-          .symbol = "B",
+          .symbol = Symbol{"B"},
           .tick_size = Price(1),
           .lot_size = Amount(1),
           .low_price = Price(0),

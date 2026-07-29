@@ -1,13 +1,30 @@
 #pragma once
 
+#include "base/strong_type.h"
+
 #include <boost/decimal/decimal32_t.hpp>
 #include <boost/decimal/decimal64_t.hpp>
 #include <magic_enum/magic_enum.hpp>
 
 namespace exchange_sim {
 
-using Price = boost::decimal::decimal64_t;
-using Amount = boost::decimal::decimal32_t;
+using Price = StrongType<boost::decimal::decimal64_t,
+    struct PriceTag,
+    skills::EqualTo,
+    skills::Ordered,
+    skills::Addable,
+    skills::Subtractable,
+    skills::Modulo,
+    skills::Dividable,
+    skills::ScalarMultipliable>;
+using Amount = StrongType<boost::decimal::decimal32_t,
+    struct AmountTag,
+    skills::EqualTo,
+    skills::Ordered,
+    skills::Subtractable,
+    skills::Modulo,
+    skills::Dividable,
+    skills::ScalarMultipliable>;
 
 enum class OrderType : std::uint8_t { LIMIT };
 enum class OrderTimeInForce : std::uint8_t { LIMIT, IOC };

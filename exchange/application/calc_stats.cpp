@@ -176,7 +176,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     }();
     stat.symbol = security_storage
                       .get_security(std::visit([](const auto& request) { return request.security_id; }, request_object))
-                      .symbol;
+                      .symbol.value();
     write_buffer.clear();
     if (!first_to_write) {
       output_file << ",\n";

@@ -9,7 +9,7 @@
 namespace exchange_sim {
 
 using SecurityID = StrongType<uint32_t, struct SecurityIDTag, skills::EqualTo>;
-using Symbol = boost::static_string<8>;
+using Symbol = StrongType<boost::static_string<8>, struct SymbolTag, skills::EqualTo, skills::Hashable>;
 
 struct SecurityConfig {
   Symbol symbol;

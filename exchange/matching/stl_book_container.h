@@ -98,7 +98,7 @@ public:
 
 private:
   using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-    return std::hash<uint64_t>()((static_cast<uint64_t>(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
+    return std::hash<uint64_t>()((std::hash<ClientID>()(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
   });
 
   template<Direction direction>

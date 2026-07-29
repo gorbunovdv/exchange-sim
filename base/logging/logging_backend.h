@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/noncopyable.h"
+#include "base/threading/cpu_id.h"
 
 #include <quill/LogMacros.h>
 #include <quill/Logger.h>
@@ -23,7 +24,7 @@ public:
     std::optional<std::filesystem::path> path;
     quill::LogLevel log_level;
     quill::PatternFormatterOptions format;
-    std::uint32_t cpu_id;
+    CpuID cpu_id;
   };
 
   static void init(const LoggingConfig& config) { get_or_create(&config); }
