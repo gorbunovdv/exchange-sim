@@ -12,7 +12,7 @@ static const auto security = Security{
     .tick_size = Price(0.2),
     .lot_size = Amount(0.1),
     .low_price = Price(1),
-    .high_price = Amount(10),
+    .high_price = Price(10),
     .max_amount = Amount(100),
 };
 static const auto risk_checker = RiskChecker(security);
@@ -20,8 +20,8 @@ static const auto risk_checker = RiskChecker(security);
 TEST(RiskChecker, CorrectOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -35,9 +35,9 @@ TEST(RiskChecker, CorrectOrderTest) {
 TEST(RiskChecker, CorrectReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(1),
@@ -49,8 +49,8 @@ TEST(RiskChecker, CorrectReplaceTest) {
 TEST(RiskChecker, TooMuchAmountOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -64,9 +64,9 @@ TEST(RiskChecker, TooMuchAmountOrderTest) {
 TEST(RiskChecker, TooMuchAmountReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(1),
@@ -78,8 +78,8 @@ TEST(RiskChecker, TooMuchAmountReplaceTest) {
 TEST(RiskChecker, InvalidAmountOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -91,8 +91,8 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -104,8 +104,8 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -119,9 +119,9 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
 TEST(RiskChecker, InvalidAmountReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(1),
@@ -131,9 +131,9 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(1),
@@ -143,9 +143,9 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(1),
@@ -157,8 +157,8 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
 TEST(RiskChecker, PriceOutOfRangeOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -170,8 +170,8 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -185,9 +185,9 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
 TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(0.5),
@@ -197,9 +197,9 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
 
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(20),
@@ -211,8 +211,8 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
 TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderAddRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
@@ -226,9 +226,9 @@ TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
 TEST(RiskChecker, InvalidPriceTickSizeReplaceTest) {
   EXPECT_EQ(risk_checker.reject_request(request::OrderReplaceRequest{
                 .origin_time = Ticks{0},
-                .client_id = 0,
-                .client_order_id = 0,
-                .client_replacement_id = 0,
+                .client_id = ClientID{0},
+                .client_order_id = ClientOrderID{0},
+                .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
                 .direction = Direction::BUY,
                 .price = Price(1.1),

@@ -1,6 +1,6 @@
 #pragma once
 #include "base/logging/logging_backend.h"
-#include "base/strong_type.h"
+#include "base/threading/cpu_id.h"
 
 #include <boost/scope/scope_exit.hpp>
 #include <magic_enum/magic_enum.hpp>
@@ -18,8 +18,6 @@ enum class CoreType : std::uint8_t {
   DEDICATED,
   SHARED,
 };
-
-using CpuID = StrongType<uint32_t, struct CpuIDType, skills::EqualTo>;
 
 class CoreAllocator;
 

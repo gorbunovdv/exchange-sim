@@ -19,12 +19,12 @@ SecurityStorage::SecurityStorage(const std::vector<SecurityConfig>& securities) 
     securities_.push_back(security);
     id_by_symbol_.emplace(security_config.symbol, id_by_symbol_.size());
     INFO("Added security, symbol={} lot_size={} tick_size={} low_price={} high_price={} max_amount={}",
-        std::string(security.symbol),
-        static_cast<double>(security.lot_size),
-        static_cast<double>(security.tick_size),
-        static_cast<double>(security.low_price),
-        static_cast<double>(security.high_price),
-        static_cast<double>(security.max_amount));
+        std::string(security.symbol.value()),
+        static_cast<double>(security.lot_size.value()),
+        static_cast<double>(security.tick_size.value()),
+        static_cast<double>(security.low_price.value()),
+        static_cast<double>(security.high_price.value()),
+        static_cast<double>(security.max_amount.value()));
   }
   CHECK(size() > 0, "Security storage is empty");
   CHECK(id_by_symbol_.size() == size(), "Security storage is not unique");

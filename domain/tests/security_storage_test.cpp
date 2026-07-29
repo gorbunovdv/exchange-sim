@@ -7,7 +7,7 @@ using namespace exchange_sim;
 TEST(SecurityStorage, BasicSecurityStorageTest) {
   SecurityStorage storage{{
       SecurityConfig{
-          .symbol = "A",
+          .symbol = Symbol{"A"},
           .tick_size = Price(1.),
           .lot_size = Amount(100),
           .low_price = Price(10),
@@ -15,7 +15,7 @@ TEST(SecurityStorage, BasicSecurityStorageTest) {
           .max_amount = Amount(10000),
       },
       SecurityConfig{
-          .symbol = "B",
+          .symbol = Symbol{"B"},
           .tick_size = Price(0.1),
           .lot_size = Amount(10),
           .low_price = Price(1),
@@ -24,14 +24,14 @@ TEST(SecurityStorage, BasicSecurityStorageTest) {
       },
   }};
   EXPECT_EQ(storage.size(), 2);
-  EXPECT_EQ(storage.get_id_by_symbol_or_null("A"), SecurityID{0});
-  EXPECT_EQ(storage.get_id_by_symbol_or_null("B"), SecurityID{1});
-  EXPECT_EQ(storage.get_id_by_symbol_or_null("C"), std::nullopt);
+  EXPECT_EQ(storage.get_id_by_symbol_or_null(Symbol{"A"}), SecurityID{0});
+  EXPECT_EQ(storage.get_id_by_symbol_or_null(Symbol{"B"}), SecurityID{1});
+  EXPECT_EQ(storage.get_id_by_symbol_or_null(Symbol{"C"}), std::nullopt);
   EXPECT_TRUE(storage.has_security(SecurityID{0}));
   EXPECT_TRUE(storage.has_security(SecurityID{1}));
   EXPECT_FALSE(storage.has_security(SecurityID{2}));
-  EXPECT_EQ(storage.get_security(SecurityID{0}).symbol, "A");
-  EXPECT_EQ(storage.get_security(SecurityID{1}).symbol, "B");
+  EXPECT_EQ(storage.get_security(SecurityID{0}).symbol, Symbol{"A"});
+  EXPECT_EQ(storage.get_security(SecurityID{1}).symbol, Symbol{"B"});
 }
 
 TEST(SecurityStorage, EmptySecurityTest) {
@@ -41,7 +41,7 @@ TEST(SecurityStorage, EmptySecurityTest) {
 TEST(SecurityStorage, DuplicateSymbolsTest) {
   EXPECT_THROW(SecurityStorage({
                    SecurityConfig{
-                       .symbol = "A",
+                       .symbol = Symbol{"A"},
                        .tick_size = Price(1.),
                        .lot_size = Amount(100),
                        .low_price = Price(10),
@@ -49,7 +49,7 @@ TEST(SecurityStorage, DuplicateSymbolsTest) {
                        .max_amount = Amount(10000),
                    },
                    SecurityConfig{
-                       .symbol = "A",
+                       .symbol = Symbol{"A"},
                        .tick_size = Price(0.1),
                        .lot_size = Amount(10),
                        .low_price = Price(1),

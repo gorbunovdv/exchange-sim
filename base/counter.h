@@ -2,13 +2,13 @@
 
 namespace exchange_sim {
 
-template<typename UnderlyingType>
+template<typename StrongType>
 class Counter {
 public:
-  UnderlyingType inc() { return ++counter_; }
+  StrongType inc() { return StrongType{++counter_}; }
 
 private:
-  UnderlyingType counter_ = 0;
+  StrongType::UnderlyingType counter_ = 0;
 };
 
 }  // namespace exchange_sim

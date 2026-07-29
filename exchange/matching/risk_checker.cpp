@@ -7,13 +7,13 @@ std::optional<typename RejectionReason<Request>::ReasonType> RiskChecker::reject
   if (request.quantity > security_.max_amount) {
     return RejectionReason<Request>::ReasonType::MAX_AMOUNT_EXCEEDED;
   }
-  if (request.quantity <= 0 || request.quantity % security_.lot_size != 0) {
+  if (request.quantity <= Amount{0} || request.quantity % security_.lot_size != Amount{0}) {
     return RejectionReason<Request>::ReasonType::INVALID_QUANTITY;
   }
   if (request.price < security_.low_price || request.price > security_.high_price) {
     return RejectionReason<Request>::ReasonType::PRICE_OUT_OF_RANGE;
   }
-  if ((request.price - security_.low_price) % security_.tick_size != 0) {
+  if ((request.price - security_.low_price) % security_.tick_size != Price{0}) {
     return RejectionReason<Request>::ReasonType::PRICE_NOT_MULTIPLE_OF_TICK_SIZE;
   }
   return std::nullopt;

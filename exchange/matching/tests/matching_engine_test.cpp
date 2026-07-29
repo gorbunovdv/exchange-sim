@@ -19,7 +19,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       [&events](engine_events::EventType&& event) { events.push_back(event); });
   SecurityStorage storage({
       SecurityConfig{
-          .symbol = "A",
+          .symbol = Symbol{"A"},
           .tick_size = Price(1),
           .lot_size = Amount(1),
           .low_price = Price(0),
