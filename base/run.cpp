@@ -32,7 +32,7 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
   }
   glz::generic config = load_config_from_file(args[1]);
 #if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
-  if (config.contains("memory") && config["memory"]["reserve_huge_os_pages"].as<bool>()) {
+  if (config.contains("memory") && config["memory"]["reserve_huge_os_pages"].get<bool>()) {
     if (mi_reserve_huge_os_pages_at(config["memory"]["huge_os_pages_count"].as<uint32_t>(), 0, 0) != 0) {
       std::cerr << "Failed to reserve huge OS pages" << "\n";
       std::abort();

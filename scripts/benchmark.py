@@ -4,8 +4,8 @@ import shutil
 from pathlib import Path
 
 import plumbum
-
 from benchmark_one import benchmark_one
+
 from helpers.config import load_config
 from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
