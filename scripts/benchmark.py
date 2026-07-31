@@ -23,7 +23,7 @@ def make_single_run(config_path, config, preset, label, current_rep, app, timeou
         config_path=config_path,
         preset=preset,
         mimalloc_verbose_show_stats=True,
-        no_alsr=True,
+        no_alsr=False,
         perf=[],
         timeout=timeout,
         hard_timeout=hard_timeout,
