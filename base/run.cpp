@@ -31,12 +31,14 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
     throw std::runtime_error("wrong number of arguments");
   }
   glz::generic config = load_config_from_file(args[1]);
+#if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
   if (config.contains("memory") && config["memory"]["reserve_huge_os_pages"].as<bool>()) {
     if (mi_reserve_huge_os_pages_at(config["memory"]["huge_os_pages_count"].as<uint32_t>(), 0, 0) != 0) {
       std::cerr << "Failed to reserve huge OS pages" << "\n";
       std::abort();
     }
   }
+#endif
   Runtime::Config rt_config{
       .core_allocator_config = {
           .shared_core = CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()},
