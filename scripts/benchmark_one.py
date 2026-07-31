@@ -24,8 +24,8 @@ DEFAULT_PERF = [
     "cpu-migrations",
     "page-faults",
     "major-faults",
-    "cpu_core/ld_blocks_partial.address_alias",
-    "cpu_core/ld_blocks.store_forward",
+    "cpu_core/ld_blocks.address_alias/",
+    "cpu_core/ld_blocks.store_forward/",
 ]
 
 

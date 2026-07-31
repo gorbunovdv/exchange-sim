@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+import itertools
 import shutil
 import subprocess
 import sys
@@ -7,6 +8,7 @@ from pathlib import Path
 
 import plumbum
 from benchmark_one import DEFAULT_PERF, benchmark_one
+from tqdm import tqdm
 
 from helpers.config import load_config
 from helpers.metadata import Metadata
@@ -69,21 +71,22 @@ def benchmark(
         if dest_path.exists():
             raise Exception(f"Path {dest_path} already exists, please back it up or remove it")
         dest_path.mkdir(parents=True, exist_ok=False)
-    for rep in range(1, reps + 1):
-        for app in apps:
-            make_single_run(
-                config_path=config_path,
-                config=config,
-                preset=preset,
-                label=label,
-                current_rep=rep,
-                app=app,
-                timeout=timeout,
-                hard_timeout=hard_timeout,
-                mimalloc_verbose_show_stats=mimalloc_verbose_show_stats,
-                perf=perf,
-                no_aslr=no_aslr,
-            )
+    for rep, app in tqdm(
+        list(itertools.product(range(1, reps + 1), apps)), mininterval=10, maxinterval=10, desc="Running all apps"
+    ):
+        make_single_run(
+            config_path=config_path,
+            config=config,
+            preset=preset,
+            label=label,
+            current_rep=rep,
+            app=app,
+            timeout=timeout,
+            hard_timeout=hard_timeout,
+            mimalloc_verbose_show_stats=mimalloc_verbose_show_stats,
+            perf=perf,
+            no_aslr=no_aslr,
+        )
 
 
 def main():

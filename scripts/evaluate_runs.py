@@ -38,7 +38,10 @@ class SingleRunEvaluation:
                     f" symbol={group.symbol} type={group.type} trades_count={group.trades_count}"
                 )
             pct_items = [pct_dict[percentile] for percentile in self.percentiles]
-            row = [group.symbol, group.type, group.trades_count, pct_items[0][0]]
+            trades_count = pct_items[0][0]
+            if trades_count < 1000:
+                continue
+            row = [group.symbol, group.type, group.trades_count, trades_count]
             for item in pct_items:
                 _, median, abs_diff, rel_diff = item
                 row.extend(
@@ -79,7 +82,10 @@ class MultiRunEvaluation:
                 )
             pct1_items = [pct_dict1[percentile] for percentile in self.percentiles]
             pct2_items = [pct_dict2[percentile] for percentile in self.percentiles]
-            row = [group.symbol, group.type, group.trades_count, min(pct1_items[0][0], pct2_items[0][0])]
+            trades_count = min(pct1_items[0][0], pct2_items[0][0])
+            if trades_count < 1000:
+                continue
+            row = [group.symbol, group.type, group.trades_count, trades_count]
             for item1, item2 in zip(pct1_items, pct2_items, strict=True):
                 _, median1, abs_diff1, _ = item1
                 _, median2, abs_diff2, _ = item2
@@ -143,7 +149,7 @@ def main():
         default=[50.0],
         help="Percentiles to compare (50, 75, 99, 99.9 are options)",
     )
-    parser.add_argument("--relative-threshold", type=float, default=5.0, help="Relative threshold for comparison")
+    parser.add_argument("--relative-threshold", type=float, default=2.0, help="Relative threshold for comparison")
     parser.add_argument("--absolute-threshold", type=float, default=5.0, help="Absolute threshold for comparison")
     args = parser.parse_args()
 
@@ -165,7 +171,7 @@ def main():
         label1=label1,
         label2=label2,
         no_fingerprint_check=args.no_fingerprint_check,
-        percentiles=args.percentiles,
+        percentiles=sorted((args.percentiles if args.percentiles else []) + [0, 100]),
         rel_threshold=args.relative_threshold,
         abs_threshold=args.absolute_threshold,
     )

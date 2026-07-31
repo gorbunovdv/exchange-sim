@@ -18,7 +18,7 @@ latency_fields = [
 ]
 
 
-percentiles = [50, 75, 90, 99, 99.9]
+percentiles = [0, 50, 75, 90, 99, 99.9, 100]
 
 
 def calculate_groups(path):
@@ -31,14 +31,11 @@ def calculate_groups(path):
                 maxinterval=10,
                 desc="Parsing initial json",
             ):
-                msg_type = item.get("type")
-                trades_count = item.get("trades_count", 0)
-                symbol = item.get("symbol")
-                group_key = (symbol, msg_type, trades_count)
-
+                msg_type, trades_count, symbol = item.get("type"), item.get("trades_count"), item.get("symbol")
+                dct = groups[(symbol, msg_type, trades_count)]
                 for field in latency_fields:
                     if field in item:
-                        groups[group_key][field].append(item[field])
+                        dct[field].append(item[field])
     except FileNotFoundError as e:
         raise Exception(f"Error: Could not open '{path}'") from e
 
