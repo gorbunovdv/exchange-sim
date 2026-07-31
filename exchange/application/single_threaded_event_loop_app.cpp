@@ -20,12 +20,12 @@
 #include <quill/Backend.h>
 
 #include <iostream>
-#include <stack>
 
 using namespace exchange_sim;
 
 namespace exchange_sim {
 
+namespace {
 template<typename T>
 class WrapVector {
 public:
@@ -112,6 +112,8 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
     report_generator_sink.clear();
   }
 }
+
+}  // namespace
 
 }  // namespace exchange_sim
 

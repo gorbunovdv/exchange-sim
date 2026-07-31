@@ -3,6 +3,10 @@
     "shared_core": 2,
     "dedicated_cores": [3, 4, 5, 6, 7]
   },
+  "memory": {
+    "reserve_huge_os_pages": true,
+    "huge_os_pages_count": 4
+  },
   "securities": [
     {
       "symbol": "EURUSD",
@@ -39,7 +43,9 @@
   },
   "results": {
     "stats": "./results/stats.json",
-    "metadata": "./results/metadata.json"
+    "metadata": "./results/metadata.json",
+    "perf": "./results/perf.txt",
+    "logs": "./results/logs.txt"
   },
   "matching_engine": {
   },

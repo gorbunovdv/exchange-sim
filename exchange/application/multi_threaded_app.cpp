@@ -1,5 +1,3 @@
-
-
 #include "base/journal.h"
 #include "base/run.h"
 #include "base/thread_receiver.h"
@@ -23,6 +21,8 @@
 #include <iostream>
 
 namespace exchange_sim {
+
+namespace {
 
 void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
@@ -130,6 +130,8 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   CHECK(exchange_dispatcher.get_sink().empty(), "ExchangeDispatcherSink must be empty");
 }
 
+}  // namespace
+
 }  // namespace exchange_sim
 
 
@@ -137,7 +139,7 @@ int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
     const auto [runtime, config] = exchange_sim::read_config_and_initialize_logging(std::span(argv, argv + argc));
-    run_multi_threaded_event_loop_app(runtime, config);
+    exchange_sim::run_multi_threaded_event_loop_app(runtime, config);
     quill::Backend::stop();
   }
   CPPTRACE_CATCH(...) {

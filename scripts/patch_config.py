@@ -33,7 +33,10 @@ def read_isolated():
     return parse_cpulist(SYS_ISOLATED.read_text())
 
 
-def patch_config(*, path, shared, dedicated, dry_run, quiet):
+def patch_config(*, path, dry_run=False, quiet=True):
+    cores = read_isolated()
+    shared, dedicated = cores[0], cores[1:]
+
     data = load_config(path)
 
     current = data.get("cpu_cores")
@@ -72,11 +75,7 @@ def main():
     parser.add_argument("--quiet", action="store_true", help="Do not print anything")
     args = parser.parse_args()
 
-    cores = read_isolated()
-    shared, dedicated = cores[0], cores[1:]
-    return patch_config(
-        path=Path(args.config_file), shared=shared, dedicated=dedicated, dry_run=args.dry_run, quiet=args.quiet
-    )
+    return patch_config(path=Path(args.config_file), dry_run=args.dry_run, quiet=args.quiet)
 
 
 if __name__ == "__main__":

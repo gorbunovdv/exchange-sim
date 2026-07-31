@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 import argparse
-import re
 import shutil
-import time
 from pathlib import Path
 
 import plumbum
@@ -12,18 +10,8 @@ from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
 
 
-def read_dirty():
-    result = re.search(r"Dirty:\s+(\d+)", Path("/proc/meminfo").read_text())
-    if result is None:
-        raise Exception("Could not read dirty memory")
-    return int(result.group(1))
-
-
 def clear_cache():
-    plumbum.local["sync"] & plumbum.FG
-    while read_dirty() > 100_000:
-        print("Waiting for cache to clear...")
-        time.sleep(1)
+    plumbum.local["sh"]["-c"]["sync; echo 3 > /proc/sys/vm/drop_caches"] & plumbum.FG
 
 
 def make_single_run(config_path, config, preset, label, current_rep, app):

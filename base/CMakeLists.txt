@@ -1,6 +1,7 @@
 find_package(GTest REQUIRED)
 find_package(Boost REQUIRED)
 find_package(cpptrace REQUIRED)
+find_package(mimalloc REQUIRED)
 include(GoogleTest)
 
 add_subdirectory(threading)
@@ -9,7 +10,7 @@ add_subdirectory(config)
 add_subdirectory(time)
 
 add_library(base run.cpp)
-target_link_libraries(base PUBLIC config logging time threading Boost::boost cpptrace::cpptrace)
+target_link_libraries(base PRIVATE mimalloc-static PUBLIC config logging time threading Boost::boost cpptrace::cpptrace)
 target_sources(base PUBLIC
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
