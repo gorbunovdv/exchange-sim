@@ -8,8 +8,8 @@ from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
 
 
-def write_metadata(*, config_path, preset, output_path, app, quiet=False, dry_run=False):
-    metadata = Metadata(ROOT_PATH, preset, config_path).collect_metadata(app)
+def write_metadata(*, config_path, preset, output_path, app, run_metadata, quiet=False, dry_run=False):
+    metadata = Metadata(ROOT_PATH, preset, config_path).collect_metadata(app, run_metadata)
     if not dry_run:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--app", required=True, type=str, help="Application that will be run")
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
     parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode")
+    parser.add_argument("--run-metadata", nargs="*", help="Metadata to append to run")
     args = parser.parse_args()
 
     config = load_config(args.config_file)
@@ -37,6 +38,7 @@ def main():
         app=args.application,
         quiet=args.quiet,
         dry_run=args.dry_run,
+        run_metadata=dict(pair.split("=") for pair in args.run_metadata) if args.run_metadata else {},
     )
 
 

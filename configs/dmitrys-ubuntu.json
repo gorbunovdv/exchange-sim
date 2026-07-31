@@ -5,7 +5,7 @@
   },
   "memory": {
     "reserve_huge_os_pages": true,
-    "huge_os_pages_count": 4
+    "huge_os_pages_count": 8
   },
   "securities": [
     {

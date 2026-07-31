@@ -24,26 +24,42 @@ DEFAULT_PERF = [
     "cpu-migrations",
     "page-faults",
     "major-faults",
+    "cpu_core/ld_blocks_partial.address_alias",
+    "cpu_core/ld_blocks.store_forward",
 ]
 
 
-def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf, no_alsr, timeout, hard_timeout):
+def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf, no_aslr, timeout, hard_timeout):
     config = load_config(config_path)
     with plumbum.local.cwd(ROOT_PATH), open(config["results"]["logs"], "w") as flog:
         just_run = plumbum.local["just"]["run"]
         if (ec := patch_config(path=config_path, dry_run=True, quiet=True)) != 0:
             return ec
         metadata_path = Path(config["results"]["metadata"])
-        write_metadata(config_path=config_path, preset=preset, app=app, quiet=True, output_path=metadata_path)
+        write_metadata(
+            config_path=config_path,
+            preset=preset,
+            app=app,
+            quiet=True,
+            output_path=metadata_path,
+            run_metadata={
+                "perf": perf,
+                "timeout": timeout,
+                "hard_timeout": hard_timeout,
+                "no_aslr": no_aslr,
+            },
+        )
         cmd = plumbum.local[ROOT_PATH / f"cmake-build-{preset}/exchange/application" / app][config_path]
         if mimalloc_verbose_show_stats:
             cmd = plumbum.local["env"]["MIMALLOC_VERBOSE=1"]["MIMALLOC_SHOW_STATS=1"][cmd]
+        perf_path = ROOT_PATH / config["results"]["perf"]
+        perf_path.unlink(missing_ok=True)
         if perf:
-            perf_cmd = plumbum.local["perf"]["stat"]["-o"][ROOT_PATH / config["results"]["perf"]]
+            perf_cmd = plumbum.local["perf"]["stat"]["-o"][perf_path]
             for perf_param in perf:
                 perf_cmd = perf_cmd["-e"][perf_param]
             cmd = perf_cmd["--"][cmd]
-        if no_alsr:
+        if no_aslr:
             cmd = plumbum.local["setarch"]["--addr-no-randomize"][cmd]
         cmd = plumbum.local["timeout"]["-s"]["INT"]["-k"][hard_timeout][timeout][cmd]
         cmd = plumbum.local["python3"][ROOT_PATH / "scripts/run_isolated.py"][cmd]
@@ -71,7 +87,7 @@ def main():
     parser.add_argument("--mimalloc-verbose-show-stats", action="store_true", help="Show mimalloc verbose stats")
     parser.add_argument("--use-perf", action="store_true", help="Use perf")
     parser.add_argument("--perf-parameters", nargs="*", default=DEFAULT_PERF, help="Parameters to pass to perf")
-    parser.add_argument("--no-alsr", action="store_true", help="Do not use ALSR")
+    parser.add_argument("--no-aslr", action="store_true", help="Do not use aslr")
     parser.add_argument("--timeout", type=int, default=60, help="Timeout for the benchmark")
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for the benchmark")
     args = parser.parse_args()
@@ -81,7 +97,7 @@ def main():
         preset=args.preset,
         mimalloc_verbose_show_stats=args.mimalloc_verbose_show_stats,
         perf=args.perf_parameters if args.use_perf else [],
-        no_alsr=args.no_alsr,
+        no_aslr=args.no_aslr,
         timeout=args.timeout,
         hard_timeout=args.hard_timeout,
     )
