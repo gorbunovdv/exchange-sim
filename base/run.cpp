@@ -44,7 +44,7 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
     const void* reserved_area = mi_arena_area(arena_id, &reserved_bytes_size);
     bool reserved_all_pages = reserved_area != nullptr && reserved_bytes_size % constHugeOsPageSize == 0 &&
         reserved_bytes_size / constHugeOsPageSize == requested_pages;
-    CHECK(!reserved_all_pages,
+    CHECK(reserved_all_pages,
         "Failed to reserve all huge OS pages, requested_pages={} reserved_bytes_size={}",
         requested_pages,
         reserved_bytes_size);
