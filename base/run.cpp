@@ -33,10 +33,20 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
   glz::generic config = load_config_from_file(args[1]);
 #if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
   if (config.contains("memory") && config["memory"]["reserve_huge_os_pages"].get<bool>()) {
-    if (mi_reserve_huge_os_pages_at(config["memory"]["huge_os_pages_count"].as<uint32_t>(), 0, 0) != 0) {
-      std::cerr << "Failed to reserve huge OS pages" << "\n";
-      std::abort();
-    }
+    static constexpr size_t constHugeOsPageSize = 1 << 30;
+
+    const auto requested_pages = config["memory"]["huge_os_pages_count"].as<size_t>();
+    CHECK(requested_pages > 0, "Must request at least one huge OS page");
+    mi_arena_id_t arena_id = nullptr;
+    const int error = mi_reserve_huge_os_pages_at_ex(requested_pages, 0, 0, false, &arena_id);
+    size_t reserved_bytes_size = 0;
+    const void* reserved_area = error == 0 ? mi_arena_area(arena_id, &reserved_bytes_size) : nullptr;
+    bool reserved_all_pages = reserved_area != nullptr && reserved_bytes_size % constHugeOsPageSize == 0 &&
+        reserved_bytes_size / constHugeOsPageSize == requested_pages;
+    CHECK(error != 0 || !reserved_all_pages,
+        "Failed to reserve all huge OS pages, requested_pages={} reserved_bytes_size={}",
+        requested_pages,
+        reserved_bytes_size);
   }
 #endif
   Runtime::Config rt_config{

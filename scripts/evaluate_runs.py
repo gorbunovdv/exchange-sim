@@ -3,7 +3,11 @@ import argparse
 from calc_stats import latency_fields
 from tabulate import tabulate
 
-from helpers.single_benchmark import SingleBenchmark
+from helpers.single_benchmark_results import SingleBenchmarkResults
+
+MAX_REL_THRESHOLD = 2.0
+MAX_ABS_THRESHOLD = 10.0
+MIN_EVENT_COUNT_THRESHOLD = 10000
 
 
 def is_significant_single(pct, rel_threshold, abs_threshold):
@@ -23,10 +27,11 @@ def is_significant_pair(pct1, pct2, rel_threshold, abs_threshold):
 
 
 class SingleRunEvaluation:
-    def __init__(self, percentiles, relative_threshold, absolute_threshold):
+    def __init__(self, percentiles, relative_threshold, absolute_threshold, min_event_count_threshold):
         self.percentiles = percentiles
         self.relative_threshold = relative_threshold
         self.absolute_threshold = absolute_threshold
+        self.min_event_count_threshold = min_event_count_threshold
 
     def print_metric_table(self, metric, rbgbp):
         metrics_table = []
@@ -39,7 +44,7 @@ class SingleRunEvaluation:
                 )
             pct_items = [pct_dict[percentile] for percentile in self.percentiles]
             trades_count = pct_items[0][0]
-            if trades_count < 1000:
+            if trades_count < self.min_event_count_threshold:
                 continue
             row = [group.symbol, group.type, group.trades_count, trades_count]
             for item in pct_items:
@@ -59,10 +64,11 @@ class SingleRunEvaluation:
 
 
 class MultiRunEvaluation:
-    def __init__(self, percentiles, rel_threshold, abs_threshold):
+    def __init__(self, percentiles, rel_threshold, abs_threshold, min_event_count_threshold):
         self.percentiles = percentiles
         self.rel_threshold = rel_threshold
         self.abs_threshold = abs_threshold
+        self.min_event_count_threshold = min_event_count_threshold
 
     def print_metric_table_comparison(self, metric, rbgbp1, rbgbp2):
         metrics_table = []
@@ -83,7 +89,7 @@ class MultiRunEvaluation:
             pct1_items = [pct_dict1[percentile] for percentile in self.percentiles]
             pct2_items = [pct_dict2[percentile] for percentile in self.percentiles]
             trades_count = min(pct1_items[0][0], pct2_items[0][0])
-            if trades_count < 1000:
+            if trades_count < self.min_event_count_threshold:
                 continue
             row = [group.symbol, group.type, group.trades_count, trades_count]
             for item1, item2 in zip(pct1_items, pct2_items, strict=True):
@@ -119,16 +125,17 @@ def evaluate_runs(
     no_fingerprint_check,
     rel_threshold,
     abs_threshold,
+    min_event_count_threshold,
 ):
     if app1 == app2 and label1 == label2:
-        sb = SingleBenchmark(config_path, preset, app1, label1, no_fingerprint_check)
-        es = SingleRunEvaluation(percentiles, rel_threshold, abs_threshold)
+        sb = SingleBenchmarkResults(config_path, preset, app1, label1, no_fingerprint_check)
+        es = SingleRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold)
         for metric in latency_fields:
             es.print_metric_table(metric, sb.results_by_group_by_percentile(metric))
     else:
-        sb1 = SingleBenchmark(config_path, preset, app1, label1, no_fingerprint_check)
-        sb2 = SingleBenchmark(config_path, preset, app2, label2, no_fingerprint_check)
-        em = MultiRunEvaluation(percentiles, rel_threshold, abs_threshold)
+        sb1 = SingleBenchmarkResults(config_path, preset, app1, label1, no_fingerprint_check)
+        sb2 = SingleBenchmarkResults(config_path, preset, app2, label2, no_fingerprint_check)
+        em = MultiRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold)
         for metric in latency_fields:
             em.print_metric_table_comparison(
                 metric, sb1.results_by_group_by_percentile(metric), sb2.results_by_group_by_percentile(metric)
@@ -146,11 +153,21 @@ def main():
         "--percentiles",
         nargs="+",
         type=float,
-        default=[50.0],
-        help="Percentiles to compare (50, 75, 99, 99.9 are options)",
+        default=[0.0, 50.0, 100.0],
+        help="Percentiles to compare (0, 50, 75, 99, 99.9, 100 are options)",
     )
-    parser.add_argument("--relative-threshold", type=float, default=2.0, help="Relative threshold for comparison")
-    parser.add_argument("--absolute-threshold", type=float, default=5.0, help="Absolute threshold for comparison")
+    parser.add_argument(
+        "--relative-threshold", type=float, default=MAX_REL_THRESHOLD, help="Relative threshold for comparison"
+    )
+    parser.add_argument(
+        "--absolute-threshold", type=float, default=MAX_ABS_THRESHOLD, help="Absolute threshold for comparison"
+    )
+    parser.add_argument(
+        "--min-event-count-threshold",
+        type=int,
+        default=MIN_EVENT_COUNT_THRESHOLD,
+        help="Minimum event count threshold for comparison",
+    )
     args = parser.parse_args()
 
     if not args.apps or len(args.apps) > 2:
@@ -171,9 +188,10 @@ def main():
         label1=label1,
         label2=label2,
         no_fingerprint_check=args.no_fingerprint_check,
-        percentiles=sorted((args.percentiles if args.percentiles else []) + [0, 100]),
+        percentiles=sorted(args.percentiles),
         rel_threshold=args.relative_threshold,
         abs_threshold=args.absolute_threshold,
+        min_event_count_threshold=args.min_event_count_threshold,
     )
 
 

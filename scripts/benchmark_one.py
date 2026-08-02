@@ -31,10 +31,11 @@ DEFAULT_PERF = [
 
 def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf, no_aslr, timeout, hard_timeout):
     config = load_config(config_path)
-    with plumbum.local.cwd(ROOT_PATH), open(config["results"]["logs"], "w") as flog:
+    log_path = ROOT_PATH / config["results"]["logs"]
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with plumbum.local.cwd(ROOT_PATH), open(log_path, "w") as flog:
         just_run = plumbum.local["just"]["run"]
-        if (ec := patch_config(path=config_path, dry_run=True, quiet=True)) != 0:
-            return ec
+        patch_config(path=config_path, dry_run=True, quiet=True)
         metadata_path = Path(config["results"]["metadata"])
         write_metadata(
             config_path=config_path,
@@ -47,6 +48,7 @@ def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf
                 "timeout": timeout,
                 "hard_timeout": hard_timeout,
                 "no_aslr": no_aslr,
+                "mimalloc_verbose_show_stats": mimalloc_verbose_show_stats,
             },
         )
         cmd = plumbum.local[ROOT_PATH / f"cmake-build-{preset}/exchange/application" / app][config_path]
@@ -76,7 +78,6 @@ def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf
         print("Running calc_stats: ", calc_stats_cmd)
         calc_stats_cmd.run(stdout=subprocess.DEVNULL, stderr=sys.stderr)
         calc_stats(input_file=config["calc_stats"]["output_file"], output_file=config["results"]["stats"], quiet=True)
-    return 0
 
 
 def main():
@@ -91,7 +92,7 @@ def main():
     parser.add_argument("--timeout", type=int, default=60, help="Timeout for the benchmark")
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for the benchmark")
     args = parser.parse_args()
-    return benchmark_one(
+    benchmark_one(
         app=args.app,
         config_path=args.config_path,
         preset=args.preset,
@@ -104,4 +105,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

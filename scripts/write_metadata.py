@@ -33,12 +33,12 @@ def main():
 
     write_metadata(
         preset=args.preset,
-        output_path=Path(config["results"]["metadata"]),
+        output_path=ROOT_PATH / config["results"]["metadata"],
         config_path=args.config_file,
-        app=args.application,
+        app=args.app,
         quiet=args.quiet,
         dry_run=args.dry_run,
-        run_metadata=dict(pair.split("=") for pair in args.run_metadata) if args.run_metadata else {},
+        run_metadata=dict(pair.split("=", 1) for pair in args.run_metadata) if args.run_metadata else {},
     )
 
 

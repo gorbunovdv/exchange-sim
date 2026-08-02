@@ -22,7 +22,7 @@ class GroupWithoutPercentile:
     trades_count: int
 
 
-class SingleBenchmark:
+class SingleBenchmarkResults:
     @staticmethod
     def _get_fingerprint(path: Path):
         metadata_path = path / "metadata.json"
@@ -41,7 +41,7 @@ class SingleBenchmark:
         if not label:
             label = self.metadata.encode_label()
             print(f"No label provided, using label={label}")
-        benchmark_path = Path(self.metadata.config["benchmark_path"]) / application / label
+        benchmark_path = ROOT_PATH / self.metadata.config["benchmark_path"] / application / label
         if not benchmark_path.exists():
             raise Exception(f"No such benchmark found, path={benchmark_path}")
         total_run_paths = list(benchmark_path.glob("*"))

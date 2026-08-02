@@ -2,10 +2,10 @@
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 from helpers.config import load_config
+from helpers.root_path import ROOT_PATH
 
 SYS_ISOLATED = Path("/sys/devices/system/cpu/isolated")
 
@@ -50,20 +50,20 @@ def patch_config(*, path, dry_run=False, quiet=True):
     if current == desired:
         if not quiet:
             print("No changes needed")
-        return 0
+        return
 
-    data["cpu_cores"] = desired
     if not quiet:
         print("Desired isolated CPUs:", json.dumps(desired))
 
     if dry_run:
-        print("Config cpu_cores do not match this machine's isolated CPUs - run ./scripts/patch_config.py <config>")
-        return 1
+        raise Exception(
+            "Config cpu_cores do not match this machine's isolated CPUs - run ./scripts/patch_config.py <config>"
+        )
 
-    with open(path, "w") as f:
+    data["cpu_cores"] = desired
+
+    with open(ROOT_PATH / path, "w") as f:
         f.write(json.dumps(data, indent=2))
-
-    return 0
 
 
 def main():
@@ -75,8 +75,8 @@ def main():
     parser.add_argument("--quiet", action="store_true", help="Do not print anything")
     args = parser.parse_args()
 
-    return patch_config(path=Path(args.config_file), dry_run=args.dry_run, quiet=args.quiet)
+    patch_config(path=Path(args.config_file), dry_run=args.dry_run, quiet=args.quiet)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

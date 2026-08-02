@@ -19,40 +19,6 @@ def clear_cache():
     plumbum.local["sudo"]["sh"]["-c"]["sync; echo 3 > /proc/sys/vm/drop_caches"] & plumbum.FG
 
 
-def make_single_run(
-    *,
-    config_path,
-    config,
-    preset,
-    label,
-    current_rep,
-    app,
-    timeout,
-    hard_timeout,
-    mimalloc_verbose_show_stats,
-    perf,
-    no_aslr,
-):
-    print(f"Running current_rep={current_rep} app={app} preset={preset}")
-    clear_cache()
-    benchmark_one(
-        app=app,
-        config_path=config_path,
-        preset=preset,
-        timeout=timeout,
-        hard_timeout=hard_timeout,
-        mimalloc_verbose_show_stats=mimalloc_verbose_show_stats,
-        perf=perf,
-        no_aslr=no_aslr,
-    )
-    dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{current_rep:02d}"
-    dest_path.mkdir(parents=True, exist_ok=True)
-    for path in config["results"].values():
-        path = ROOT_PATH / path
-        if path.exists():
-            shutil.copy(path, dest_path)
-
-
 def benchmark(
     *, preset, label, reps, apps, config_path, timeout, hard_timeout, mimalloc_verbose_show_stats, perf, no_aslr
 ):
@@ -70,23 +36,27 @@ def benchmark(
         dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label
         if dest_path.exists():
             raise Exception(f"Path {dest_path} already exists, please back it up or remove it")
-        dest_path.mkdir(parents=True, exist_ok=False)
     for rep, app in tqdm(
         list(itertools.product(range(1, reps + 1), apps)), mininterval=10, maxinterval=10, desc="Running all apps"
     ):
-        make_single_run(
-            config_path=config_path,
-            config=config,
-            preset=preset,
-            label=label,
-            current_rep=rep,
+        print(f"Running current_rep={rep} app={app} preset={preset}")
+        clear_cache()
+        benchmark_one(
             app=app,
+            config_path=config_path,
+            preset=preset,
             timeout=timeout,
             hard_timeout=hard_timeout,
             mimalloc_verbose_show_stats=mimalloc_verbose_show_stats,
             perf=perf,
             no_aslr=no_aslr,
         )
+        dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{rep:02d}"
+        dest_path.mkdir(parents=True, exist_ok=True)
+        for path in config["results"].values():
+            path = ROOT_PATH / path
+            if path.exists():
+                shutil.copy(path, dest_path)
 
 
 def main():
