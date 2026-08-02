@@ -38,12 +38,13 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
     const auto requested_pages = config["memory"]["huge_os_pages_count"].as<size_t>();
     CHECK(requested_pages > 0, "Must request at least one huge OS page");
     mi_arena_id_t arena_id = nullptr;
-    const int error = mi_reserve_huge_os_pages_at_ex(requested_pages, 0, 0, false, &arena_id);
+    int ec = mi_reserve_huge_os_pages_at_ex(requested_pages, 0, 0, false, &arena_id);
+    CHECK(ec == 0, "Failed to reserve huge OS pages, requested_pages={}", requested_pages);
     size_t reserved_bytes_size = 0;
-    const void* reserved_area = error == 0 ? mi_arena_area(arena_id, &reserved_bytes_size) : nullptr;
+    const void* reserved_area = ec == 0 ? mi_arena_area(arena_id, &reserved_bytes_size) : nullptr;
     bool reserved_all_pages = reserved_area != nullptr && reserved_bytes_size % constHugeOsPageSize == 0 &&
         reserved_bytes_size / constHugeOsPageSize == requested_pages;
-    CHECK(error != 0 || !reserved_all_pages,
+    CHECK(!reserved_all_pages,
         "Failed to reserve all huge OS pages, requested_pages={} reserved_bytes_size={}",
         requested_pages,
         reserved_bytes_size);
