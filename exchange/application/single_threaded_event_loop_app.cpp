@@ -32,7 +32,10 @@ class WrapVector {
 public:
   explicit WrapVector(auto&&... args): vector_{std::forward<decltype(args)>(args)...} {}
 
-  void push(auto&&... args) { vector_.push_back(std::forward<decltype(args)>(args)...); }
+  void push(auto&&... args) {
+    CHECK(vector_.size() < vector_.capacity(), "Vector is full");
+    vector_.push_back(std::forward<decltype(args)>(args)...);
+  }
 
   auto begin(this auto&& self) { return std::forward_like<decltype(self)>(self.vector_).begin(); }
 
@@ -43,6 +46,47 @@ public:
 private:
   T vector_;
 };
+
+struct Sinks {
+  static constexpr size_t constQueueSize = 1024;
+
+  using RequestSinkType = WrapVector<boost::container::static_vector<request::RequestType, constQueueSize>>;
+  using EngineEventSinkType = WrapVector<boost::container::static_vector<engine_events::EventType, constQueueSize>>;
+  using MarketDataSinkType = WrapVector<boost::container::static_vector<market_events::EventType, constQueueSize>>;
+  using ReportSinkType = WrapVector<boost::container::static_vector<report::ReportType, constQueueSize>>;
+
+  static constexpr size_t constGuard = 1344;
+
+  RequestSinkType request_sink;
+  EngineEventSinkType engine_event_sink;
+  std::array<std::byte, constGuard> padding2{};
+  MarketDataSinkType market_data_generator_sink;
+  std::array<std::byte, constGuard> padding3{};
+  ReportSinkType report_generator_sink;
+
+  Sinks() {
+    static constexpr size_t constPage = 4096;
+    static constexpr auto far_from_page = [](size_t offset1, size_t offset2) {
+      size_t r = (offset2 - offset1) % constPage;
+      return r >= constGuard && r <= constPage - constGuard;
+    };
+
+    static constexpr size_t constEngineSinkDelta = sizeof(request_sink);
+    static constexpr size_t constMarketDataSinkDelta =
+        constEngineSinkDelta + sizeof(engine_event_sink) + sizeof(padding2);
+    static constexpr size_t constReportSinkDelta =
+        constMarketDataSinkDelta + sizeof(market_data_generator_sink) + sizeof(padding3);
+
+    static_assert(far_from_page(constEngineSinkDelta, constMarketDataSinkDelta));
+    static_assert(far_from_page(constMarketDataSinkDelta, constReportSinkDelta));
+    static_assert(far_from_page(constEngineSinkDelta, constReportSinkDelta));
+
+    static_assert(sizeof(Sinks) ==
+        sizeof(request_sink) + sizeof(engine_event_sink) + sizeof(padding2) + sizeof(market_data_generator_sink) +
+            sizeof(padding3) + sizeof(report_generator_sink));
+  }
+};
+
 
 void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
@@ -68,34 +112,19 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
       runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
 
-  static constexpr size_t constQueueSize = 1024;
-
-  using RequestSinkType = WrapVector<boost::container::static_vector<request::RequestType, constQueueSize>>;
-  using EngineEventSinkType = WrapVector<boost::container::static_vector<engine_events::EventType, constQueueSize>>;
-  using MarketDataSinkType = WrapVector<boost::container::static_vector<market_events::EventType, constQueueSize>>;
-  using ReportSinkType = WrapVector<boost::container::static_vector<report::ReportType, constQueueSize>>;
-
-  struct Sinks {
-    RequestSinkType request_sink;
-    EngineEventSinkType engine_event_sink;
-    std::array<std::byte, 1344> padding2{};
-    MarketDataSinkType market_data_generator_sink;
-    std::array<std::byte, 1344> padding3{};
-    ReportSinkType report_generator_sink;
-  };
-
   auto stop_token = runtime->stop_token();
 
   auto sinks = std::make_unique<Sinks>();
 
-  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, RequestSinkType> order_generator_wrapper(stop_token,
+  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, Sinks::RequestSinkType> order_generator_wrapper(
+      stop_token,
       security_storage,
       request_journal,
       market_data_journal,
       report_journal,
       sinks->request_sink,
       config["order_generator"]);
-  MatchingEngine<StlL3BookContainer, EngineEventSinkType> matching_engine(
+  MatchingEngine<StlL3BookContainer, Sinks::EngineEventSinkType> matching_engine(
       config["matching_engine"], security_storage, sinks->engine_event_sink);
   ExchangeDispatcher event_dispatcher(
       config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);

@@ -15,7 +15,7 @@ venv:
 
 bootstrap:
     apt update
-    apt install git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
+    apt install jq git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
     just venv
 
 # todo(dgorbunov): Create prerequisites check script & move to separate area
