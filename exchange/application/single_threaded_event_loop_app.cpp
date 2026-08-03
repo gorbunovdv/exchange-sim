@@ -32,10 +32,7 @@ class WrapVector {
 public:
   explicit WrapVector(auto&&... args): vector_{std::forward<decltype(args)>(args)...} {}
 
-  void push(auto&&... args) {
-    CHECK(vector_.size() < vector_.capacity(), "Vector is full");
-    vector_.push_back(std::forward<decltype(args)>(args)...);
-  }
+  void push(auto&&... args) { vector_.push_back(std::forward<decltype(args)>(args)...); }
 
   auto begin(this auto&& self) { return std::forward_like<decltype(self)>(self.vector_).begin(); }
 
