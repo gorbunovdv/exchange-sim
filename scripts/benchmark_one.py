@@ -88,7 +88,7 @@ def benchmark_one(
         )
         calc_stats_cmd = just_run[ROOT_PATH / f"cmake-build-{preset}/exchange/application/calc_stats"][config_path]
         print("Running calc_stats: ", calc_stats_cmd)
-        calc_stats_cmd.run(stdout=subprocess.DEVNULL, stderr=sys.stderr)
+        calc_stats_cmd.run(stdout=flog, stderr=flog)
         calc_stats(input_file=config["calc_stats"]["output_file"], output_file=config["results"]["stats"], quiet=True)
 
 

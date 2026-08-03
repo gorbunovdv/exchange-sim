@@ -34,7 +34,7 @@ def benchmark(
     huge_pages,
 ):
     with plumbum.local.cwd(ROOT_PATH):
-        plumbum.local["just"]["build-from-scratch"][preset].run(stdout=subprocess.DEVNULL, stderr=sys.stderr)
+        plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     config = load_config(config_path)
     metadata = Metadata(ROOT_PATH, preset, config_path)
     if not label:
