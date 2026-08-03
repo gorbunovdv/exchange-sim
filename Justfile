@@ -30,8 +30,7 @@ apply-core-isol-and-perf:
     echo 0 | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 
     apt install linux-tools-generic -y
-    echo 'kernel.kptr_restrict=0' | tee /etc/sysctl.d/99-perf.conf
-    echo 'kernel.perf_event_paranoid=1' | tee /etc/sysctl.d/99-perf.conf
+    echo -e 'kernel.kptr_restrict=0\nkernel.perf_event_paranoid=1' | tee /etc/sysctl.d/99-perf.conf
     sysctl --system
 
     sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23

@@ -10,7 +10,8 @@
 
 #include <iostream>
 
-#if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
+#if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__) && !__has_feature(thread_sanitizer) && \
+    !defined(__SANITIZE_THREAD__)
 #include <mimalloc-new-delete.h>
 #endif
 
