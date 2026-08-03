@@ -31,25 +31,6 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
     throw std::runtime_error("wrong number of arguments");
   }
   glz::generic config = load_config_from_file(args[1]);
-#if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
-  if (config.contains("memory") && config["memory"]["reserve_huge_os_pages"].get<bool>()) {
-    static constexpr size_t constHugeOsPageSize = 1 << 30;
-
-    const auto requested_pages = config["memory"]["huge_os_pages_count"].as<size_t>();
-    CHECK(requested_pages > 0, "Must request at least one huge OS page");
-    mi_arena_id_t arena_id = nullptr;
-    int ec = mi_reserve_huge_os_pages_at_ex(requested_pages, 0, 0, false, &arena_id);
-    CHECK(ec == 0, "Failed to reserve huge OS pages, requested_pages={}", requested_pages);
-    size_t reserved_bytes_size = 0;
-    const void* reserved_area = mi_arena_area(arena_id, &reserved_bytes_size);
-    bool reserved_all_pages = reserved_area != nullptr && reserved_bytes_size % constHugeOsPageSize == 0 &&
-        reserved_bytes_size / constHugeOsPageSize == requested_pages;
-    CHECK(reserved_all_pages,
-        "Failed to reserve all huge OS pages, requested_pages={} reserved_bytes_size={}",
-        requested_pages,
-        reserved_bytes_size);
-  }
-#endif
   Runtime::Config rt_config{
       .core_allocator_config = {
           .shared_core = CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()},

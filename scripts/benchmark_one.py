@@ -6,6 +6,8 @@ from pathlib import Path
 import plumbum
 from calc_stats import calc_stats
 from patch_config import patch_config
+from plumbum.commands.base import BoundCommand
+from plumbum.machines import LocalCommand
 from write_metadata import write_metadata
 
 from helpers.config import load_config
@@ -29,8 +31,12 @@ DEFAULT_PERF = [
 ]
 
 
-def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf, no_aslr, timeout, hard_timeout):
+def benchmark_one(
+    *, app, config_path, preset, mimalloc_verbose_show_stats, perf, no_aslr, timeout, hard_timeout, huge_pages
+):
     config = load_config(config_path)
+    if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
+        huge_pages = config["memory"]["huge_os_pages_count"]
     log_path = ROOT_PATH / config["results"]["logs"]
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with plumbum.local.cwd(ROOT_PATH), open(log_path, "w") as flog:
@@ -49,11 +55,17 @@ def benchmark_one(*, app, config_path, preset, mimalloc_verbose_show_stats, perf
                 "hard_timeout": hard_timeout,
                 "no_aslr": no_aslr,
                 "mimalloc_verbose_show_stats": mimalloc_verbose_show_stats,
+                "huge_pages": huge_pages,
             },
         )
         cmd = plumbum.local[ROOT_PATH / f"cmake-build-{preset}/exchange/application" / app][config_path]
-        if mimalloc_verbose_show_stats:
-            cmd = plumbum.local["env"]["MIMALLOC_VERBOSE=1"]["MIMALLOC_SHOW_STATS=1"][cmd]
+        if mimalloc_verbose_show_stats or huge_pages:
+            env: BoundCommand | LocalCommand = plumbum.local["env"]
+            if mimalloc_verbose_show_stats:
+                env = env["MIMALLOC_VERBOSE=1"]["MIMALLOC_SHOW_STATS=1"]
+            if huge_pages:
+                env = env[f"MIMALLOC_RESERVE_HUGE_OS_PAGES={huge_pages}"]
+            cmd = env[cmd]
         perf_path = ROOT_PATH / config["results"]["perf"]
         perf_path.unlink(missing_ok=True)
         if perf:
@@ -91,6 +103,7 @@ def main():
     parser.add_argument("--no-aslr", action="store_true", help="Do not use aslr")
     parser.add_argument("--timeout", type=int, default=60, help="Timeout for the benchmark")
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for the benchmark")
+    parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
     args = parser.parse_args()
     benchmark_one(
         app=args.app,
@@ -101,6 +114,7 @@ def main():
         no_aslr=args.no_aslr,
         timeout=args.timeout,
         hard_timeout=args.hard_timeout,
+        huge_pages=args.huge_pages,
     )
 
 

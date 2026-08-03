@@ -20,7 +20,18 @@ def clear_cache():
 
 
 def benchmark(
-    *, preset, label, reps, apps, config_path, timeout, hard_timeout, mimalloc_verbose_show_stats, perf, no_aslr
+    *,
+    preset,
+    label,
+    reps,
+    apps,
+    config_path,
+    timeout,
+    hard_timeout,
+    mimalloc_verbose_show_stats,
+    perf,
+    no_aslr,
+    huge_pages,
 ):
     with plumbum.local.cwd(ROOT_PATH):
         plumbum.local["just"]["build-from-scratch"][preset].run(stdout=subprocess.DEVNULL, stderr=sys.stderr)
@@ -50,6 +61,7 @@ def benchmark(
             mimalloc_verbose_show_stats=mimalloc_verbose_show_stats,
             perf=perf,
             no_aslr=no_aslr,
+            huge_pages=huge_pages,
         )
         dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{rep:02d}"
         dest_path.mkdir(parents=True, exist_ok=True)
@@ -74,6 +86,7 @@ def main():
 
     parser.add_argument("--timeout", type=int, default=60, help="Timeout for each run")
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for each run")
+    parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
 
     parser.add_argument("config_path", help="Path to config")
 
@@ -90,6 +103,7 @@ def main():
         mimalloc_verbose_show_stats=args.mimalloc_verbose_show_stats,
         perf=args.perf_parameters if args.use_perf else [],
         no_aslr=args.no_aslr,
+        huge_pages=args.huge_pages,
     )
 
 
