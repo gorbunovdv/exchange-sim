@@ -1,6 +1,7 @@
 #include "base/forward_sink.h"
 #include "base/journal.h"
 #include "base/logging/quill_sinks.h"
+#include "base/macros.h"
 #include "base/run.h"
 
 #include "domain/security_storage.h"
@@ -74,42 +75,49 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
   using MarketDataSinkType = WrapVector<boost::container::static_vector<market_events::EventType, constQueueSize>>;
   using ReportSinkType = WrapVector<boost::container::static_vector<report::ReportType, constQueueSize>>;
 
-  RequestSinkType request_sink;
-  EngineEventSinkType engine_event_sink;
-  MarketDataSinkType market_data_generator_sink;
-  ReportSinkType report_generator_sink;
+  struct Sinks {
+    RequestSinkType request_sink;
+    EngineEventSinkType engine_event_sink;
+    std::array<std::byte, 1344> padding2{};
+    MarketDataSinkType market_data_generator_sink;
+    std::array<std::byte, 1344> padding3{};
+    ReportSinkType report_generator_sink;
+  };
 
   auto stop_token = runtime->stop_token();
+
+  auto sinks = std::make_unique<Sinks>();
 
   OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, RequestSinkType> order_generator_wrapper(stop_token,
       security_storage,
       request_journal,
       market_data_journal,
       report_journal,
-      request_sink,
+      sinks->request_sink,
       config["order_generator"]);
   MatchingEngine<StlL3BookContainer, EngineEventSinkType> matching_engine(
-      config["matching_engine"], security_storage, engine_event_sink);
-  ExchangeDispatcher event_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
+      config["matching_engine"], security_storage, sinks->engine_event_sink);
+  ExchangeDispatcher event_dispatcher(
+      config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
 
   while (!stop_token.stop_requested()) {
     order_generator_wrapper.generate_event();
-    for (const auto& request : request_sink) {
+    for (const auto& request : sinks->request_sink) {
       matching_engine.process(request);
     }
-    for (const auto& engine_event : engine_event_sink) {
+    for (const auto& engine_event : sinks->engine_event_sink) {
       event_dispatcher.process(engine_event);
     }
-    for (const auto& market_data_event : market_data_generator_sink) {
+    for (const auto& market_data_event : sinks->market_data_generator_sink) {
       order_generator_wrapper.process(market_data_event);
     }
-    for (const auto& report_event : report_generator_sink) {
+    for (const auto& report_event : sinks->report_generator_sink) {
       order_generator_wrapper.process(report_event);
     }
-    request_sink.clear();
-    engine_event_sink.clear();
-    market_data_generator_sink.clear();
-    report_generator_sink.clear();
+    sinks->request_sink.clear();
+    sinks->engine_event_sink.clear();
+    sinks->market_data_generator_sink.clear();
+    sinks->report_generator_sink.clear();
   }
 }
 

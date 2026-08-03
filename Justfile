@@ -97,3 +97,49 @@ benchmark *args:
 
 evaluate *args:
     python3 ./scripts/evaluate_runs.py {{ args }}
+
+_remove-label old_label benchmark_path:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    label="{{ old_label }}"; bp="{{ benchmark_path }}"
+    [[ -n "$label" && "$label" != *"/"* && "$label" != "." && "$label" != ".." ]] \
+        || { echo "ERROR: bad label '$label'"; exit 1; }
+    [[ -d "$bp" ]] || { echo "ERROR: benchmark_path '$bp' is not a directory"; exit 1; }
+    shopt -s nullglob
+    matches=("$bp"/*/"$label")
+    (( ${#matches[@]} )) || { echo "ERROR: label '$label' not found under $bp"; exit 1; }
+    for d in "${matches[@]}"; do
+        echo "INFO: removing: $d"
+        rm -rf -- "$d"
+    done
+    echo "INFO: removed ${#matches[@]} dir(s) for label '$label'"
+
+_rename-label old_label new_label benchmark_path:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    old="{{ old_label }}"; new="{{ new_label }}"; bp="{{ benchmark_path }}"
+    for l in "$old" "$new"; do
+        [[ -n "$l" && "$l" != *"/"* && "$l" != "." && "$l" != ".." ]] \
+            || { echo "ERROR: bad label '$l'"; exit 1; }
+    done
+    [[ "$old" != "$new" ]] || { echo "ERROR: labels are identical"; exit 1; }
+    [[ -d "$bp" ]] || { echo "ERROR: benchmark_path '$bp' is not a directory"; exit 1; }
+    shopt -s nullglob
+    matches=("$bp"/*/"$old")
+    (( ${#matches[@]} )) || { echo "ERROR: label '$old' not found under $bp"; exit 1; }
+    for d in "${matches[@]}"; do
+        dst="$(dirname "$d")/$new"
+        [[ ! -e "$dst" ]] || { echo "ERROR: '$dst' already exists, aborting before any mv"; exit 1; }
+    done
+    for d in "${matches[@]}"; do
+        dst="$(dirname "$d")/$new"
+        echo "INFO: renaming: $d -> $dst"
+        mv -- "$d" "$dst"
+    done
+    echo "INFO: renamed ${#matches[@]} dir(s): '$old' -> '$new'"
+
+remove-label old_label config='./configs/dmitrys-ubuntu.json':
+    just _remove-label "{{ old_label }}" "{{ ROOT_DIR }}/$(jq -r '.benchmark_path' {{ config }})"
+
+rename-label old_label new_label config='./configs/dmitrys-ubuntu.json':
+    just _rename-label "{{ old_label }}" "{{ new_label }}" "{{ ROOT_DIR }}/$(jq -r '.benchmark_path' {{ config }})"
