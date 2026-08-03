@@ -55,6 +55,7 @@ struct Sinks {
   static constexpr size_t constGuard = 1344;
 
   RequestSinkType request_sink;
+  std::array<std::byte, constGuard> padding1{};
   EngineEventSinkType engine_event_sink;
   std::array<std::byte, constGuard> padding2{};
   MarketDataSinkType market_data_generator_sink;
@@ -68,19 +69,21 @@ struct Sinks {
       return r >= constGuard && r <= constPage - constGuard;
     };
 
-    static constexpr size_t constEngineSinkDelta = sizeof(request_sink);
+    static constexpr size_t constRequestSinkDelta = 0;
+    static constexpr size_t constEngineSinkDelta = constRequestSinkDelta + sizeof(request_sink) + sizeof(padding1);
     static constexpr size_t constMarketDataSinkDelta =
         constEngineSinkDelta + sizeof(engine_event_sink) + sizeof(padding2);
     static constexpr size_t constReportSinkDelta =
         constMarketDataSinkDelta + sizeof(market_data_generator_sink) + sizeof(padding3);
 
+    static_assert(far_from_page(constRequestSinkDelta, constEngineSinkDelta));
     static_assert(far_from_page(constEngineSinkDelta, constMarketDataSinkDelta));
     static_assert(far_from_page(constMarketDataSinkDelta, constReportSinkDelta));
     static_assert(far_from_page(constEngineSinkDelta, constReportSinkDelta));
 
     static_assert(sizeof(Sinks) ==
-        sizeof(request_sink) + sizeof(engine_event_sink) + sizeof(padding2) + sizeof(market_data_generator_sink) +
-            sizeof(padding3) + sizeof(report_generator_sink));
+        sizeof(request_sink) + sizeof(padding1) + sizeof(engine_event_sink) + sizeof(padding2) +
+            sizeof(market_data_generator_sink) + sizeof(padding3) + sizeof(report_generator_sink));
   }
 };
 
