@@ -16,7 +16,7 @@ TEST(Run, MissingConfigFile) {
 
   char* argv[] = {nullptr, path.data()};
 
-  EXPECT_THROW(read_config_and_initialize_logging(std::span{argv, argv + 2}), std::runtime_error);
+  EXPECT_THROW(read_config_and_initialize_logging(std::span{argv, argv + 2}, true), std::runtime_error);
 }
 
 TEST(Run, MissingLoggingType) {
@@ -46,7 +46,7 @@ TEST(Run, MissingLoggingType) {
 
   char* argv[] = {nullptr, config_file_path_string.data()};
 
-  EXPECT_ANY_THROW(read_config_and_initialize_logging(std::span(argv, argv + 2)));
+  EXPECT_ANY_THROW(read_config_and_initialize_logging(std::span(argv, argv + 2), true));
 }
 
 TEST(Run, IncorrectLogLevel) {
@@ -77,7 +77,7 @@ TEST(Run, IncorrectLogLevel) {
 
   char* argv[] = {nullptr, config_file_path_string.data()};
 
-  EXPECT_ANY_THROW(read_config_and_initialize_logging(std::span(argv, argv + 2)));
+  EXPECT_ANY_THROW(read_config_and_initialize_logging(std::span(argv, argv + 2), true));
 }
 
 
@@ -109,7 +109,7 @@ TEST(Run, BasicTest) {
 
   char* argv[] = {nullptr, config_file_path_string.data()};
 
-  auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + 2));
+  auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + 2), true);
   ASSERT_TRUE(config.contains("logging"));
   EXPECT_EQ(config["logging"]["type"].as<std::string>(), "file");
   EXPECT_EQ(config["logging"]["log_level"].as<std::string>(), "info");

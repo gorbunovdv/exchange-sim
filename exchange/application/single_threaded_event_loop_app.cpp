@@ -156,7 +156,7 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
-    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
+    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
     run_single_threaded_event_loop_app(runtime, config);
     quill::Backend::stop();
   }
