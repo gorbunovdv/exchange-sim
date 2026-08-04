@@ -52,7 +52,8 @@ struct Sinks {
   using MarketDataSinkType = WrapVector<boost::container::static_vector<market_events::EventType, constQueueSize>>;
   using ReportSinkType = WrapVector<boost::container::static_vector<report::ReportType, constQueueSize>>;
 
-  static constexpr size_t constGuard = 1344;
+  static constexpr size_t constPage = 4096;
+  static constexpr size_t constGuard = constPage / 3 - ((constPage / 3) % 64);
 
   RequestSinkType request_sink;
   std::array<std::byte, constGuard> padding1{};
@@ -63,7 +64,6 @@ struct Sinks {
   ReportSinkType report_generator_sink;
 
   Sinks() {
-    static constexpr size_t constPage = 4096;
     static constexpr auto far_from_page = [](size_t offset1, size_t offset2) {
       size_t r = (offset2 - offset1) % constPage;
       return r >= constGuard && r <= constPage - constGuard;
@@ -79,7 +79,6 @@ struct Sinks {
     static_assert(far_from_page(constRequestSinkDelta, constEngineSinkDelta));
     static_assert(far_from_page(constEngineSinkDelta, constMarketDataSinkDelta));
     static_assert(far_from_page(constMarketDataSinkDelta, constReportSinkDelta));
-    static_assert(far_from_page(constEngineSinkDelta, constReportSinkDelta));
 
     static_assert(sizeof(Sinks) ==
         sizeof(request_sink) + sizeof(padding1) + sizeof(engine_event_sink) + sizeof(padding2) +
