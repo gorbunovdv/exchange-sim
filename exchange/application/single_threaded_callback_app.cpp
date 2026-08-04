@@ -93,7 +93,7 @@ using namespace exchange_sim;
 int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
-    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
+    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
     run_single_threaded_callback_app(runtime, config);
     quill::Backend::stop();
   }

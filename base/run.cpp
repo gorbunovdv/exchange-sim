@@ -18,7 +18,8 @@
 
 namespace exchange_sim {
 
-std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(std::span<char*> args) {
+std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(
+    std::span<char*> args, bool secondary_app) {
   block_shutdown_signals();
 
   auto value_or_raise = [](std::string_view type, auto expected) {
@@ -33,14 +34,16 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
     throw std::runtime_error("wrong number of arguments");
   }
   glz::generic config = load_config_from_file(args[1]);
-  auto expected_huge_pages = config.contains("memory") && config["memory"]["reserve_huge_os_pages"].get_boolean() ?
-      config["memory"]["huge_os_pages_count"].as<size_t>() :
-      0;
-  size_t requested_huge_pages = mi_option_get(mi_option_reserve_huge_os_pages);
-  CHECK(expected_huge_pages == requested_huge_pages,
-      "Memory setup mismatch, allocated_huge_pages={} expected={}",
-      requested_huge_pages,
-      expected_huge_pages);
+  if (!secondary_app) {
+    auto expected_huge_pages = config.contains("memory") && config["memory"]["reserve_huge_os_pages"].get_boolean() ?
+        config["memory"]["huge_os_pages_count"].as<size_t>() :
+        0;
+    size_t requested_huge_pages = mi_option_get(mi_option_reserve_huge_os_pages);
+    CHECK(expected_huge_pages == requested_huge_pages,
+        "Memory setup mismatch, allocated_huge_pages={} expected={}",
+        requested_huge_pages,
+        expected_huge_pages);
+  }
   Runtime::Config rt_config{
       .core_allocator_config = {
           .shared_core = CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()},

@@ -7,6 +7,7 @@
 
 namespace exchange_sim {
 
-std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(std::span<char*> args);
+std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(
+    std::span<char*> args, bool secondary_app);
 
 }  // namespace exchange_sim

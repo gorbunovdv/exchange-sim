@@ -24,7 +24,7 @@ using namespace exchange_sim;
 
 int main(int argc, char** argv) {
   try {
-    auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
+    auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
     run_empty_app(runtime, config);
     quill::Backend::stop();
   } catch (const std::exception& e) {

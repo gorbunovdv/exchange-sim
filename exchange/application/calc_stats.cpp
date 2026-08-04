@@ -197,7 +197,7 @@ using namespace exchange_sim;
 int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
-    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc));
+    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), true);
     run_calc_stats(runtime, config);
   }
   CPPTRACE_CATCH(...) {
