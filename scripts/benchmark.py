@@ -1,45 +1,39 @@
 #!/usr/bin/python3
 import argparse
-import re
+import itertools
 import shutil
-import time
+import sys
 from pathlib import Path
 
 import plumbum
+from benchmark_one import DEFAULT_PERF, benchmark_one
+from tqdm import tqdm
 
 from helpers.config import load_config
 from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
 
 
-def read_dirty():
-    result = re.search(r"Dirty:\s+(\d+)", Path("/proc/meminfo").read_text())
-    if result is None:
-        raise Exception("Could not read dirty memory")
-    return int(result.group(1))
-
-
 def clear_cache():
-    plumbum.local["sync"] & plumbum.FG
-    while read_dirty() > 100_000:
-        print("Waiting for cache to clear...")
-        time.sleep(1)
+    plumbum.local["sudo"]["sh"]["-c"]["sync; echo 3 > /proc/sys/vm/drop_caches"] & plumbum.FG
 
 
-def make_single_run(config_path, config, preset, label, current_rep, app):
-    print(f"Running current_rep={current_rep} app={app} preset={preset}")
-    clear_cache()
+def benchmark(
+    *,
+    preset,
+    label,
+    reps,
+    apps,
+    config_path,
+    timeout,
+    hard_timeout,
+    mimalloc_verbose_show_stats,
+    perf,
+    no_aslr,
+    huge_pages,
+):
     with plumbum.local.cwd(ROOT_PATH):
-        plumbum.local["just"]["benchmark-one"][app][config_path][preset] & plumbum.FG
-    dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{current_rep:02d}"
-    dest_path.mkdir(parents=True, exist_ok=True)
-    for path in config["results"].values():
-        shutil.copy(path, dest_path)
-
-
-def benchmark(*, preset, label, reps, apps, config_path):
-    with plumbum.local.cwd(ROOT_PATH):
-        plumbum.local["just"]["build-from-scratch"][preset] & plumbum.FG
+        plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     config = load_config(config_path)
     metadata = Metadata(ROOT_PATH, preset, config_path)
     if not label:
@@ -52,12 +46,28 @@ def benchmark(*, preset, label, reps, apps, config_path):
         dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label
         if dest_path.exists():
             raise Exception(f"Path {dest_path} already exists, please back it up or remove it")
-        dest_path.mkdir(parents=True, exist_ok=False)
-    for rep in range(1, reps + 1):
-        for app in apps:
-            make_single_run(
-                config_path=config_path, config=config, preset=preset, label=label, current_rep=rep, app=app
-            )
+    for rep, app in tqdm(
+        list(itertools.product(range(1, reps + 1), apps)), mininterval=10, maxinterval=10, desc="Running all apps"
+    ):
+        print(f"Running current_rep={rep} app={app} preset={preset}")
+        clear_cache()
+        benchmark_one(
+            app=app,
+            config_path=config_path,
+            preset=preset,
+            timeout=timeout,
+            hard_timeout=hard_timeout,
+            mimalloc_verbose_show_stats=mimalloc_verbose_show_stats,
+            perf=perf,
+            no_aslr=no_aslr,
+            huge_pages=huge_pages,
+        )
+        dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{rep:02d}"
+        dest_path.mkdir(parents=True, exist_ok=True)
+        for path in config["results"].values():
+            path = ROOT_PATH / path
+            if path.exists():
+                shutil.copy(path, dest_path)
 
 
 def main():
@@ -68,11 +78,32 @@ def main():
     )
     parser.add_argument("--reps", type=int, default=5, help="Repetitions of run to make")
     parser.add_argument("--apps", nargs="+", type=str, help="Applications to run")
+    parser.add_argument("--mimalloc-verbose-show-stats", action="store_true", help="Show mimalloc verbose stats")
+    parser.add_argument("--use-perf", action="store_true", help="Use perf")
+    parser.add_argument("--perf-parameters", nargs="*", default=DEFAULT_PERF, help="Parameters to pass to perf")
+    parser.add_argument("--no-aslr", action="store_true", help="Do not use aslr")
+
+    parser.add_argument("--timeout", type=int, default=60, help="Timeout for each run")
+    parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for each run")
+    parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
+
     parser.add_argument("config_path", help="Path to config")
 
     args = parser.parse_args()
 
-    benchmark(preset=args.preset, label=args.label, reps=args.reps, apps=args.apps, config_path=args.config_path)
+    benchmark(
+        preset=args.preset,
+        label=args.label,
+        reps=args.reps,
+        apps=args.apps,
+        config_path=args.config_path,
+        timeout=args.timeout,
+        hard_timeout=args.hard_timeout,
+        mimalloc_verbose_show_stats=args.mimalloc_verbose_show_stats,
+        perf=args.perf_parameters if args.use_perf else [],
+        no_aslr=args.no_aslr,
+        huge_pages=args.huge_pages,
+    )
 
 
 if __name__ == "__main__":

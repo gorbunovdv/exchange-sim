@@ -1,6 +1,7 @@
 #include "base/forward_sink.h"
 #include "base/journal.h"
 #include "base/logging/quill_sinks.h"
+#include "base/macros.h"
 #include "base/run.h"
 
 #include "domain/security_storage.h"
@@ -20,12 +21,12 @@
 #include <quill/Backend.h>
 
 #include <iostream>
-#include <stack>
 
 using namespace exchange_sim;
 
 namespace exchange_sim {
 
+namespace {
 template<typename T>
 class WrapVector {
 public:
@@ -42,6 +43,49 @@ public:
 private:
   T vector_;
 };
+
+struct Sinks {
+  static constexpr size_t constQueueSize = 1024;
+
+  using RequestSinkType = WrapVector<boost::container::static_vector<request::RequestType, constQueueSize>>;
+  using EngineEventSinkType = WrapVector<boost::container::static_vector<engine_events::EventType, constQueueSize>>;
+  using MarketDataSinkType = WrapVector<boost::container::static_vector<market_events::EventType, constQueueSize>>;
+  using ReportSinkType = WrapVector<boost::container::static_vector<report::ReportType, constQueueSize>>;
+
+  static constexpr size_t constPage = 4096;
+  static constexpr size_t constGuard = constPage / 3 - ((constPage / 3) % 64);
+
+  RequestSinkType request_sink;
+  std::array<std::byte, constGuard> padding1{};
+  EngineEventSinkType engine_event_sink;
+  std::array<std::byte, constGuard> padding2{};
+  MarketDataSinkType market_data_generator_sink;
+  std::array<std::byte, constGuard> padding3{};
+  ReportSinkType report_generator_sink;
+
+  Sinks() {
+    static constexpr auto far_from_page = [](size_t offset1, size_t offset2) {
+      size_t r = (offset2 - offset1) % constPage;
+      return r >= constGuard && r <= constPage - constGuard;
+    };
+
+    static constexpr size_t constRequestSinkDelta = 0;
+    static constexpr size_t constEngineSinkDelta = constRequestSinkDelta + sizeof(request_sink) + sizeof(padding1);
+    static constexpr size_t constMarketDataSinkDelta =
+        constEngineSinkDelta + sizeof(engine_event_sink) + sizeof(padding2);
+    static constexpr size_t constReportSinkDelta =
+        constMarketDataSinkDelta + sizeof(market_data_generator_sink) + sizeof(padding3);
+
+    static_assert(far_from_page(constRequestSinkDelta, constEngineSinkDelta));
+    static_assert(far_from_page(constEngineSinkDelta, constMarketDataSinkDelta));
+    static_assert(far_from_page(constMarketDataSinkDelta, constReportSinkDelta));
+
+    static_assert(sizeof(Sinks) ==
+        sizeof(request_sink) + sizeof(padding1) + sizeof(engine_event_sink) + sizeof(padding2) +
+            sizeof(market_data_generator_sink) + sizeof(padding3) + sizeof(report_generator_sink));
+  }
+};
+
 
 void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
@@ -67,51 +111,45 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
       runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
 
-  static constexpr size_t constQueueSize = 1024;
-
-  using RequestSinkType = WrapVector<boost::container::static_vector<request::RequestType, constQueueSize>>;
-  using EngineEventSinkType = WrapVector<boost::container::static_vector<engine_events::EventType, constQueueSize>>;
-  using MarketDataSinkType = WrapVector<boost::container::static_vector<market_events::EventType, constQueueSize>>;
-  using ReportSinkType = WrapVector<boost::container::static_vector<report::ReportType, constQueueSize>>;
-
-  RequestSinkType request_sink;
-  EngineEventSinkType engine_event_sink;
-  MarketDataSinkType market_data_generator_sink;
-  ReportSinkType report_generator_sink;
-
   auto stop_token = runtime->stop_token();
 
-  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, RequestSinkType> order_generator_wrapper(stop_token,
+  auto sinks = std::make_unique<Sinks>();
+
+  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, Sinks::RequestSinkType> order_generator_wrapper(
+      stop_token,
       security_storage,
       request_journal,
       market_data_journal,
       report_journal,
-      request_sink,
+      sinks->request_sink,
       config["order_generator"]);
-  MatchingEngine<StlL3BookContainer, EngineEventSinkType> matching_engine(
-      config["matching_engine"], security_storage, engine_event_sink);
-  ExchangeDispatcher event_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
+  MatchingEngine<StlL3BookContainer, Sinks::EngineEventSinkType> matching_engine(
+      config["matching_engine"], security_storage, sinks->engine_event_sink);
+  ExchangeDispatcher event_dispatcher(
+      config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
 
   while (!stop_token.stop_requested()) {
     order_generator_wrapper.generate_event();
-    for (const auto& request : request_sink) {
+    for (const auto& request : sinks->request_sink) {
       matching_engine.process(request);
     }
-    for (const auto& engine_event : engine_event_sink) {
+    for (const auto& engine_event : sinks->engine_event_sink) {
       event_dispatcher.process(engine_event);
     }
-    for (const auto& market_data_event : market_data_generator_sink) {
+    for (const auto& market_data_event : sinks->market_data_generator_sink) {
       order_generator_wrapper.process(market_data_event);
     }
-    for (const auto& report_event : report_generator_sink) {
+    for (const auto& report_event : sinks->report_generator_sink) {
       order_generator_wrapper.process(report_event);
     }
-    request_sink.clear();
-    engine_event_sink.clear();
-    market_data_generator_sink.clear();
-    report_generator_sink.clear();
+    sinks->request_sink.clear();
+    sinks->engine_event_sink.clear();
+    sinks->market_data_generator_sink.clear();
+    sinks->report_generator_sink.clear();
   }
 }
+
+}  // namespace
 
 }  // namespace exchange_sim
 

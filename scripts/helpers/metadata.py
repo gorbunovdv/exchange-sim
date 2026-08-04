@@ -111,7 +111,7 @@ class Metadata:
             "cache_variables": self._parse_cmake_cache(),
         }
 
-    def collect_metadata(self, application):
+    def collect_metadata(self, application, run_metadata):
         return {
             "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             "application": application,
@@ -121,4 +121,5 @@ class Metadata:
             "flags": self._flags_from_command(self.app_targets()[application]["command"]),
             "compilation": self.compilation_metadata(),
             "config": self.config,
+            "run_metadata": run_metadata,
         }

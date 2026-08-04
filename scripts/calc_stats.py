@@ -9,6 +9,7 @@ import numpy
 from tqdm import tqdm
 
 from helpers.config import load_config
+from helpers.root_path import ROOT_PATH
 
 latency_fields = [
     "first_report",
@@ -18,7 +19,7 @@ latency_fields = [
 ]
 
 
-percentiles = [50, 75, 90, 99, 99.9]
+percentiles = [0, 50, 75, 90, 99, 99.9, 100]
 
 
 def calculate_groups(path):
@@ -31,14 +32,11 @@ def calculate_groups(path):
                 maxinterval=10,
                 desc="Parsing initial json",
             ):
-                msg_type = item.get("type")
-                trades_count = item.get("trades_count", 0)
-                symbol = item.get("symbol")
-                group_key = (symbol, msg_type, trades_count)
-
+                msg_type, trades_count, symbol = item.get("type"), item.get("trades_count"), item.get("symbol")
+                dct = groups[(symbol, msg_type, trades_count)]
                 for field in latency_fields:
                     if field in item:
-                        groups[group_key][field].append(item[field])
+                        dct[field].append(item[field])
     except FileNotFoundError as e:
         raise Exception(f"Error: Could not open '{path}'") from e
 
@@ -64,10 +62,10 @@ def calculate_metrics(groups):
                     "type": type_label,
                     "trades_count": trades_count,
                     "events_count": len(values),
-                    "percentile": str(percentiles[i]),
-                    "value": current_results[i],
+                    "percentile": percentile,
+                    "value": value,
                 }
-                for i in range(len(percentiles))
+                for percentile, value in zip(map(str, percentiles), current_results, strict=True)
             )
     return results
 
@@ -92,7 +90,11 @@ def main():
 
     config = load_config(args.config_path)
 
-    calc_stats(input_file=config["calc_stats"]["output_file"], output_file=config["results"]["stats"], quiet=args.quiet)
+    calc_stats(
+        input_file=ROOT_PATH / config["calc_stats"]["output_file"],
+        output_file=ROOT_PATH / config["results"]["stats"],
+        quiet=args.quiet,
+    )
 
 
 if __name__ == "__main__":

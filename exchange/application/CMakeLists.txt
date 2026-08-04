@@ -1,4 +1,4 @@
-find_package(cpptrace REQUIRED)
+find_package(mimalloc REQUIRED)
 
 add_executable(single_threaded_callback_app single_threaded_callback_app.cpp)
 target_link_libraries(single_threaded_callback_app PUBLIC base exchange_domain simple_order_generator matching exchange_dispatcher)

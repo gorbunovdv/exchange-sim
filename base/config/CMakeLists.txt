@@ -11,7 +11,7 @@ target_sources(config PUBLIC
 
 add_executable(config_test tests/config_test.cpp)
 target_compile_definitions(config_test PRIVATE
-    EXCHANGE_SIM_DEFAULT_CONFIG_PATH="${PROJECT_SOURCE_DIR}/configs/default.json"
+    EXCHANGE_SIM_DEFAULT_CONFIG_PATH="${PROJECT_SOURCE_DIR}/base/config/tests/default.json"
 )
 target_link_libraries(config_test PUBLIC config gtest::gtest)
 include(GoogleTest)
