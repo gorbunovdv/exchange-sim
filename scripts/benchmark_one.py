@@ -3,7 +3,7 @@ from pathlib import Path
 
 import plumbum
 from calc_stats import calc_stats
-from patch_config import patch_config
+from check_isolation import check_isolation
 from plumbum.commands.base import BoundCommand
 from plumbum.machines import LocalCommand
 from write_metadata import write_metadata
@@ -39,7 +39,7 @@ def benchmark_one(
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with plumbum.local.cwd(ROOT_PATH), open(log_path, "w") as flog:
         just_run = plumbum.local["just"]["run"]
-        patch_config(path=config_path, dry_run=True, quiet=True)
+        check_isolation(path=config_path, quiet=True)
         metadata_path = Path(config["results"]["metadata"])
         write_metadata(
             config_path=config_path,
