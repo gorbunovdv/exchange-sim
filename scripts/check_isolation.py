@@ -84,12 +84,19 @@ class IsolationMetadata:
             key.strip(): value.strip()
             for key, value in (line.split(": ", 1) for line in MEMINFO.read_text().strip().split("\n"))
         }
+    @staticmethod
+    def _read_no_turbo():
+        NO_TURBO = Path("/sys/devices/system/cpu/intel_pstate/no_turbo")
+        if not NO_TURBO.exists():
+            raise Exception(f"No turbo file not found, path={NO_TURBO}")
+        return NO_TURBO.read_text().strip()
 
     def get_metadata(self):
         return {
             "isolated": self.isolated,
             "nohz_full": self.nohz_full,
             "cmd_line_linux": self._read_cmd_line_linux(),
+            "no_turbo": self._read_no_turbo(),
             "huge_page_size": self._read_meminfo()["Hugepagesize"],
             "huge_page_count": self._read_meminfo()["HugePages_Total"],
         }
@@ -113,6 +120,8 @@ class IsolationMetadata:
                 raise Exception(f"Core {core} is in irqaffinity")
 
     def run_isolation_check(self, isolated, huge_pages):
+        if self._read_no_turbo() != "0":
+            raise Exception("no_turbo is not disabled")
         for core in isolated:
             if core not in self.isolated:
                 raise Exception(f"Core {core} is not isolated")
