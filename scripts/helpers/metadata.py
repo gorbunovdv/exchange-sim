@@ -5,6 +5,7 @@ import re
 import typing
 
 import plumbum
+from check_isolation import IsolationMetadata
 
 from helpers.config import load_config
 
@@ -34,6 +35,7 @@ class Metadata:
         self.compilation_commands_path = self.build_dir / "compile_commands.json"
         self.config_path = self.repo_root / config_path
         self.config = load_config(self.config_path)
+        self._isolation_metadata = IsolationMetadata()
 
     @staticmethod
     def _flags_from_command(cmd):
@@ -65,6 +67,9 @@ class Metadata:
             "branch": self._run_cmd(plumbum.local["git"]["rev-parse"]["--abbrev-ref"]["HEAD"]),
             "dirty": bool(self._run_cmd(plumbum.local["git"]["status"]["--porcelain"])),
         }
+
+    def isolation_metadata(self):
+        return self._isolation_metadata.get_metadata()
 
     def encode_label(self):
         metadata = self.git_metadata()
@@ -122,4 +127,5 @@ class Metadata:
             "compilation": self.compilation_metadata(),
             "config": self.config,
             "run_metadata": run_metadata,
+            "isolation_metadata": self.isolation_metadata(),
         }

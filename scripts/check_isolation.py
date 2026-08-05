@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import os
 import re
 from pathlib import Path
 
 from helpers.config import load_config
-from helpers.root_path import ROOT_PATH
 
 
 class CPUMetadata:
@@ -83,7 +81,8 @@ class IsolationMetadata:
         if not MEMINFO.exists():
             raise Exception(f"Memory information file not found, path={MEMINFO}")
         return {
-            key: value for key, value in map(lambda line: line.split(": ", 1), MEMINFO.read_text().strip().split("\n"))
+            key.strip(): value.strip()
+            for key, value in (line.split(": ", 1) for line in MEMINFO.read_text().strip().split("\n"))
         }
 
     def get_metadata(self):
@@ -97,9 +96,7 @@ class IsolationMetadata:
 
     def check_cmd_line_linux(self, isolated):
         cmd_line_linux = self._read_cmd_line_linux()
-        parameters = {
-            key: value for key, value in (line.split("=", 1) for line in cmd_line_linux.split() if line.count("=") >= 1)
-        }
+        parameters = dict(line.split("=", 1) for line in cmd_line_linux.split() if line.count("=") >= 1)
         rcu_nocbs = parameters.get("rcu_nocbs")
         if rcu_nocbs is None:
             raise Exception("rcu_nocbs parameter not found in cmd_line_linux")
@@ -115,7 +112,7 @@ class IsolationMetadata:
             if core in irq_affinity_cores:
                 raise Exception(f"Core {core} is in irqaffinity")
 
-    def run_isolation_check(self, isolated):
+    def run_isolation_check(self, isolated, huge_pages):
         for core in isolated:
             if core not in self.isolated:
                 raise Exception(f"Core {core} is not isolated")
@@ -130,30 +127,38 @@ class IsolationMetadata:
                 raise Exception(f"Core {cpu} is not in performance mode")
             if any(name not in ["POLL", "C1"] for name in current_cpu.cpu_idle_states()):
                 raise Exception(f"Core {cpu} is not in POLL or C1 idle states")
+        if huge_pages is not None:
+            meminfo = self._read_meminfo()
+            if meminfo["Hugepagesize"] != "1048576 kB":
+                raise Exception(f"Huge pages size is not 1GB, found: {meminfo['Hugepagesize']}")
+            if int(meminfo["HugePages_Total"]) < huge_pages:
+                raise Exception(f"Not enough huge pages, expected at least {huge_pages}")
         self.check_cmd_line_linux(isolated)
 
 
-def check_isolation(*, path, quiet=True):
+def check_isolation(*, path):
     metadata = IsolationMetadata()
     data = load_config(path)
 
     current = data.get("cpu_cores")
     if current is None:
         raise Exception("No isolated CPUs configured in config file")
+    huge_pages = None
+    if data.get("memory", {}).get("reserve_huge_os_pages", False):
+        huge_pages = data["memory"]["huge_os_pages_count"]
 
     shared, dedicated = current["shared_core"], current["dedicated_cores"]
-    isolated = [shared] + dedicated
+    isolated = [shared, *dedicated]
 
-    metadata.run_isolation_check(isolated=isolated)
+    metadata.run_isolation_check(isolated=isolated, huge_pages=huge_pages)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("config_file", help="Path to the config file")
-    parser.add_argument("--quiet", action="store_true", help="Do not print anything")
     args = parser.parse_args()
 
-    check_isolation(path=Path(args.config_file), quiet=args.quiet)
+    check_isolation(path=Path(args.config_file))
 
 
 if __name__ == "__main__":
