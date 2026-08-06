@@ -104,7 +104,7 @@ class IsolationMetadata:
             "no_turbo": self._read_no_turbo(),
             "huge_page_size": self._read_meminfo()["Hugepagesize"],
             "huge_page_count": self._read_meminfo()["HugePages_Total"],
-            "scaling_governor": CPUMetadata(self.isolated[0]).scaling_governor(),
+            "scaling_governor": CPUMetadata(f"cpu{self.isolated[0]}").scaling_governor(),
         }
 
     def check_cmd_line_linux(self, isolated):
