@@ -91,6 +91,20 @@ class IsolationMetadata:
             raise Exception(f"No turbo file not found, path={NO_TURBO}")
         return NO_TURBO.read_text().strip()
 
+    @staticmethod
+    def _read_perf_event_paranoid():
+        PERF_EVENT_PARANOID = Path("/proc/sys/kernel/perf_event_paranoid")
+        if not PERF_EVENT_PARANOID.exists():
+            raise Exception(f"perf_event_paranoid file not found, path={PERF_EVENT_PARANOID}")
+        return PERF_EVENT_PARANOID.read_text().strip()
+
+    @staticmethod
+    def _read_kptrrestrict():
+        KPTRRESTRICT = Path("/proc/sys/kernel/kptr_restrict")
+        if not KPTRRESTRICT.exists():
+            raise Exception(f"kptrrestrict file not found, path={KPTRRESTRICT}")
+        return KPTRRESTRICT.read_text().strip()
+
     def get_metadata(self):
         return {
             "isolated": self.isolated,
@@ -122,6 +136,10 @@ class IsolationMetadata:
     def run_isolation_check(self, isolated, huge_pages):
         if self._read_no_turbo() != "0":
             raise Exception("no_turbo is not disabled")
+        if self._read_kptrrestrict() != "0":
+            raise Exception("kptrrestrict is not disabled")
+        if self._read_perf_event_paranoid() != "1":
+            raise Exception("perf_event_paranoid is not set to 1")
         for core in isolated:
             if core not in self.isolated:
                 raise Exception(f"Core {core} is not isolated")
