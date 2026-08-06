@@ -27,8 +27,8 @@ apply-runtime:
     cpupower frequency-set -g performance
 
     echo 0 | tee /sys/devices/system/cpu/intel_pstate/no_turbo
-    echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
-    echo 1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+    echo 0 | tee /proc/sys/kernel/kptr_restrict
+    echo 1 | tee /proc/sys/kernel/perf_event_paranoid
 
     sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
     sudo systemctl set-property --runtime user.slice AllowedCPUs=0-1,8-23

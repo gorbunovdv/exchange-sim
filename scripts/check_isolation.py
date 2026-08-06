@@ -104,6 +104,7 @@ class IsolationMetadata:
             "no_turbo": self._read_no_turbo(),
             "huge_page_size": self._read_meminfo()["Hugepagesize"],
             "huge_page_count": self._read_meminfo()["HugePages_Total"],
+            "scaling_governor": CPUMetadata(self.isolated[0]).scaling_governor(),
         }
 
     def check_cmd_line_linux(self, isolated):
@@ -129,8 +130,8 @@ class IsolationMetadata:
             raise Exception("no_turbo is not disabled")
         if self._read_kptrrestrict() != "0":
             raise Exception("kptrrestrict is not disabled")
-        if self._read_perf_event_paranoid() != "1":
-            raise Exception("perf_event_paranoid is not set to 1")
+        if int(self._read_perf_event_paranoid()) > 1:
+            raise Exception("perf_event_paranoid must be less than 1")
         for core in isolated:
             if core not in self.isolated:
                 raise Exception(f"Core {core} is not isolated")
@@ -147,7 +148,7 @@ class IsolationMetadata:
             meminfo = self._read_meminfo()
             if meminfo["Hugepagesize"] != "1048576 kB":
                 raise Exception(f"Huge pages size is not 1GB, found: {meminfo['Hugepagesize']}")
-            if int(meminfo["HugePages_Total"]) < huge_pages:
+            if int(meminfo["HugePages_Free"]) < huge_pages:
                 raise Exception(f"Not enough huge pages, expected at least {huge_pages}")
         self.check_cmd_line_linux(isolated)
 
