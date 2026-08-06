@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import itertools
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -68,6 +69,11 @@ def benchmark(
             path = ROOT_PATH / path
             if path.exists():
                 shutil.copy(path, dest_path)
+                os.remove(path)
+        for path in config["journaling"].values():
+            path = ROOT_PATH / path
+            if path.exists():
+                os.remove(path)
 
 
 def main():

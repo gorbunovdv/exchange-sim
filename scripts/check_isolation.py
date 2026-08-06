@@ -20,16 +20,6 @@ class CPUMetadata:
             raise Exception(f"Scaling governor file not found, path={scaling_governor_path}")
         return scaling_governor_path.read_text().strip()
 
-    def cpu_idle_states(self):
-        cpu_idle_path = self.core_path / "cpuidle"
-        if not cpu_idle_path.exists():
-            raise Exception(f"CPU idle path not found, path={cpu_idle_path}")
-        result = []
-        for state in os.listdir(cpu_idle_path):
-            cpu_state_name = cpu_idle_path / state / "name"
-            result.append(cpu_state_name.read_text().strip())
-        return result
-
 
 class IsolationMetadata:
     def __init__(self):
@@ -84,6 +74,7 @@ class IsolationMetadata:
             key.strip(): value.strip()
             for key, value in (line.split(": ", 1) for line in MEMINFO.read_text().strip().split("\n"))
         }
+
     @staticmethod
     def _read_no_turbo():
         NO_TURBO = Path("/sys/devices/system/cpu/intel_pstate/no_turbo")
@@ -152,8 +143,6 @@ class IsolationMetadata:
             current_cpu = CPUMetadata(cpu)
             if current_cpu.scaling_governor() != "performance":
                 raise Exception(f"Core {cpu} is not in performance mode")
-            if any(name not in ["POLL", "C1"] for name in current_cpu.cpu_idle_states()):
-                raise Exception(f"Core {cpu} is not in POLL or C1 idle states")
         if huge_pages is not None:
             meminfo = self._read_meminfo()
             if meminfo["Hugepagesize"] != "1048576 kB":
