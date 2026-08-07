@@ -8,6 +8,7 @@ from pathlib import Path
 
 import plumbum
 from benchmark_one import DEFAULT_PERF, benchmark_one
+from check_isolation import check_isolation
 from tqdm import tqdm
 
 from helpers.config import load_config
@@ -32,7 +33,10 @@ def benchmark(
     perf,
     no_aslr,
     huge_pages,
+    skip_isolation_check,
 ):
+    if not skip_isolation_check:
+        check_isolation(path=ROOT_PATH / config_path)
     with plumbum.local.cwd(ROOT_PATH):
         plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     config = load_config(config_path)
@@ -92,6 +96,7 @@ def main():
     parser.add_argument("--timeout", type=int, default=60, help="Timeout for each run")
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for each run")
     parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
+    parser.add_argument("--skip-isolation-check", action="store_true", help="Skip isolation check")
 
     parser.add_argument("config_path", help="Path to config")
 
@@ -109,6 +114,7 @@ def main():
         perf=args.perf_parameters if args.use_perf else [],
         no_aslr=args.no_aslr,
         huge_pages=args.huge_pages,
+        skip_isolation_check=args.skip_isolation_check,
     )
 
 
