@@ -8,7 +8,6 @@ from pathlib import Path
 
 import plumbum
 from benchmark_one import DEFAULT_PERF, benchmark_one
-from check_isolation import check_isolation
 from tqdm import tqdm
 
 from helpers.config import load_config
@@ -35,8 +34,6 @@ def benchmark(
     huge_pages,
     skip_isolation_check,
 ):
-    if not skip_isolation_check:
-        check_isolation(path=ROOT_PATH / config_path)
     with plumbum.local.cwd(ROOT_PATH):
         plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     config = load_config(config_path)
@@ -66,6 +63,7 @@ def benchmark(
             perf=perf,
             no_aslr=no_aslr,
             huge_pages=huge_pages,
+            skip_isolation_check=skip_isolation_check,
         )
         dest_path = ROOT_PATH / Path(config["benchmark_path"]) / app / label / f"run_{rep:02d}"
         dest_path.mkdir(parents=True, exist_ok=True)
