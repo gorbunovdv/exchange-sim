@@ -131,7 +131,7 @@ class IsolationMetadata:
         if self._read_kptrrestrict() != "0":
             raise Exception("kptrrestrict is not disabled")
         if int(self._read_perf_event_paranoid()) > 1:
-            raise Exception("perf_event_paranoid must be less than 1")
+            raise Exception("perf_event_paranoid must no more than 1")
         for core in isolated:
             if core not in self.isolated:
                 raise Exception(f"Core {core} is not isolated")
