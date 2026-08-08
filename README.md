@@ -52,10 +52,15 @@ For a single application this reports median +- max drift per bucket and flags a
 drift (INCONSISTENT), for two applications/labels it reports median differences with the combined noise floor
 in every row and a verdict (IMPROVED / REGRESSED / -).
 
-For stable measurements run this on Linux after applying CPU isolation and
-performance settings:
+GRUB must be patched to isolate CPU cores and remove certain interrupts:
 
-    sudo just apply-core-isol-and-perf
+    sudo just patch-grub
+    reboot
+
+For measurements and to be able to run perf successfully run this on Linux after applying CPU isolation and
+performance settings (settings do not persist after reboot, apply-runtime must be run each time):
+
+    sudo just apply-runtime
 
 The benchmark must be run on a machine with isolated cores and performance settings applied.
 

@@ -15,26 +15,23 @@ venv:
 
 bootstrap:
     apt update
-    apt install jq git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
+    apt install linux-tools-generic linux-cpupower jq git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
     just venv
 
-# todo(dgorbunov): Create prerequisites check script & move to separate area
-apply-core-isol-and-perf:
+patch-grub:
     cp /etc/default/grub "/etc/default/grub.bak_$(date +%Y-%m-%d_%H-%M-%S)"
-    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="isolcpus=domain,managed_irq,2-7 nohz_full=2-7 rcu_nocbs=2-7 irqaffinity=0-1,8-23 processor.max_cstate=1 intel_idle.max_cstate=0 default_hugepagesz=1G hugepagesz=1G hugepages=8"/' /etc/default/grub
+    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="isolcpus=domain,managed_irq,2-7 nohz_full=2-7 rcu_nocbs=2-7 irqaffinity=0-1,8-23 default_hugepagesz=1G hugepagesz=1G hugepages=8"/' /etc/default/grub
     update-grub
 
-    apt install linux-cpupower -y
+apply-runtime:
     cpupower frequency-set -g performance
 
     echo 0 | tee /sys/devices/system/cpu/intel_pstate/no_turbo
-
-    apt install linux-tools-generic -y
-    echo -e 'kernel.kptr_restrict=0\nkernel.perf_event_paranoid=1' | tee /etc/sysctl.d/99-perf.conf
-    sysctl --system
+    echo 0 | tee /proc/sys/kernel/kptr_restrict
+    echo 1 | tee /proc/sys/kernel/perf_event_paranoid
 
     sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
-    sudo systemctl set-property --runtime user.slice   AllowedCPUs=0-1,8-23
+    sudo systemctl set-property --runtime user.slice AllowedCPUs=0-1,8-23
 
 clean preset:
     rm -Rf "cmake-build-{{ preset }}"

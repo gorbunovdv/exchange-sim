@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
+
 import argparse
 from pathlib import Path
 
 import plumbum
 from calc_stats import calc_stats
-from patch_config import patch_config
+from check_isolation import check_isolation
 from plumbum.commands.base import BoundCommand
 from plumbum.machines import LocalCommand
 from write_metadata import write_metadata
@@ -30,8 +32,20 @@ DEFAULT_PERF = [
 
 
 def benchmark_one(
-    *, app, config_path, preset, mimalloc_verbose_show_stats, perf, no_aslr, timeout, hard_timeout, huge_pages
+    *,
+    app,
+    config_path,
+    preset,
+    mimalloc_verbose_show_stats,
+    perf,
+    no_aslr,
+    timeout,
+    hard_timeout,
+    huge_pages,
+    skip_isolation_check,
 ):
+    if not skip_isolation_check:
+        check_isolation(path=config_path)
     config = load_config(config_path)
     if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
         huge_pages = config["memory"]["huge_os_pages_count"]
@@ -39,7 +53,6 @@ def benchmark_one(
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with plumbum.local.cwd(ROOT_PATH), open(log_path, "w") as flog:
         just_run = plumbum.local["just"]["run"]
-        patch_config(path=config_path, dry_run=True, quiet=True)
         metadata_path = Path(config["results"]["metadata"])
         write_metadata(
             config_path=config_path,
@@ -102,6 +115,7 @@ def main():
     parser.add_argument("--timeout", type=int, default=60, help="Timeout for the benchmark")
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for the benchmark")
     parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
+    parser.add_argument("--skip-isolation-check", action="store_true", help="Skip isolation check")
     args = parser.parse_args()
     benchmark_one(
         app=args.app,
@@ -113,6 +127,7 @@ def main():
         timeout=args.timeout,
         hard_timeout=args.hard_timeout,
         huge_pages=args.huge_pages,
+        skip_isolation_check=args.skip_isolation_check,
     )
 
 
