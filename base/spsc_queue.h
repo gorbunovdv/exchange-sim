@@ -12,15 +12,15 @@ template<typename ObjectType>
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class SPSCQueue {
 public:
-  explicit SPSCQueue(size_t size): size_(size), queue_(std::allocator<ObjectType>().allocate(size)) {}
+  explicit SPSCQueue(size_t size): capacity_(size), queue_(std::allocator<ObjectType>().allocate(size)) {}
 
-  ~SPSCQueue() { std::allocator<ObjectType>().deallocate(queue_, size_); }
+  ~SPSCQueue() { std::allocator<ObjectType>().deallocate(queue_, capacity_); }
 
   template<typename Producer>
   bool produce(Producer&& producer) {
     // todo(gorbunovdv): Use correct memory order
     size_t current_tail = tail_.load(), current_head = head_.load();
-    size_t next_head = (current_head + 1) % size_;
+    size_t next_head = (current_head + 1) % capacity_;
     if (next_head == current_tail) {
       return false;
     }
@@ -32,10 +32,10 @@ public:
   template<typename Consumer>
   auto consume_span(Consumer&& consumer) {
     size_t current_head = head_.load(), current_tail = tail_.load();
-    size_t last_head = current_tail <= current_head ? current_head : size_;
+    size_t last_head = current_tail <= current_head ? current_head : capacity_;
     auto result = std::forward<Consumer>(consumer)(std::span{queue_ + current_tail, queue_ + last_head});
     if (current_tail != last_head) {
-      tail_.store(last_head % size_);
+      tail_.store(last_head % capacity_);
     }
     return result;
   }
@@ -47,7 +47,7 @@ public:
       return false;
     }
     std::forward<Consumer>(consumer)(queue_[current_tail]);
-    tail_.store((current_tail + 1) % size_);
+    tail_.store((current_tail + 1) % capacity_);
     return true;
   }
 
@@ -69,16 +69,18 @@ public:
 
   bool empty() const { return head_.load() == tail_.load(); }
 
+  size_t capacity() const { return capacity_ - 1; }
+
   size_t size() const {
     size_t current_head = head_.load(), current_tail = tail_.load();
     if (current_tail <= current_head) {
       return current_head - current_tail;
     }
-    return size_ - (current_tail - current_head);
+    return capacity_ - (current_tail - current_head);
   }
 
 private:
-  size_t size_;
+  size_t capacity_;
   ObjectType* queue_;
 
   alignas(constCacheLineSize) std::atomic<size_t> head_ = 0;

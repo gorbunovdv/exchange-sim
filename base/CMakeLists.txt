@@ -34,3 +34,7 @@ gtest_discover_tests(journal_test DISCOVERY_MODE PRE_TEST)
 add_executable(indexed_map_test tests/indexed_map_test.cpp)
 target_link_libraries(indexed_map_test PUBLIC base gtest::gtest)
 gtest_discover_tests(indexed_map_test DISCOVERY_MODE PRE_TEST)
+
+add_executable(spsc_queue_test tests/spsc_queue_test.cpp)
+target_link_libraries(spsc_queue_test PUBLIC base gtest::gtest)
+gtest_discover_tests(spsc_queue_test DISCOVERY_MODE PRE_TEST)
