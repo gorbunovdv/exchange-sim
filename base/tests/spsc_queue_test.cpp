@@ -5,7 +5,7 @@
 
 using namespace exchange_sim;
 
-static constexpr int constIterCount = 1000;
+static constexpr int constIterCount = 20000;
 
 TEST(SPSCQueue, BasicQueueTest) {
   SPSCQueue<int> queue(3);
@@ -46,7 +46,7 @@ TEST(SPSCQueue, EmplaceTest) {
 }
 
 TEST(SPSCQueue, AlmostEmptyTest) {
-  SPSCQueue<int> queue(constIterCount / 10);
+  SPSCQueue<int> queue(constIterCount / 100);
   {
     std::jthread consumer([&queue] {
       for (int i = 0; i < constIterCount; i++) {
@@ -58,7 +58,7 @@ TEST(SPSCQueue, AlmostEmptyTest) {
       for (int i = 0; i < constIterCount; i++) {
         while (!queue.produce([&](int& value) { value = i; })) {
         }
-        std::this_thread::sleep_for(10us);
+        std::this_thread::sleep_for(1us);
       }
     });
   }
@@ -66,13 +66,13 @@ TEST(SPSCQueue, AlmostEmptyTest) {
 }
 
 TEST(SPSCQueue, AlmostFullTest) {
-  SPSCQueue<int> queue(constIterCount / 10);
+  SPSCQueue<int> queue(constIterCount / 100);
   {
     std::jthread consumer([&queue] {
       for (int i = 0; i < constIterCount; i++) {
         while (!queue.consume([&](const int& value) { EXPECT_EQ(value, i); })) {
         }
-        std::this_thread::sleep_for(10us);
+        std::this_thread::sleep_for(1us);
       }
     });
     std::jthread producer([&queue] {
@@ -86,7 +86,7 @@ TEST(SPSCQueue, AlmostFullTest) {
 }
 
 TEST(SPSCQueue, HalfFullTest) {
-  SPSCQueue<int> queue(constIterCount / 2);
+  SPSCQueue<int> queue(constIterCount / 100);
   for (size_t i = 0; i < queue.capacity() / 2; i++) {
     queue.push(static_cast<int>(i));
   }
@@ -95,14 +95,12 @@ TEST(SPSCQueue, HalfFullTest) {
       for (int i = 0; i < constIterCount; i++) {
         while (!queue.consume([&](const int& value) { EXPECT_EQ(value, i); })) {
         }
-        std::this_thread::sleep_for(10us);
       }
     });
     std::jthread producer([&queue] {
       for (int i = static_cast<int>(queue.capacity() / 2); i < constIterCount; i++) {
         while (!queue.produce([&](int& value) { value = i; })) {
         }
-        std::this_thread::sleep_for(10us);
       }
     });
   }
