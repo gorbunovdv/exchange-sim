@@ -125,12 +125,17 @@
       "displayName": "Mac Clang Debug + ASan/UBSan",
       "inherits": "mac-clang",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
-        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
-        "CONAN_HOST_PROFILE": "${sourceDir}/conan/profiles/mac-clang.profile",
-        "CONAN_BUILD_PROFILE": "${sourceDir}/conan/profiles/mac-clang.profile",
         "CMAKE_BUILD_TYPE": "Debug",
         "SANITIZER": "address"
+      }
+    },
+    {
+      "name": "mac-clang-debug-tsan",
+      "displayName": "Mac Clang Debug + TSan",
+      "inherits": "mac-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZER": "thread"
       }
     },
     {
@@ -180,6 +185,10 @@
     {
       "name": "mac-clang-debug-asan",
       "configurePreset": "mac-clang-debug-asan"
+    },
+    {
+      "name": "mac-clang-debug-tsan",
+      "configurePreset": "mac-clang-debug-tsan"
     },
     {
       "name": "mac-clang-release",
