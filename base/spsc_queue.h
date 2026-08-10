@@ -50,7 +50,7 @@ public:
   bool consume(Consumer&& consumer) {
     size_t current_tail = tail_.load(std::memory_order_relaxed);
     if (cached_head_ == current_tail) {
-      cached_head_ = head_.load(std::memory_order_acquire);
+      cached_head_ = head_.load(std::memory_order_relaxed);
       if (cached_head_ == current_tail) {
         return false;
       }
