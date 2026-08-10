@@ -5,7 +5,7 @@
 
 using namespace exchange_sim;
 
-static constexpr int constIterCount = 20000;
+static constexpr int constIterCount = 100000;
 
 TEST(SPSCQueue, BasicQueueTest) {
   SPSCQueue<int> queue(3);
@@ -51,6 +51,7 @@ TEST(SPSCQueue, AlmostEmptyTest) {
     std::jthread consumer([&queue] {
       for (int i = 0; i < constIterCount; i++) {
         while (!queue.consume([&](const int& value) { EXPECT_EQ(value, i); })) {
+          std::this_thread::yield();
         }
       }
     });
@@ -78,6 +79,7 @@ TEST(SPSCQueue, AlmostFullTest) {
     std::jthread producer([&queue] {
       for (int i = 0; i < constIterCount; i++) {
         while (!queue.produce([&](int& value) { value = i; })) {
+          std::this_thread::yield();
         }
       }
     });
@@ -94,12 +96,14 @@ TEST(SPSCQueue, HalfFullTest) {
     std::jthread consumer([&queue] {
       for (int i = 0; i < constIterCount; i++) {
         while (!queue.consume([&](const int& value) { EXPECT_EQ(value, i); })) {
+          std::this_thread::yield();
         }
       }
     });
     std::jthread producer([&queue] {
       for (int i = static_cast<int>(queue.capacity() / 2); i < constIterCount; i++) {
         while (!queue.produce([&](int& value) { value = i; })) {
+          std::this_thread::yield();
         }
       }
     });
