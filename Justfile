@@ -53,7 +53,7 @@ build-from-scratch preset='clang-release':
 
 test preset='clang-debug-asan':
     just build "{{ preset }}"
-    ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
+    TSAN_OPTIONS="symbolize=0:halt_on_error=1" ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
 test-from-scratch preset='clang-debug-asan':
     just clean "{{ preset }}"
