@@ -5,6 +5,7 @@
 #include "domain/generate_securities.h"
 #include "domain/security_storage.h"
 
+#include <boost/decimal.hpp>
 #include <cpptrace/from_current.hpp>
 #include <quill/Backend.h>
 
@@ -72,6 +73,9 @@ using namespace exchange_sim;
 
 BENCHMARK_TEMPLATE(BenchmarkDecimal, boost::decimal::decimal32_t)->Range(2, 1024);
 BENCHMARK_TEMPLATE(BenchmarkDecimal, boost::decimal::decimal64_t)->Range(2, 1024);
+BENCHMARK_TEMPLATE(BenchmarkDecimal, boost::decimal::decimal_fast32_t)->Range(2, 1024);
+BENCHMARK_TEMPLATE(BenchmarkDecimal, boost::decimal::decimal_fast64_t)->Range(2, 1024);
+BENCHMARK_TEMPLATE(BenchmarkDecimal, int32_t)->Range(2, 1024);
 BENCHMARK_TEMPLATE(BenchmarkDecimal, int64_t)->Range(2, 1024);
 
 int main(int argc, char* argv[]) {
