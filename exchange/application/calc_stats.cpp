@@ -1,9 +1,9 @@
 #include "base/journal.h"
 #include "base/run.h"
 
+#include "domain/generate_securities.h"
 #include "domain/security_storage.h"
 
-#include "exchange/application/helpers/generate_securities.h"
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"

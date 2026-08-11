@@ -4,9 +4,9 @@
 #include "base/logging/quill_sinks.h"
 #include "base/run.h"
 
+#include "domain/generate_securities.h"
 #include "domain/security.h"
 
-#include "exchange/application/helpers/generate_securities.h"
 #include "exchange/domain/engine_events.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"

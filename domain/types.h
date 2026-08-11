@@ -17,10 +17,12 @@ using Price = StrongType<boost::decimal::decimal64_t,
     skills::Modulo,
     skills::Dividable,
     skills::ScalarMultipliable>;
+
 using Amount = StrongType<boost::decimal::decimal32_t,
     struct AmountTag,
     skills::EqualTo,
     skills::Ordered,
+    skills::Addable,
     skills::Subtractable,
     skills::Modulo,
     skills::Dividable,
