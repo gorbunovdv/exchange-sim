@@ -27,6 +27,11 @@ The transport layer is based on Sink concept that is implemented using callbacks
     scripts/    Python scripts, mostly benchmark orchestration and result printing
     conan/      CMake conan wrapper and conan profiles
 
+    base/config/        JSON configuration implementation with glaze
+    base/logging/       Logging implementation with quill
+    base/threading/     Core isolation suite
+    base/time/          Tsc timestamping suite
+
     exchange/application/   Applications: single_threaded_event_loop_app, calc_stats and so on
     exchange/domain/        Exchange-specific types: requests, reports, engine_events and so on
     exchange/input/         Order generation classes: SimpleOrderGenerator, OrderGeneratorWrapper and so on
