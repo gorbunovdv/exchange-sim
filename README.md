@@ -17,6 +17,8 @@ internal engine events to market data events and report events and sends them to
 
 The transport layer is based on Sink concept that is implemented using callbacks, queues or spsc queues.
 
+A more thorough architecture is located in [architecture.md](docs/architecture.md).
+
 ## Repository layout
 
     base/       Common classes and types: SPSCQueue, Journal, StrongTypes and so on.
