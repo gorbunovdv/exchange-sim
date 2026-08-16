@@ -11,8 +11,8 @@ order generator. The focus is carefully measured e2e latency and throughput.
 ## Architecture at a glance
 
 The lifecycle of a single order is as follows: SimpleOrderGenerator creates an order -> the request is passed to MatchingEngine via 
-respective transport -> MatchingEngine passes request to L3Book that maintains the respective security -> L3Book performs basic risk checks using 
-basic RiskChecker -> L3Book outputs internal engine events to ExchangeDispatcher via respective transport -> ExchangeDispatcher converts
+respective transport -> MatchingEngine passes request to L3Book that maintains the respective security -> L3Book performs basic risk 
+checks using RiskChecker -> L3Book updates the l3 book and outputs engine events to ExchangeDispatcher via respective transport -> ExchangeDispatcher converts
 internal engine events to market data events and report events and sends them to SimpleOrderGenerator via respective transport.
 
 The transport layer is based on Sink concept that is implemented using callbacks, queues or spsc queues.
@@ -35,7 +35,7 @@ The transport layer is based on Sink concept that is implemented using callbacks
     exchange/domain/        Exchange-specific types: requests, reports, engine_events and so on
     exchange/input/         Order generation classes: SimpleOrderGenerator, OrderGeneratorWrapper and so on
     exchange/matching/      Matching related classes, matching engine and l3 book implementation
-    exchange/output/        Event output classes: ExchangeDispatcher
+    exchange/output/        External event output classes: ExchangeDispatcher
 
 ## Designs
 
@@ -65,7 +65,7 @@ first_report/first_market_data and last_report/last_market_data round trips are 
 just benchmark runs each of apps several times, calculating the latencies during each run. `just evaluate` can either evaluate a
 single app or compare two apps:
 
-- Single app evaluation measures the drift of single app across runs by percentile. It emits either `-` or `INCONSISTENT` if drift is too big.
+- Single app evaluation measures the drift of single app across runs by percentile. It emits either `-` or `INCONSISTENT` based on drift.
 - Two-way app evaluation measures the difference between latency percentile of two apps. It emits either `-`, `REGRESSED` or `IMPROVED` based on data.
 
 Either different apps can be evaluated or one app across different labels.
@@ -100,6 +100,7 @@ The benchmark must be run on a machine with isolated cores and performance setti
 
 ## Restrictions
 
+- Currently SimpleOrderGenerator uses only one ClientID{0} and two securities from config.
 - Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. It will not be tested in CI and it should be used for development purposes only.
 
 ## Current plans
