@@ -59,8 +59,10 @@ along with timestamps, calc_stats then matches events by origin_time and calcula
 first_report/first_market_data and last_report/last_market_data round trips are calculated.
 
 - `check_isolation` verifies the actual hardware and operating system state prior to benchmarking.
-- Metadata that contains current setup, git states, application sha is written, runs are archived under `git_revision[:6]` labels with full fingerprint.
+- Metadata that contains current setup, git states, application sha is written, runs are archived under labels (`branch-git_revision[:6](-dirty)` by default) with full fingerprint.
 - The dirty page cache is drained prior to each run, every run executes in separate systemd-run scope pinned to isolated cores.
+
+Take a look at [benchmarking.md](docs/benchmarking.md) for more info.
 
 ## Result evaluation
 
