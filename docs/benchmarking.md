@@ -2,7 +2,7 @@
 
 ## Machine setup
 
-Cores must be isolated in order to be able to run benchmark.
+Cores must be isolated in order to run benchmarks.
 
     sudo just patch-grub
 
@@ -35,17 +35,19 @@ Each of the settings above is validated and written as metadata:
 
 ## just benchmark
 
-    just benchmark <config> [--apps APPS...] [--reps REPS] [--label LABEL]
+    just benchmark <config> [--apps APPS...] [--reps REPS] [--labels LABELS...] [--use-perf] [--no-aslr]
 
 - Script rebuilds all targets in preset from scratch
 - Default label is `branch-git_revision[:6](-dirty)`. `just remove-label` and `just rename-label` are implemented for convenience.
 - Default app set is: every `*_app` target except `empty_app`.
 - For each `(rep, app)`:
   - page cache is dropped (`sync; echo 3 > drop_caches`)
-  - each run lasts `--timeout` seconds (a minute by default)
-  - `calc_stats.cpp` join all journals by `origin_time` and prints json with latencies
+  - the app is run under `hft.slice` scope with `-p AllowedCPUs=<cpus>`, each run lasts `--timeout` seconds (a minute by default). `MIMALLOC_RESERVE_HUGE_OS_PAGES` is passed from config.
+  - `calc_stats.cpp` joins all journals by `origin_time` and prints json with latencies
   - `calc_stats.py` aggregates all these latencies into statistics by percentiles
   - artifacts (perf, metadata, logs, stats) are copied to `<benchmark_path>/<app>/<label>/run_<rep>/`
+- `--use-perf` and `--perf-parameters` could be used to run `perf stat` on each run and copy results
+- `--no-aslr` could be used to disable ASLR
 
 ## Fingerprinting
 
@@ -56,7 +58,7 @@ Each run metadata json contains:
 - git state
   - branch
   - revision
-  - dirty (?)
+  - is_dirty
 - compiler flags
 - preset
 - cmake cache variables (sanitizers, build type, compilers)
@@ -67,7 +69,7 @@ Each run metadata json contains:
 
     just evaluate <config> --apps APP1 [APP2] --label LABEL1 [LABEL2] --percentiles 50 99.9
 
-Fingerprints are verified at first: they must match for one run (unless `--no-fingerprint-check` enabled). Groups with fewer than 10000 events are skipped. First `calc_stats.requests_to_skip` requests are skipped. Currently four metric values are calculated: `first_report`, `last_report`, `first_market_data`, `last_market_data`. Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
+Fingerprints must match within one app/label (unless `--no-fingerprint-check` enabled). Groups with fewer than 10000 events are skipped. First `calc_stats.requests_to_skip` requests are skipped. Currently four metric values are calculated: `first_report`, `last_report`, `first_market_data`, `last_market_data`. Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
 
 ### Single mode
 
