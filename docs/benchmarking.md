@@ -35,7 +35,7 @@ Each of the settings above is validated and written as metadata:
 
 ## just benchmark
 
-    just benchmark <config> [--apps APPS...] [--reps REPS] [--labels LABELS...] [--use-perf] [--no-aslr]
+    just benchmark <config> [--apps APPS...] [--reps REPS] [--label LABEL] [--use-perf] [--no-aslr]
 
 - Script rebuilds all targets in preset from scratch
 - Default label is `branch-git_revision[:6](-dirty)`. `just remove-label` and `just rename-label` are implemented for convenience.
@@ -67,7 +67,7 @@ Each run metadata json contains:
 
 ## just evaluate
 
-    just evaluate <config> --apps APP1 [APP2] --label LABEL1 [LABEL2] --percentiles 50 99.9
+    just evaluate <config> --apps APP1 [APP2] --labels LABEL1 [LABEL2] --percentiles 50 99.9
 
 Fingerprints must match within one app/label (unless `--no-fingerprint-check` enabled). Groups with fewer than 10000 events are skipped. First `calc_stats.requests_to_skip` requests are skipped. Currently four metric values are calculated: `first_report`, `last_report`, `first_market_data`, `last_market_data`. Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
 
