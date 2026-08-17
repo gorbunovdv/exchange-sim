@@ -64,7 +64,7 @@ first_report/first_market_data and last_report/last_market_data round trips are 
 
 ## Result evaluation
 
-just benchmark runs each of apps several times, calculating the latencies during each run. `just evaluate` can either evaluate a
+`just benchmark` runs each of apps several times, calculating the latencies during each run. `just evaluate` can either evaluate a
 single app or compare two apps:
 
 - Single app evaluation measures the drift of single app across runs by percentile. It emits either `-` or `INCONSISTENT` based on drift.
