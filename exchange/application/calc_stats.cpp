@@ -12,6 +12,8 @@
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 namespace exchange_sim {
@@ -30,6 +32,16 @@ struct RequestStat {
   size_t reports_count = 0;
   size_t market_events_count = 0;
   size_t trades_count = 0;
+};
+
+struct MetricStat {
+  std::string metric;
+  std::string symbol;
+  std::string type;
+  size_t trades_count;
+  size_t events_count;
+  std::string percentile;
+  std::int64_t value;
 };
 
 }  // namespace exchange_sim
@@ -90,6 +102,12 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
   bool first_to_write = true;
 
   std::map<Ticks, RequestStat> request_by_origin_time;
+
+  static constexpr std::array constLatencyFields = {
+      "first_report", "last_report", "first_market_event", "last_market_event"};
+  std::map<std::tuple<std::string, std::string, size_t>,
+      std::array<std::vector<std::int64_t>, constLatencyFields.size()>>
+      latencies_by_group;
 
   auto update_report = [](RequestStat& stat, Ticks report_timestamp, const auto& report) {
     auto time_ns = report_timestamp.nanoseconds_distance(report.origin_time).count();
@@ -185,8 +203,55 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     }
     CHECK(!glz::write_json(stat, write_buffer), "Failed to print json");
     output_file << write_buffer;
+
+    auto& group_latencies = latencies_by_group[{stat.symbol, stat.type, stat.trades_count}];
+    const std::array latencies = {
+        stat.first_report_ns, stat.last_report_ns, stat.first_market_event_ns, stat.last_market_event_ns};
+    for (size_t i = 0; i < latencies.size(); i++) {
+      if (latencies[i].has_value()) {
+        group_latencies[i].push_back(latencies[i].value());
+      }
+    }
   }
   output_file << "\n]";
+
+  static constexpr std::array<std::pair<double, std::string_view>, 7> constPercentiles = {
+      {{0, "0"}, {50, "50"}, {75, "75"}, {90, "90"}, {99, "99"}, {99.9, "99.9"}, {100, "100"}}};
+
+  auto percentile_value = [](std::vector<std::int64_t>& values, double percentile) {
+    auto index = static_cast<int32_t>(std::ceil(percentile / 100 * static_cast<double>(values.size())) - 1);
+    index = std::max(0, std::min<int32_t>(std::ssize(values) - 1, index));
+    std::ranges::nth_element(values, values.begin() + index);
+    return values[index];
+  };
+
+  std::vector<MetricStat> stats;
+  for (size_t field_index = 0; field_index < constLatencyFields.size(); field_index++) {
+    for (auto& [group, group_latencies] : latencies_by_group) {
+      auto& values = group_latencies[field_index];
+      if (values.empty()) {
+        continue;
+      }
+      const auto& [symbol, type, trades_count] = group;
+      for (const auto& [percentile, percentile_label] : constPercentiles) {
+        stats.push_back(MetricStat{
+            .metric = constLatencyFields[field_index],
+            .symbol = symbol,
+            .type = type,
+            .trades_count = trades_count,
+            .events_count = values.size(),
+            .percentile = std::string(percentile_label),
+            .value = percentile_value(values, percentile),
+        });
+      }
+    }
+  }
+
+  write_buffer.clear();
+  CHECK(!glz::write<glz::opts{.prettify = true}>(stats, write_buffer), "Failed to print json");
+  std::fstream stats_file(config["results"]["stats"].as<std::string>(), std::ios::out);
+  stats_file << write_buffer << std::flush;
+  CHECK(stats_file, "Failed to write stats, path={}", config["results"]["stats"].as<std::string>());
 }
 
 }  // namespace exchange_sim
