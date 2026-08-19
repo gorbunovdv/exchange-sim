@@ -46,31 +46,6 @@ struct MetricStat {
 
 }  // namespace exchange_sim
 
-template<>
-struct glz::meta<exchange_sim::RequestStat> {
-  using T = exchange_sim::RequestStat;
-  static constexpr auto value = object("origin_time",
-      &T::origin_time,
-      "type",
-      &T::type,
-      "symbol",
-      &T::symbol,
-      "first_report",
-      &T::first_report_ns,
-      "last_report",
-      &T::last_report_ns,
-      "first_market_event",
-      &T::first_market_event_ns,
-      "last_market_event",
-      &T::last_market_event_ns,
-      "reports_count",
-      &T::reports_count,
-      "market_events_count",
-      &T::market_events_count,
-      "trades_count",
-      &T::trades_count);
-};
-
 namespace exchange_sim {
 
 void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
@@ -108,6 +83,21 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
   std::map<std::tuple<std::string, std::string, size_t>,
       std::array<std::vector<std::int64_t>, constLatencyFields.size()>>
       latencies_by_group;
+
+  auto update_by_stat = [&](const auto& stat) {
+    auto& group_latencies = latencies_by_group[{stat.symbol, stat.type, stat.trades_count}];
+    const std::array latencies = {
+      stat.first_report_ns,
+      stat.last_report_ns,
+      stat.first_market_event_ns,
+      stat.last_market_event_ns,
+  };
+    for (size_t i = 0; i < latencies.size(); i++) {
+      if (latencies[i].has_value()) {
+        group_latencies[i].push_back(latencies[i].value());
+      }
+    }
+  };
 
   auto update_report = [](RequestStat& stat, Ticks report_timestamp, const auto& report) {
     auto time_ns = report_timestamp.nanoseconds_distance(report.origin_time).count();
@@ -186,12 +176,12 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
 
     RequestStat& stat = request_by_origin_time.at(request_timestamp);
     stat.origin_time = request_timestamp.ticks();
-    stat.type = [&]() {
+    stat.type = [](const auto& request_object) {
       return std::visit(boost::hof::match([](const request::OrderAddRequest&) { return "ADD"; },
                             [](const request::OrderCancelRequest&) { return "CANCEL"; },
                             [](const request::OrderReplaceRequest&) { return "REPLACE"; }),
           request_object);
-    }();
+    }(request_object);
     stat.symbol = security_storage
                       .get_security(std::visit([](const auto& request) { return request.security_id; }, request_object))
                       .symbol.value();
@@ -204,14 +194,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     CHECK(!glz::write_json(stat, write_buffer), "Failed to print json");
     output_file << write_buffer;
 
-    auto& group_latencies = latencies_by_group[{stat.symbol, stat.type, stat.trades_count}];
-    const std::array latencies = {
-        stat.first_report_ns, stat.last_report_ns, stat.first_market_event_ns, stat.last_market_event_ns};
-    for (size_t i = 0; i < latencies.size(); i++) {
-      if (latencies[i].has_value()) {
-        group_latencies[i].push_back(latencies[i].value());
-      }
-    }
+    update_by_stat(stat);
   }
   output_file << "\n]";
 
