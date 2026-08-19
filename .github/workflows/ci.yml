@@ -11,7 +11,9 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container: ubuntu:26.04
+    container:
+      image: ubuntu:26.04
+      options: --security-opt seccomp=unconfined
 
     steps:
       - name: Update apt
@@ -62,6 +64,7 @@ jobs:
         run: |
           just test clang-debug-asan
           just test gcc-debug-asan
+          just test clang-debug-tsan
 
       - name: Run linter
         run: |
