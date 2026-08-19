@@ -68,7 +68,6 @@ public:
     }
 
     const auto& [request_timestamp, request_object] = *request_iterator_;
-    processed_count_++;
 
     while (!current_reports_.empty() && current_reports_.front().timestamp < request_timestamp) {
       current_reports_.pop_front();
@@ -155,8 +154,6 @@ private:
   Journal<request::RequestType> request_journal_;
   const SecurityStorage& security_storage_;
 
-  size_t processed_count_ = 0;
-
   std::map<Ticks, RequestStat> request_by_origin_time_;
 
   std::deque<decltype(report_journal_)::value_type> current_reports_;
@@ -236,7 +233,12 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     CHECK(output_file, "Failed to write output_file, path={}", config["calc_stats"]["output_file"].as<std::string>());
   };
 
+  Throughput throughput("calc_stats.cpp");
+
   while (auto opt_st = request_matcher.next()) {
+    if (stop_token.stop_requested()) {
+      break;
+    }
     const auto& stat = *opt_st;
     processed_count++;
     if (processed_count <= requests_to_skip) {
@@ -244,6 +246,7 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     }
     write_stat(stat);
     update_by_stat(stat);
+    throughput.tick();
   }
   output_file << "\n]";
 
