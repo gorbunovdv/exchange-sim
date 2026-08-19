@@ -31,7 +31,7 @@ public:
   template<typename Decimal>
   Decimal rand_decimal(Decimal from, Decimal to, Decimal step) {
     auto interval_steps = static_cast<int64_t>((to - from) / step);
-    return from + std::uniform_int_distribution<int64_t>{0, interval_steps}(generator_) *step;
+    return from + std::uniform_int_distribution<int64_t>{0, interval_steps}(generator_) * step;
   }
 
 private:

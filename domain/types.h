@@ -4,11 +4,13 @@
 
 #include <boost/decimal/decimal32_t.hpp>
 #include <boost/decimal/decimal64_t.hpp>
+#include <boost/decimal/decimal_fast32_t.hpp>
+#include <boost/decimal/decimal_fast64_t.hpp>
 #include <magic_enum/magic_enum.hpp>
 
 namespace exchange_sim {
 
-using Price = StrongType<boost::decimal::decimal64_t,
+using Price = StrongType<boost::decimal::decimal_fast64_t,
     struct PriceTag,
     skills::EqualTo,
     skills::Ordered,
@@ -18,7 +20,7 @@ using Price = StrongType<boost::decimal::decimal64_t,
     skills::Dividable,
     skills::ScalarMultipliable>;
 
-using Amount = StrongType<boost::decimal::decimal32_t,
+using Amount = StrongType<boost::decimal::decimal_fast32_t,
     struct AmountTag,
     skills::EqualTo,
     skills::Ordered,
