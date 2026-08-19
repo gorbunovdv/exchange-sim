@@ -283,7 +283,7 @@ private:
     const Security& security = interface_.security_storage().get_security(security_id);
 
     auto resulting_price = random_.rand_decimal<Price>(security.low_price, security.high_price, security.tick_size);
-    auto resulting_amount = random_.rand_decimal<Amount>(Amount{0}, security.max_amount, security.lot_size);
+    auto resulting_amount = random_.rand_decimal<Amount>(security.lot_size, security.max_amount, security.lot_size);
 
     auto direction = random_.rand_enum<Direction>();
 
