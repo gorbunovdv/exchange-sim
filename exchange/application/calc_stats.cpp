@@ -87,11 +87,11 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
   auto update_by_stat = [&](const auto& stat) {
     auto& group_latencies = latencies_by_group[{stat.symbol, stat.type, stat.trades_count}];
     const std::array latencies = {
-      stat.first_report_ns,
-      stat.last_report_ns,
-      stat.first_market_event_ns,
-      stat.last_market_event_ns,
-  };
+        stat.first_report_ns,
+        stat.last_report_ns,
+        stat.first_market_event_ns,
+        stat.last_market_event_ns,
+    };
     for (size_t i = 0; i < latencies.size(); i++) {
       if (latencies[i].has_value()) {
         group_latencies[i].push_back(latencies[i].value());
