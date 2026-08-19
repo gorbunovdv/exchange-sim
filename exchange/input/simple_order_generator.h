@@ -237,9 +237,8 @@ public:
       return;
     }
 
-    auto security = random_.rand_int_strong_type<SecurityID>(0, interface_.security_storage().size() - 1);
-
     auto type = random_.rand_int(0, 2);
+    auto security = random_.rand_int_strong_type<SecurityID>(0, interface_.security_storage().size() - 1);
     if (type == 0) {
       generate_new_order_request(security);
       return;
@@ -255,7 +254,7 @@ private:
   void generate_new_order_request(SecurityID security_id) {
     const Security& security = interface_.security_storage().get_security(security_id);
     auto resulting_price = random_.rand_decimal<Price>(security.low_price, security.high_price, security.tick_size);
-    auto resulting_amount = random_.rand_decimal<Amount>(Amount{0}, security.max_amount, security.lot_size);
+    auto resulting_amount = random_.rand_decimal<Amount>(security.lot_size, security.max_amount, security.lot_size);
     auto time_in_force = random_.rand_enum<OrderTimeInForce>();
     auto direction = random_.rand_enum<Direction>();
 
