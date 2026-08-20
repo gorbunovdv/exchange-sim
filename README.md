@@ -25,10 +25,10 @@ The lifecycle of a single order is as follows:
 - SimpleOrderGenerator creates an order.
 - The request is passed to MatchingEngine via respective transport.
 - MatchingEngine passes request to L3Book that maintains the respective security.
-- L3Book performs basic risk checks using RiskChecker
-- L3Book updates the l3 book and outputs engine events to ExchangeDispatcher via respective transport
-- ExchangeDispatcher converts internal engine events to market data events and report events and sends them to 
-SimpleOrderGenerator via respective transport.
+- L3Book performs basic risk checks using RiskChecker.
+- L3Book updates the l3 book and outputs engine events to ExchangeDispatcher via respective transport.
+- ExchangeDispatcher converts internal engine events to market data events and report events.
+- ExchangeDispatcher sends them to SimpleOrderGenerator via respective transport.
 
 The transport layer is based on the Sink concept that is implemented using callbacks, queues or spsc queues.
 
