@@ -8,14 +8,29 @@ It models the venue side of an electronic market: a matching engine that keeps a
 L3 order book per instrument with FIFO price-time priority fed by a synthetic
 order generator. The focus is carefully measured e2e latency and throughput.
 
+## Requirements
+
+- Linux (developed and benchmarked on Ubuntu 26.04 LTS)
+- C++23 compiler (GCC or Clang), CMake, Conan 2, Just
+
+## Quickstart
+
+    just bootstrap
+    just build
+    just test
+
 ## Architecture at a glance
 
-The lifecycle of a single order is as follows: SimpleOrderGenerator creates an order -> the request is passed to MatchingEngine via 
-respective transport -> MatchingEngine passes request to L3Book that maintains the respective security -> L3Book performs basic risk 
-checks using RiskChecker -> L3Book updates the l3 book and outputs engine events to ExchangeDispatcher via respective transport -> ExchangeDispatcher converts
-internal engine events to market data events and report events and sends them to SimpleOrderGenerator via respective transport.
+The lifecycle of a single order is as follows: 
+- SimpleOrderGenerator creates an order.
+- The request is passed to MatchingEngine via respective transport.
+- MatchingEngine passes request to L3Book that maintains the respective security.
+- L3Book performs basic risk checks using RiskChecker
+- L3Book updates the l3 book and outputs engine events to ExchangeDispatcher via respective transport
+- ExchangeDispatcher converts internal engine events to market data events and report events and sends them to 
+SimpleOrderGenerator via respective transport.
 
-The transport layer is based on Sink concept that is implemented using callbacks, queues or spsc queues.
+The transport layer is based on the Sink concept that is implemented using callbacks, queues or spsc queues.
 
 A more thorough architecture is located in [architecture.md](docs/architecture.md).
 
@@ -82,17 +97,6 @@ Either different apps can be evaluated or one app across different labels.
 - Synthetic order generator, market-data dispatcher, execution reports
 - Benchmarking: latency and throughput
 
-## Requirements
-
-- Linux (developed and benchmarked on Ubuntu 26.04 LTS)
-- C++23 compiler (GCC or Clang), CMake, Conan 2, Just
-
-## Quickstart
-    
-    just bootstrap
-    just build
-    just test
-
 ## Core isolation
     
     sudo just patch-grub && sudo reboot
@@ -107,6 +111,6 @@ The benchmark must be run on a machine with isolated cores and performance setti
 - Currently SimpleOrderGenerator uses only one ClientID{0} and two securities from config.
 - Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. It will not be tested in CI and it should be used for development purposes only.
 
-## Current plans
+## Future plans
 
 - Security sharding in multi_threaded_app

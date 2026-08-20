@@ -10,9 +10,9 @@ The exchange is a pipeline of three stages connected by typed message streams:
 - `MatchingEngine` sends `engine_events::EventType` to `ExchangeDispatcher`
 - `ExchangeDispatcher` sends `market_events::EventType` and `report::ReportType` to `OrderGeneratorWrapper`
 
-Every message is `std::variant<PODTypes...>`. A stage is a class that satisfies `ProcessorOf` concept. 
+Every message in these streams is `std::variant<PODTypes...>`. A stage is a class that satisfies `ProcessorOf` concept. 
 Each stage emits objects into sink that satisfies `SinkOf`. All concurrency or absence of it is achieved 
-using specialized wrappers, processors do not know anything about the specific setup. Same set of classes could
+using specialized wrappers, processors do not know anything about the specific setup. The same set of classes could
 yield a completely different design.
 
 Wiring utilities include:
