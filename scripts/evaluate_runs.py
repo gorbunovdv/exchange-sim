@@ -2,10 +2,16 @@
 
 import argparse
 
-from calc_stats import latency_fields
 from tabulate import tabulate
 
 from helpers.single_benchmark_results import SingleBenchmarkResults
+
+latency_fields = [
+    "first_report",
+    "last_report",
+    "first_market_event",
+    "last_market_event",
+]
 
 MAX_REL_THRESHOLD = 2.0
 MAX_ABS_THRESHOLD = 10.0

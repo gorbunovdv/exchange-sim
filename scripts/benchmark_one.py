@@ -4,7 +4,6 @@ import argparse
 from pathlib import Path
 
 import plumbum
-from calc_stats import calc_stats
 from check_isolation import check_isolation
 from plumbum.commands.base import BoundCommand
 from plumbum.machines import LocalCommand
@@ -100,7 +99,6 @@ def benchmark_one(
         calc_stats_cmd = just_run[ROOT_PATH / f"cmake-build-{preset}/exchange/application/calc_stats"][config_path]
         print("Running calc_stats: ", calc_stats_cmd)
         calc_stats_cmd.run(stdout=flog, stderr=flog)
-        calc_stats(input_file=config["calc_stats"]["output_file"], output_file=config["results"]["stats"], quiet=True)
 
 
 def main():

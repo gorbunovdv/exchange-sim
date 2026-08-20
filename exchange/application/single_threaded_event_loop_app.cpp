@@ -4,6 +4,7 @@
 #include "base/macros.h"
 #include "base/run.h"
 
+#include "domain/generate_securities.h"
 #include "domain/security_storage.h"
 
 #include "exchange/domain/market_events.h"
@@ -14,7 +15,6 @@
 #include "exchange/matching/matching_engine.h"
 #include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
-#include "helpers/generate_securities.h"
 
 #include <boost/container/static_vector.hpp>
 #include <cpptrace/from_current.hpp>

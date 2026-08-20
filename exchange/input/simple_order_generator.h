@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/logging/loggable_class.h"
+#include "base/random.h"
 #include "base/throughput.h"
 
 #include "domain/security.h"
@@ -24,8 +25,7 @@ public:
       min_active_orders_by_security_(config["min_active_orders_by_security"].as<std::uint32_t>()),
       max_active_orders_by_security_(config["max_active_orders_by_security"].as<std::uint32_t>()),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
-      generator_(config["seed"].as<std::uint32_t>()),
-      security_id_distribution_(0, interface_.security_storage().size() - 1) {
+      random_(config["seed"].as<std::uint32_t>()) {
     CHECK(min_active_orders_by_security_ <= max_active_orders_by_security_,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security_,
@@ -237,32 +237,26 @@ public:
       return;
     }
 
-    auto type = type_distribution_(generator_);
+    auto type = random_.rand_int(0, 2);
+    auto security = random_.rand_int_strong_type<SecurityID>(0, interface_.security_storage().size() - 1);
     if (type == 0) {
-      generate_new_order_request(SecurityID{security_id_distribution_(generator_)});
+      generate_new_order_request(security);
       return;
     }
     if (type == 1) {
-      generate_cancel_order_request(SecurityID{security_id_distribution_(generator_)});
+      generate_cancel_order_request(security);
       return;
     }
-    generate_replace_order_request(SecurityID{security_id_distribution_(generator_)});
+    generate_replace_order_request(security);
   }
 
 private:
   void generate_new_order_request(SecurityID security_id) {
     const Security& security = interface_.security_storage().get_security(security_id);
-    Price price_interval = security.high_price - security.low_price;
-    int64_t price_max_multiplied_value = static_cast<uint64_t>(price_interval / security.tick_size);
-
-    Price resulting_price =
-        std::uniform_int_distribution<uint64_t>(0, price_max_multiplied_value)(generator_) * security.tick_size +
-        security.low_price;
-    Amount resulting_amount = std::uniform_int_distribution<uint64_t>(
-                                  1, static_cast<uint64_t>(security.max_amount / security.lot_size))(generator_) *
-        security.lot_size;
-    OrderTimeInForce time_in_force = random_enum_value<OrderTimeInForce>(generator_);
-    Direction direction = random_enum_value<Direction>(generator_);
+    auto resulting_price = random_.rand_decimal<Price>(security.low_price, security.high_price, security.tick_size);
+    auto resulting_amount = random_.rand_decimal<Amount>(security.lot_size, security.max_amount, security.lot_size);
+    auto time_in_force = random_.rand_enum<OrderTimeInForce>();
+    auto direction = random_.rand_enum<Direction>();
 
     interface_.send_order_add_request(
         ClientID{0}, security_id, time_in_force, OrderType::LIMIT, direction, resulting_price, resulting_amount);
@@ -273,7 +267,7 @@ private:
         "Active orders must not be empty for cancellation query, security_id={}",
         security_id.value());
     const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
-    size_t order_to_cancel_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
+    auto order_to_cancel_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
     interface_.send_order_cancel_request(
         ClientID{0}, active_orders[order_to_cancel_index].client_order_id, security_id);
@@ -284,20 +278,14 @@ private:
         "Active orders must not be empty for replacement query, security_id={}",
         security_id.value());
     const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
-    size_t order_to_replace_index = std::uniform_int_distribution<size_t>(0, active_orders.size() - 1)(generator_);
+    auto order_to_replace_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
     const Security& security = interface_.security_storage().get_security(security_id);
-    Price price_interval = security.high_price - security.low_price;
-    int64_t price_max_multiplied_value = static_cast<uint64_t>(price_interval / security.tick_size);
 
-    Price resulting_price =
-        std::uniform_int_distribution<uint64_t>(0, price_max_multiplied_value)(generator_) * security.tick_size +
-        security.low_price;
-    Amount resulting_amount = std::uniform_int_distribution<uint64_t>(
-                                  1, static_cast<uint64_t>(security.max_amount / security.lot_size))(generator_) *
-        security.lot_size;
+    auto resulting_price = random_.rand_decimal<Price>(security.low_price, security.high_price, security.tick_size);
+    auto resulting_amount = random_.rand_decimal<Amount>(security.lot_size, security.max_amount, security.lot_size);
 
-    Direction direction = random_enum_value<Direction>(generator_);
+    auto direction = random_.rand_enum<Direction>();
 
     interface_.send_order_replace_request(ClientID{0},
         active_orders[order_to_replace_index].client_order_id,
@@ -307,24 +295,13 @@ private:
         resulting_amount);
   }
 
-  template<typename Enum>
-  static Enum random_enum_value(std::mt19937& generator) {
-    static_assert(std::is_enum_v<Enum>);
-    static_assert(magic_enum::enum_count<Enum>() > 0);
-
-    static constexpr auto values = magic_enum::enum_values<Enum>();
-    return values[std::uniform_int_distribution<uint32_t>(0, magic_enum::enum_count<Enum>() - 1)(generator)];
-  }
-
   GeneratorInterface& interface_;
 
   const uint32_t min_active_orders_by_security_;
   const uint32_t max_active_orders_by_security_;
   const uint32_t max_pending_transactions_;
 
-  std::mt19937 generator_;
-  std::uniform_int_distribution<std::uint32_t> type_distribution_{0, 2};
-  std::uniform_int_distribution<SecurityID::UnderlyingType> security_id_distribution_;
+  Random random_;
 };
 
 }  // namespace exchange_sim
