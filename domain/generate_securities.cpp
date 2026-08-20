@@ -1,4 +1,4 @@
-#pragma once
+#include "generate_securities.h"
 
 namespace exchange_sim {
 
