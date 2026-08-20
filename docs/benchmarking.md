@@ -23,6 +23,18 @@ It applies:
 - `kptr_restrict=0`, `perf_event_paranoid=1` for perf
 - `system.slice` and `user.slice` are set to the nonisolated cores
 
+## HW & OS settings rationale
+
+The main benchmarking machine has Intel Core Ultra 9 285K, 64GB RAM and Ubuntu 26.04 under hood.
+
+Here are the main non-obvious points behind the settings (or lack of them):
+
+- Intel Core Ultra 9 285K lacks the SMT support, so there's no need to turn it off.
+- The app has been tested with turbo enabled/disabled. Turned on turbo makes frequency a lot higher (up to 5.7 GHz vs 3.7 GHz 
+of basic frequency). The current result with turbo stays within CONSISTENT threshold, so there's little need to turn it off.
+- The app has been tested with/without core sleep prevention (`processor.max_cstate=1 intel_idle.max_cstate=0`). The core is 
+able to achieve a better frequency during the app benchmark with other cores allowed to sleep, so it's been decided to leave core sleep prevention off.
+
 ## Pre-run checks
 
 `check_isolation.py` checks the actual hardware, kernel and OS state prior to benchmark. 
