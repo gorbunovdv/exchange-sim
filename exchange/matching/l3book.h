@@ -109,10 +109,10 @@ private:
         .client_id = current_order.client_id,
         .client_order_id = current_order.client_order_id,
         .security_id = security_.security_id,
-        .time_in_force = request.time_in_force,
-        .direction = current_order.direction,
         .price = current_order.price,
         .quantity = current_order.quantity,
+        .direction = current_order.direction,
+        .time_in_force = request.time_in_force,
     });
     current_order = fill_order_and_place_in_book<current_order_direction>(current_order, request.time_in_force, sink);
     if (current_order.quantity != Amount{0} && request.time_in_force != OrderTimeInForce::IOC) {
@@ -122,9 +122,9 @@ private:
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
           .security_id = security_.security_id,
-          .direction = request.direction,
           .price = request.price,
           .quantity = current_order.quantity,
+          .direction = request.direction,
       });
     } else if (current_order.quantity == Amount{0}) {
       sink.push(engine_events::OrderFilled{
@@ -133,8 +133,8 @@ private:
           .client_id = current_order.client_id,
           .client_order_id = current_order.client_order_id,
           .security_id = security_.security_id,
-          .direction = current_order.direction,
           .price = current_order.price,
+          .direction = current_order.direction,
           .type = engine_events::FilledType::AGGRESSIVE_FILL,
       });
     } else {
@@ -186,9 +186,9 @@ private:
           .client_order_id = current_order.client_order_id,
           .client_replacement_id = request.client_replacement_id,
           .security_id = security_.security_id,
-          .direction = request.direction,
           .price = request.price,
           .quantity = request.quantity,
+          .direction = request.direction,
       });
       current_order.origin_time = request.origin_time;
       current_order.order_id = new_order_id;
@@ -205,9 +205,9 @@ private:
             .client_id = current_order.client_id,
             .client_order_id = current_order.client_order_id,
             .security_id = security_.security_id,
-            .direction = request.direction,
             .price = request.price,
             .quantity = current_order.quantity,
+            .direction = request.direction,
         });
       } else {
         sink.push(engine_events::OrderFilled{
@@ -216,8 +216,8 @@ private:
             .client_id = request.client_id,
             .client_order_id = current_order.client_order_id,
             .security_id = security_.security_id,
-            .direction = current_order.direction,
             .price = current_order.price,
+            .direction = current_order.direction,
             .type = engine_events::FilledType::AGGRESSIVE_FILL,
         });
       }
@@ -264,10 +264,9 @@ private:
       opposite_order.quantity -= quantity_to_fill;
       sink.push(engine_events::Trade{
           .origin_time = current_order.origin_time,
-          .security_id = security_.security_id,
-          .aggressor_direction = current_order.direction,
           .price = opposite_order.price,
           .quantity = quantity_to_fill,
+          .security_id = security_.security_id,
           .trade_id = generate_trade_id(),
           .aggressor_order_id = current_order.order_id,
           .aggressor_client_id = current_order.client_id,
@@ -275,6 +274,7 @@ private:
           .recipient_order_id = opposite_order.order_id,
           .recipient_client_id = opposite_order.client_id,
           .recipient_client_order_id = opposite_order.client_order_id,
+          .aggressor_direction = current_order.direction,
       });
       if (opposite_order.quantity == Amount{0}) {
         sink.push(engine_events::OrderFilled{
@@ -283,8 +283,8 @@ private:
             .client_id = opposite_order.client_id,
             .client_order_id = opposite_order.client_order_id,
             .security_id = security_.security_id,
-            .direction = opposite_order.direction,
             .price = opposite_order.price,
+            .direction = opposite_order.direction,
             .type = engine_events::FilledType::PASSIVE_FILL,
         });
         book_container_.template erase_front<opposite_current_order_direction>();
@@ -295,9 +295,9 @@ private:
             .client_id = opposite_order.client_id,
             .client_order_id = opposite_order.client_order_id,
             .security_id = security_.security_id,
-            .direction = opposite_order.direction,
             .price = opposite_order.price,
             .remaining_quantity = opposite_order.quantity,
+            .direction = opposite_order.direction,
         });
       }
     }

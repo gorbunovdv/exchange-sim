@@ -45,9 +45,9 @@ public:
         .security_id = security_id,
         .time_in_force = time_in_force,
         .order_type = order_type,
-        .direction = direction,
         .price = price,
         .quantity = quantity,
+        .direction = direction,
     };
     if (security_storage_.has_security(security_id)) {
       order_storage_[security_id].handle(request);
@@ -89,9 +89,9 @@ public:
         .client_order_id = client_order_id,
         .client_replacement_id = client_replacement_id,
         .security_id = security_id,
-        .direction = direction,
         .price = price,
         .quantity = quantity,
+        .direction = direction,
     };
     if (security_storage_.has_security(security_id)) {
       order_storage_[security_id].handle(request);

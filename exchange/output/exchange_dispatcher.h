@@ -64,9 +64,9 @@ private:
         .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
-        .direction = event.direction,
         .price = event.price,
         .quantity = event.quantity,
+        .direction = event.direction,
     });
     report_generator_sink_.push(event);
   }
@@ -87,9 +87,9 @@ private:
         .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
-        .direction = event.direction,
         .price = event.price,
         .new_quantity = event.remaining_quantity,
+        .direction = event.direction,
     });
   }
 
