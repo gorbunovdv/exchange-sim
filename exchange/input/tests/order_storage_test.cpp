@@ -11,11 +11,11 @@
 using namespace exchange_sim;
 
 void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest request, Order::State state) {
-  storage.handle(request);
+  storage.handle_sent_order_add(request.client_id, request.client_order_id);
   if (state == Order::State::SENT) {
     return;
   }
-  storage.handle(report::OrderAccepted{
+  storage.handle_report(report::OrderAccepted{
       .origin_time = request.origin_time,
       .order_id = ExchangeOrderID{request.client_order_id.value()},
       .client_id = request.client_id,
@@ -32,7 +32,7 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
   if (request.time_in_force == OrderTimeInForce::IOC) {
     CHECK(state != Order::State::ACTIVE, "IOC order can't be active");
   } else {
-    storage.handle(report::OrderBookEntry{
+    storage.handle_report(report::OrderBookEntry{
         .origin_time = request.origin_time,
         .order_id = ExchangeOrderID{request.client_order_id.value()},
         .client_id = request.client_id,
@@ -46,24 +46,9 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
       return;
     }
     if (state == Order::State::CANCEL_SENT) {
-      storage.handle(request::OrderCancelRequest{
-          .origin_time = request.origin_time,
-          .client_id = request.client_id,
-          .client_order_id = request.client_order_id,
-          .client_cancellation_id = ClientOrderID{request.client_order_id.value() + 1},
-          .security_id = request.security_id,
-      });
+      storage.handle_sent_order_cancel(request.client_id, request.client_order_id);
     } else if (state == Order::State::REPLACE_SENT) {
-      storage.handle(request::OrderReplaceRequest{
-          .origin_time = request.origin_time,
-          .client_id = request.client_id,
-          .client_order_id = request.client_order_id,
-          .client_replacement_id = ClientOrderID{request.client_order_id.value() + 1},
-          .security_id = request.security_id,
-          .direction = request.direction,
-          .price = request.price,
-          .quantity = request.quantity,
-      });
+      storage.handle_sent_order_replace(request.client_id, request.client_order_id);
     } else {
       CRITICAL("Order state is not handled: {}", format_as(state));
     }
@@ -205,8 +190,8 @@ report::ReplacementRejected convert_to<report::ReplacementRejected>(const reques
 
 void apply_events(OrderStorage& storage, const std::vector<report::ReportType>& events) {
   for (const auto& event : events) {
-    std::visit(
-        boost::hof::match([](const report::Trade&) {}, [&](const auto& typed_event) { storage.handle(typed_event); }),
+    std::visit(boost::hof::match(
+                   [](const report::Trade&) {}, [&](const auto& typed_event) { storage.handle_report(typed_event); }),
         event);
   }
 }

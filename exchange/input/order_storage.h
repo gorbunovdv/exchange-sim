@@ -15,7 +15,6 @@ namespace exchange_sim {
 struct Order {
   ClientID client_id;
   ClientOrderID client_order_id;
-  SecurityID security_id;
 
   enum class State : std::uint8_t { SENT, ACCEPTED, ACTIVE, CANCEL_SENT, REPLACE_SENT };
 
@@ -31,18 +30,18 @@ class OrderStorage {
 public:
   OrderStorage() = default;
 
-  void handle(const request::OrderAddRequest& request);
-  void handle(const request::OrderCancelRequest& request);
-  void handle(const request::OrderReplaceRequest& request);
-  void handle(const report::OrderAccepted& report);
-  void handle(const report::OrderRejected& report);
-  void handle(const report::OrderBookEntry& report);
-  void handle(const report::OrderExpired& report);
-  void handle(const report::OrderFilled& report);
-  void handle(const report::OrderCancelled& report);
-  void handle(const report::CancellationRejected& report);
-  void handle(const report::ReplacementAccepted& report);
-  void handle(const report::ReplacementRejected& report);
+  void handle_sent_order_add(ClientID client_id, ClientOrderID client_order_id);
+  void handle_sent_order_cancel(ClientID client_id, ClientOrderID client_order_id);
+  void handle_sent_order_replace(ClientID client_id, ClientOrderID client_order_id);
+  void handle_report(const report::OrderAccepted& report);
+  void handle_report(const report::OrderRejected& report);
+  void handle_report(const report::OrderBookEntry& report);
+  void handle_report(const report::OrderExpired& report);
+  void handle_report(const report::OrderFilled& report);
+  void handle_report(const report::OrderCancelled& report);
+  void handle_report(const report::CancellationRejected& report);
+  void handle_report(const report::ReplacementAccepted& report);
+  void handle_report(const report::ReplacementRejected& report);
 
   size_t pending_transactions() const { return pending_transactions_count_; }
 

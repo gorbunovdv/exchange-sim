@@ -50,7 +50,7 @@ public:
         .quantity = quantity,
     };
     if (security_storage_.has_security(security_id)) {
-      order_storage_[security_id].handle(request);
+      order_storage_[security_id].handle_sent_order_add(client_id, client_order_id);
     }
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
@@ -67,7 +67,7 @@ public:
         .client_cancellation_id = client_cancellation_id,
         .security_id = security_id};
     if (security_storage_.has_security(security_id)) {
-      order_storage_[security_id].handle(request);
+      order_storage_[security_id].handle_sent_order_cancel(client_id, client_order_id);
     }
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
@@ -94,7 +94,7 @@ public:
         .quantity = quantity,
     };
     if (security_storage_.has_security(security_id)) {
-      order_storage_[security_id].handle(request);
+      order_storage_[security_id].handle_sent_order_replace(client_id, client_order_id);
     }
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
@@ -107,7 +107,7 @@ public:
     std::visit(boost::hof::match([](const report::Trade&) {},
                    [this](const auto& report) {
                      if (security_storage_.has_security(report.security_id)) {
-                       order_storage_[report.security_id].handle(report);
+                       order_storage_[report.security_id].handle_report(report);
                      }
                    }),
         report);
