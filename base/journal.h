@@ -51,9 +51,7 @@ public:
     }
   }
 
-  void write(Ticks timestamp, const POD& value) {
-    queue_.emplace(timestamp, value);
-  }
+  void write(Ticks timestamp, const POD& value) { queue_.emplace(timestamp, value); }
 
   template<typename Consumer>
   bool consume_if_available(Consumer&& consumer) {
