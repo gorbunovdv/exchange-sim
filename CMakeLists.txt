@@ -9,6 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERIFY_INTERFACE_HEADER_SETS ON)
 
+message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message("CMAKE_INTERPROCEDURAL_OPTIMIZATION: ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
+
 add_compile_options(
     "$<$<CONFIG:Debug>:-O0;-g>"
     "$<$<CONFIG:Release>:-O3;-march=native>"
@@ -21,6 +24,9 @@ add_compile_options(
 )
 
 set(SANITIZER "none" CACHE STRING "none|address|thread|undefined")
+
+message("SANITIZER: ${SANITIZER}")
+
 if(NOT SANITIZER STREQUAL "none")
     add_compile_options(-fno-omit-frame-pointer -g -fno-sanitize-recover=all)
 endif()
