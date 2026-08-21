@@ -22,8 +22,8 @@ concept BookLevel = requires(
 template<typename HalfBookType, typename OrderType>
 concept HalfBook = requires(std::remove_cvref_t<HalfBookType> half_book) {
   { half_book.empty() } -> std::same_as<bool>;
-  { half_book.key_comp()(Price{0}, Price{0}) } -> std::same_as<bool>;
-  { half_book.begin()->first } -> std::same_as<const Price&>;
+  { half_book.key_comp()(InternalPrice{0}, InternalPrice{0}) } -> std::same_as<bool>;
+  { half_book.begin()->first } -> std::same_as<const InternalPrice&>;
   { half_book.begin()->second } -> BookLevel<OrderType>;
   { half_book.erase(half_book.begin()) };
 };

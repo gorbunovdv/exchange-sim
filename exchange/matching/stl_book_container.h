@@ -39,10 +39,10 @@ public:
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
 
   template<typename Comparator>
-  using HalfBookType = std::map<Price, BookLevelType, Comparator>;
+  using HalfBookType = std::map<InternalPrice, BookLevelType, Comparator>;
 
-  using BuyBook = HalfBookType<std::greater<Price>>;
-  using SellBook = HalfBookType<std::less<Price>>;
+  using BuyBook = HalfBookType<std::greater<InternalPrice>>;
+  using SellBook = HalfBookType<std::less<InternalPrice>>;
 
   bool contains(ClientID client_id, ClientOrderID order_id) const {
     return active_orders_.contains(std::make_pair(client_id, order_id));
@@ -102,7 +102,7 @@ private:
   });
 
   template<Direction direction>
-  void erase_from_level(Price price, StlL3BookLevel<OrderType>::iterator iterator) {
+  void erase_from_level(InternalPrice price, StlL3BookLevel<OrderType>::iterator iterator) {
     auto it = half<direction>().find(price);
     it->second.erase(iterator);
     if (it->second.empty()) {

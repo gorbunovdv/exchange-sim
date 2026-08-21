@@ -16,7 +16,7 @@ struct ActiveOrder {
   ExchangeOrderID order_id;
   ClientID client_id;
   ClientOrderID client_order_id;
-  Price price;
+  InternalPrice price;
   Amount quantity;
 };
 
@@ -100,7 +100,7 @@ private:
         .order_id = generate_order_id(),
         .client_id = request.client_id,
         .client_order_id = request.client_order_id,
-        .price = request.price,
+        .price = InternalPrice{(request.price - security_.low_price) / security_.tick_size},
         .quantity = request.quantity,
     };
     sink.push(engine_events::OrderAccepted{
@@ -111,7 +111,7 @@ private:
         .security_id = security_.security_id,
         .time_in_force = request.time_in_force,
         .direction = current_order.direction,
-        .price = current_order.price,
+        .price = request.price,
         .quantity = current_order.quantity,
     });
     current_order = fill_order_and_place_in_book<current_order_direction>(current_order, request.time_in_force, sink);
@@ -134,7 +134,7 @@ private:
           .client_order_id = current_order.client_order_id,
           .security_id = security_.security_id,
           .direction = current_order.direction,
-          .price = current_order.price,
+          .price = request.price,
           .type = engine_events::FilledType::AGGRESSIVE_FILL,
       });
     } else {
@@ -193,7 +193,7 @@ private:
       current_order.origin_time = request.origin_time;
       current_order.order_id = new_order_id;
       current_order.direction = request.direction;
-      current_order.price = request.price;
+      current_order.price = InternalPrice{(request.price - security_.low_price) / security_.tick_size};
       current_order.quantity = request.quantity;
       current_order.client_order_id = request.client_replacement_id;
       current_order =
@@ -217,7 +217,7 @@ private:
             .client_order_id = current_order.client_order_id,
             .security_id = security_.security_id,
             .direction = current_order.direction,
-            .price = current_order.price,
+            .price = request.price,
             .type = engine_events::FilledType::AGGRESSIVE_FILL,
         });
       }
@@ -266,7 +266,7 @@ private:
           .origin_time = current_order.origin_time,
           .security_id = security_.security_id,
           .aggressor_direction = current_order.direction,
-          .price = opposite_order.price,
+          .price = (opposite_order.price.value() * security_.tick_size) + security_.low_price,
           .quantity = quantity_to_fill,
           .trade_id = generate_trade_id(),
           .aggressor_order_id = current_order.order_id,
@@ -284,7 +284,7 @@ private:
             .client_order_id = opposite_order.client_order_id,
             .security_id = security_.security_id,
             .direction = opposite_order.direction,
-            .price = opposite_order.price,
+            .price = opposite_order.price.value() * security_.tick_size + security_.low_price,
             .type = engine_events::FilledType::PASSIVE_FILL,
         });
         book_container_.template erase_front<opposite_current_order_direction>();
@@ -296,7 +296,7 @@ private:
             .client_order_id = opposite_order.client_order_id,
             .security_id = security_.security_id,
             .direction = opposite_order.direction,
-            .price = opposite_order.price,
+            .price = opposite_order.price.value() * security_.tick_size + security_.low_price,
             .remaining_quantity = opposite_order.quantity,
         });
       }
