@@ -45,28 +45,22 @@ public:
       mode_(mode),
       queue_(size.has_value() ? *size : 0),
       throughput_(name) {
-    if (!stream_.is_open()) {
-      CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
-    }
+    CHECK(stream_.is_open(), "Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     if (mode == JournalMode::WRITE) {
       thread_ = std::jthread([this](const std::stop_token& token) { run(token); });
     }
   }
 
   void write(Ticks timestamp, const POD& value) {
-    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
     queue_.emplace(timestamp, value);
   }
 
   template<typename Consumer>
   bool consume_if_available(Consumer&& consumer) {
-    CHECK(mode_ == JournalMode::READ, "Mode should be read");
     alignas(value_type) std::array<std::byte, sizeof(value_type)> data;
     stream_.read(reinterpret_cast<char*>(data.data()), data.size());
     std::streamsize bytes_read = stream_.gcount();
-    if (stream_.bad()) {
-      CRITICAL("Encountered error while reading from journal");
-    }
+    CHECK(!stream_.bad(), "Encountered error while reading from journal");
     if (stream_ && bytes_read == sizeof(value_type)) {
       std::forward<Consumer>(consumer)(*reinterpret_cast<value_type*>(data.data()));
       return true;

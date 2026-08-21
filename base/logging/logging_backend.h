@@ -14,7 +14,6 @@
 #include <string>
 
 namespace exchange_sim {
-
 class LoggingBackend : NonCopyable, NonMoveable {
 public:
   struct LoggingConfig {
@@ -55,13 +54,15 @@ quill::Logger* get_logger();
 #define ERROR(...) LOG_ERROR(get_logger(), __VA_ARGS__)
 #define CRITICAL(...) \
   do { \
-    LOG_CRITICAL(get_logger(), __VA_ARGS__); \
-    throw std::runtime_error("Critical error occured"); \
+    [&] [[gnu::noinline, gnu::cold]] () { \
+      LOG_CRITICAL(get_logger(), __VA_ARGS__); \
+      throw std::runtime_error("Critical error occured"); \
+    }(); \
   } while (false)
 
 #define CHECK(condition, ...) \
   do { \
-    if (!(condition)) { \
+    if (!(condition)) [[unlikely]] { \
       CRITICAL(__VA_ARGS__); \
     } \
   } while (false)
