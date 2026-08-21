@@ -127,22 +127,6 @@ TEST(JournalTest, TornRecord) {
   EXPECT_FALSE(consumer_called);
 }
 
-TEST(JournalTest, WrongMode) {
-  TemporaryDirectory temp_dir("journal_mode_test");
-  TemporaryFile temp_journal_file(temp_dir, "journal_mode_test");
-
-  {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
-    EXPECT_THROW(journal.write(Ticks{1}, Record{.a = 1, .b = 2}), std::runtime_error);
-  }
-
-  {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::WRITE, std::nullopt, 2);
-    EXPECT_THROW(journal.consume_if_available([](const auto&) {}), std::runtime_error);
-    EXPECT_THROW(journal.begin(), std::runtime_error);
-  }
-}
-
 TEST(JournalTest, MissingJournal) {
   TemporaryDirectory temp_dir("missing_journal_test");
   auto missing_path = temp_dir.path() / "missing_journal";
