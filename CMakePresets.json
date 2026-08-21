@@ -80,6 +80,7 @@
       "inherits": "clang",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "SANITIZER": "none"
       }
     },
@@ -117,6 +118,7 @@
       "inherits": "gcc",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "SANITIZER": "none"
       }
     },
@@ -144,6 +146,7 @@
       "inherits": "mac-clang",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON",
         "SANITIZER": "none"
       }
     }
