@@ -1,3 +1,4 @@
+#include "base/callback_receiver.h"
 #include "base/journal.h"
 #include "base/run.h"
 #include "base/thread_receiver.h"
@@ -58,10 +59,7 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   MarketDataSinkType market_data_generator_sink(constQueueSize);
   ReportSinkType report_generator_sink(constQueueSize);
 
-  ThreadReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>> exchange_dispatcher(
-      "ExchangeDispatcher",
-      constQueueSize,
-      runtime->core_allocator().lease_core(CoreType::DEDICATED),
+  CallbackReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>> exchange_dispatcher(
       config["exchange_dispatcher"],
       market_data_generator_sink,
       report_generator_sink);
@@ -87,10 +85,6 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
       matching_engine.get_sink(),
       config["order_generator"]);
 
-  while (!exchange_dispatcher.ready_to_receive()) {
-    std::this_thread::sleep_for(100ms);
-  }
-
   while (!matching_engine.ready_to_receive()) {
     std::this_thread::sleep_for(100ms);
   }
@@ -110,7 +104,6 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   }
 
   matching_engine.ask_to_stop();
-  exchange_dispatcher.ask_to_stop();
 
   Ticks current = Ticks::rdtsc();
   while (current.nanoseconds_till_now() < 100ms) {
@@ -120,14 +113,12 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   }
 
   matching_engine.stop();
-  exchange_dispatcher.stop();
   while (consume()) {
   }
 
   CHECK(market_data_generator_sink.empty(), "MarketDataSink must be empty");
   CHECK(report_generator_sink.empty(), "ReportGeneratorSink must be empty");
   CHECK(matching_engine.get_sink().empty(), "MatchingEngineSink must be empty");
-  CHECK(exchange_dispatcher.get_sink().empty(), "ExchangeDispatcherSink must be empty");
 }
 
 }  // namespace
