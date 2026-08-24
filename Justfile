@@ -19,17 +19,10 @@ bootstrap:
     just venv
 
 patch-grub *args:
-    python3 ./scripts/patch_grub.py {{ args }}
+    python3 ./scripts/apply_os_settings.py patch-grub {{ args }}
 
-apply-runtime:
-    cpupower frequency-set -g performance
-
-    echo 0 | tee /sys/devices/system/cpu/intel_pstate/no_turbo
-    echo 0 | tee /proc/sys/kernel/kptr_restrict
-    echo 1 | tee /proc/sys/kernel/perf_event_paranoid
-
-    systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
-    systemctl set-property --runtime user.slice AllowedCPUs=0-1,8-23
+apply-runtime *args:
+    python3 ./scripts/apply_os_settings.py apply-runtime {{ args }}
 
 clean preset:
     rm -Rf "cmake-build-{{ preset }}"

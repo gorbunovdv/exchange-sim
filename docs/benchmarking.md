@@ -4,18 +4,19 @@
 
 Cores must be isolated in order to run benchmarks.
 
-    sudo just patch-grub
+    sudo just patch-grub ./configs/dmitrys-ubuntu.json
 
 `just patch-grub` backs up `/etc/default/grub` and replaces the kernel cmdline to:
 
-    isolcpus=domain,managed_irq,2-7 nohz_full=2-7 rcu_nocbs=2-7
-    irqaffinity=0-1,8-23 default_hugepagesz=1G hugepagesz=1G hugepages=8
+    isolcpus=domain,managed_irq,2,3,4,5,6,7 nohz_full=2,3,4,5,6,7 rcu_nocbs=2,3,4,5,6,7
+    irqaffinity=0,1,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    default_hugepagesz=1G hugepagesz=1G hugepages=8
 
 The shared and all dedicated cpu cores in the json runtime config must be isolated. 
 
 Runtime settings must also be applied:
 
-    sudo just apply-runtime
+    sudo just apply-runtime ./configs/dmitrys-ubuntu.json
 
 It applies:
 - `performance` governor on all cores
