@@ -18,10 +18,8 @@ bootstrap:
     apt install linux-tools-generic linux-cpupower jq git gcc-15 g++-15 clang-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
     just venv
 
-patch-grub:
-    cp /etc/default/grub "/etc/default/grub.bak_$(date +%Y-%m-%d_%H-%M-%S)"
-    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="isolcpus=domain,managed_irq,2-7 nohz_full=2-7 rcu_nocbs=2-7 irqaffinity=0-1,8-23 default_hugepagesz=1G hugepagesz=1G hugepages=8"/' /etc/default/grub
-    update-grub
+patch-grub *args:
+    python3 ./scripts/patch_grub.py {{ args }}
 
 apply-runtime:
     cpupower frequency-set -g performance
@@ -30,8 +28,8 @@ apply-runtime:
     echo 0 | tee /proc/sys/kernel/kptr_restrict
     echo 1 | tee /proc/sys/kernel/perf_event_paranoid
 
-    sudo systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
-    sudo systemctl set-property --runtime user.slice AllowedCPUs=0-1,8-23
+    systemctl set-property --runtime system.slice AllowedCPUs=0-1,8-23
+    systemctl set-property --runtime user.slice AllowedCPUs=0-1,8-23
 
 clean preset:
     rm -Rf "cmake-build-{{ preset }}"
