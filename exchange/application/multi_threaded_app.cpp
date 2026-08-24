@@ -59,10 +59,8 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
   MarketDataSinkType market_data_generator_sink(constQueueSize);
   ReportSinkType report_generator_sink(constQueueSize);
 
-  CallbackReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>> exchange_dispatcher(
-      config["exchange_dispatcher"],
-      market_data_generator_sink,
-      report_generator_sink);
+  CallbackReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>>
+      exchange_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
 
   using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
 
