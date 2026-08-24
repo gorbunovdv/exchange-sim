@@ -1,18 +1,16 @@
 #pragma once
 
 #include "base/noncopyable.h"
+#include "base/traits.h"
 
 #include <functional>
 
 namespace exchange_sim {
 
-template<typename ObjectType>
+template<typename ObjectType, typename CallbackType>
 class CallbackSink : NonCopyable {
 public:
-  template<typename CallbackType>
-    requires(
-        !std::same_as<std::remove_cvref_t<CallbackType>, CallbackSink> && std::invocable<CallbackType, ObjectType &&>)
-  explicit CallbackSink(CallbackType&& callback): callback_(std::forward<CallbackType>(callback)) {}
+  explicit CallbackSink(auto&&... args): callback_(std::forward<decltype(args)>(args)...) {}
 
   CallbackSink(CallbackSink&&) = default;
   CallbackSink& operator=(CallbackSink&&) = default;
@@ -20,7 +18,10 @@ public:
   void push(ObjectType&& object) { callback_(std::move(object)); }
 
 private:
-  std::function<void(ObjectType&&)> callback_;
+  CallbackType callback_;
 };
+
+template<typename Callback>
+CallbackSink(Callback&&) -> CallbackSink<callable_argument_t<Callback>, std::remove_cvref_t<Callback>>;
 
 }  // namespace exchange_sim
