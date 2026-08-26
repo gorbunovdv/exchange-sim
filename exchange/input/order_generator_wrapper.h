@@ -58,6 +58,7 @@ public:
 
 private:
   void apply_stored_events() {
+    generator_interface_.apply_stored_events();
     for (const auto& [market_event, timestamp] : event_buffer_) {
       market_data_journal_.write(market_event, timestamp);
       generator_interface_.handle_market_event(market_event);

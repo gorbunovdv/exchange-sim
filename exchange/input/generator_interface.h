@@ -32,7 +32,7 @@ public:
       Amount quantity) {
     auto client_order_id = generate_client_order_id();
     auto request = request::OrderAddRequest{
-        .origin_time = Ticks{0},
+        .origin_time = Ticks::rdtscp(),
         .client_id = client_id,
         .client_order_id = client_order_id,
         .security_id = security_id,
@@ -42,26 +42,22 @@ public:
         .price = price,
         .quantity = quantity,
     };
-    auto timestamp = Ticks::rdtscp();
-    request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(request, timestamp);
-    (Skills::handle_request(request), ...);
+    request_buffer_.push_back(request);
     return client_order_id;
   }
 
   ClientOrderID send_order_cancel_request(ClientID client_id, ClientOrderID client_order_id, SecurityID security_id) {
     auto client_cancellation_id = generate_client_order_id();
-    auto request = request::OrderCancelRequest{.origin_time = Ticks{0},
+    auto request = request::OrderCancelRequest{
+        .origin_time = Ticks::rdtscp(),
         .client_id = client_id,
         .client_order_id = client_order_id,
         .client_cancellation_id = client_cancellation_id,
-        .security_id = security_id};
-    auto timestamp = Ticks::rdtscp();
-    request.origin_time = timestamp;
+        .security_id = security_id,
+    };
     sink_.push(request);
-    journal_.write(request, timestamp);
-    (Skills::handle_request(request), ...);
+    request_buffer_.push_back(request);
     return client_cancellation_id;
   }
 
@@ -73,7 +69,7 @@ public:
       Amount quantity) {
     ClientOrderID client_replacement_id = generate_client_order_id();
     auto request = request::OrderReplaceRequest{
-        .origin_time = Ticks{0},
+        .origin_time = Ticks::rdtscp(),
         .client_id = client_id,
         .client_order_id = client_order_id,
         .client_replacement_id = client_replacement_id,
@@ -82,13 +78,18 @@ public:
         .price = price,
         .quantity = quantity,
     };
-    auto timestamp = Ticks::rdtscp();
-    request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(request, timestamp);
-    (Skills::handle_request(request), ...);
+    request_buffer_.push_back(request);
     return client_replacement_id;
   }
+
+  const auto& security_storage() const { return security_storage_; }
+
+  bool asked_to_stop() const { return stop_token_.stop_requested(); }
+
+private:
+  template<template<typename> typename, typename, typename>
+  friend class OrderGeneratorWrapper;
 
   void handle_report(const report::ReportType& report) {
     std::visit([this](const auto& report) { (Skills::handle_report(report), ...); }, report);
@@ -98,11 +99,18 @@ public:
     std::visit([this](const auto& market_event) { (Skills::handle_market_event(market_event), ...); }, event);
   }
 
-  const auto& security_storage() const { return security_storage_; }
+  void handle_request(const request::RequestType& request) {
+    std::visit([this](const auto& request) { (Skills::handle_request(request), ...); }, request);
+  }
 
-  bool asked_to_stop() const { return stop_token_.stop_requested(); }
+  void apply_stored_events() {
+    for (auto& request : request_buffer_) {
+      journal_.write(request, std::visit([](const auto& request) { return request.origin_time; }, request));
+      handle_request(request);
+    }
+    request_buffer_.clear();
+  }
 
-private:
   ClientOrderID generate_client_order_id() { return current_client_order_id_.inc(); }
 
   std::stop_token stop_token_;
@@ -110,6 +118,8 @@ private:
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;
   Journal<request::RequestType>& journal_;
+
+  std::vector<request::RequestType> request_buffer_;
 };
 
 }  // namespace exchange_sim
