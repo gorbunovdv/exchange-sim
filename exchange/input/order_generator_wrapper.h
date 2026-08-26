@@ -153,9 +153,7 @@ public:
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}
 
-  ~OrderGeneratorWrapper() {
-    apply_stored_events();
-  }
+  ~OrderGeneratorWrapper() { apply_stored_events(); }
 
   void process(const market_events::EventType& market_event) {
     auto timestamp = Ticks::rdtscp();
