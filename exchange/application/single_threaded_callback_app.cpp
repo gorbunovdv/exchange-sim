@@ -48,8 +48,11 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
       runtime->core_allocator().lease_core(CoreType::SHARED),
       constJournalSize);
 
-  using MarketDataSinkType = ForwardSink<market_events::EventType, CallbackSink<market_events::EventType>>;
-  using ReportSinkType = ForwardSink<report::ReportType, CallbackSink<report::ReportType>>;
+  using MarketDataInternalSinkType =
+      CallbackSink<market_events::EventType, std::function<void(market_events::EventType&&)>>;
+  using MarketDataSinkType = ForwardSink<market_events::EventType, MarketDataInternalSinkType>;
+  using ReportInternalSinkType = CallbackSink<report::ReportType, std::function<void(report::ReportType&&)>>;
+  using ReportSinkType = ForwardSink<report::ReportType, ReportInternalSinkType>;
 
   MarketDataSinkType market_data_generator_sink;
   ReportSinkType report_generator_sink;
@@ -73,9 +76,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
       matching_engine.get_sink(),
       config["order_generator"]);
 
-  CallbackSink<market_events::EventType> market_data_generator_sink_callback(
+  MarketDataInternalSinkType market_data_generator_sink_callback(
       [&order_generator](market_events::EventType&& snapshot) { order_generator.process(snapshot); });
-  CallbackSink<report::ReportType> report_generator_sink_callback(
+  ReportInternalSinkType report_generator_sink_callback(
       [&order_generator](report::ReportType&& report) { order_generator.process(report); });
 
   market_data_generator_sink.set_sink(&market_data_generator_sink_callback);

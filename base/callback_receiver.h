@@ -12,17 +12,16 @@ template<typename ArgumentClass, typename BaseClass>
 class CallbackReceiver {
 public:
   template<typename... Args>
-  explicit CallbackReceiver(Args&&... args):
-      base_class_(std::forward<Args>(args)...),
-      sink_([this](ArgumentClass&& object) { return base_class_.process(std::move(object)); }) {}
+  explicit CallbackReceiver(Args&&... args): base_class_(std::forward<Args>(args)...) {}
 
-  auto& get_sink() { return sink_; }
+  auto& get_sink() { return *this; }
 
   BaseClass& base() { return base_class_; }
 
+  void push(ArgumentClass&& object) { base_class_.process(std::move(object)); }
+
 private:
   BaseClass base_class_;
-  CallbackSink<ArgumentClass> sink_;
 };
 
 }  // namespace exchange_sim

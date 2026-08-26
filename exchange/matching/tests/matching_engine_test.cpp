@@ -15,8 +15,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
   };
 
   std::vector<engine_events::EventType> events;
-  CallbackSink<engine_events::EventType> event_sink(
-      [&events](engine_events::EventType&& event) { events.push_back(event); });
+  CallbackSink event_sink([&events](engine_events::EventType&& event) { events.push_back(event); });
   SecurityStorage storage({
       SecurityConfig{
           .symbol = Symbol{"A"},
