@@ -53,14 +53,14 @@ public:
       const std::filesystem::path& market_events_path,
       const std::filesystem::path& reports_path,
       const std::filesystem::path& requests_path):
-      max_time_difference_(max_time_difference),
       market_data_journal_("Journal<market_events::EventType>", market_events_path, JournalMode::READ),
       report_journal_("Journal<report::ReportType>", reports_path, JournalMode::READ),
       request_journal_("Journal<request::RequestType>", requests_path, JournalMode::READ),
       security_storage_(security_storage),
       market_data_iterator_(market_data_journal_.begin()),
       report_iterator_(report_journal_.begin()),
-      request_iterator_(request_journal_.begin()) {}
+      request_iterator_(request_journal_.begin()),
+      max_time_difference_(max_time_difference) {}
 
   std::optional<RequestStat> next() {
     if (request_iterator_ == request_journal_.end()) {
@@ -149,8 +149,6 @@ private:
     stat.market_events_count++;
   };
 
-  std::chrono::nanoseconds max_time_difference_;
-
   Journal<market_events::EventType> market_data_journal_;
   Journal<report::ReportType> report_journal_;
   Journal<request::RequestType> request_journal_;
@@ -164,6 +162,8 @@ private:
   decltype(market_data_journal_)::iterator<> market_data_iterator_;
   decltype(report_journal_)::iterator<> report_iterator_;
   decltype(request_journal_)::iterator<> request_iterator_;
+
+  std::chrono::nanoseconds max_time_difference_;
 };
 
 constexpr std::array constLatencyFields = {
