@@ -3,6 +3,9 @@
 #include "base/counter.h"
 #include "base/journal.h"
 
+#include "domain/security_storage.h"
+
+#include "exchange/domain/requests.h"
 #include "exchange/domain/market_events.h"
 #include "exchange/input/order_storage.h"
 
