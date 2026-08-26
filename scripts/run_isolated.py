@@ -11,7 +11,7 @@ def main():
     if not cmd:
         raise Exception("No command provided")
     cores_json = json.loads(config.read_text())["cpu_cores"]
-    if not "disable_core_pinning" in cores_json or not cores_json["disable_core_pinning"]:
+    if "disable_core_pinning" not in cores_json or not cores_json["disable_core_pinning"]:
         cores = [cores_json["shared_core"], *cores_json["dedicated_cores"]]
         cmd = [
             "systemd-run",
