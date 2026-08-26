@@ -8,8 +8,10 @@
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
+#include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
+#include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -78,14 +80,16 @@ void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, 
 
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
-  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, MatchingEngineSinkType> order_generator(
-      runtime->stop_token(),
-      security_storage,
-      request_journal,
-      market_data_journal,
-      report_journal,
-      matching_engine.get_sink(),
-      config["order_generator"]);
+  OrderGeneratorWrapper<SimpleOrderGenerator,
+      GeneratorInterface<MatchingEngineSinkType, generator_interface_skills::StoreOrders>,
+      MatchingEngineSinkType>
+      order_generator(runtime->stop_token(),
+          security_storage,
+          request_journal,
+          market_data_journal,
+          report_journal,
+          matching_engine.get_sink(),
+          config["order_generator"]);
 
   while (!exchange_dispatcher.ready_to_receive()) {
     std::this_thread::sleep_for(100ms);

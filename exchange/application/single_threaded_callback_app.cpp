@@ -8,8 +8,10 @@
 #include "domain/security.h"
 
 #include "exchange/domain/engine_events.h"
+#include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
+#include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -67,14 +69,16 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
-  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, MatchingEngineSinkType> order_generator(
-      runtime->stop_token(),
-      security_storage,
-      request_journal,
-      market_data_journal,
-      report_journal,
-      matching_engine.get_sink(),
-      config["order_generator"]);
+  OrderGeneratorWrapper<SimpleOrderGenerator,
+      GeneratorInterface<MatchingEngineSinkType, generator_interface_skills::StoreOrders>,
+      MatchingEngineSinkType>
+      order_generator(runtime->stop_token(),
+          security_storage,
+          request_journal,
+          market_data_journal,
+          report_journal,
+          matching_engine.get_sink(),
+          config["order_generator"]);
 
   MarketDataInternalSinkType market_data_generator_sink_callback(
       [&order_generator](market_events::EventType&& snapshot) { order_generator.process(snapshot); });
