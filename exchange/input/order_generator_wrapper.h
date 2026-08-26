@@ -30,7 +30,26 @@ public:
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}
 
-  ~OrderGeneratorWrapper() { apply_stored_events(); }
+  ~OrderGeneratorWrapper() {
+    CPPTRACE_TRY {
+      apply_stored_events();
+    }
+    CPPTRACE_CATCH(...) {
+      try {
+        try {
+          throw;
+        } catch (const std::exception& e) {
+          ERROR("Exception occurred: {}", e.what());
+        } catch (...) {
+          ERROR("Unknown exception occurred");
+        }
+        ERROR("\nStacktrace:");
+        ERROR("{}", cpptrace::from_current_exception().to_string());
+      } catch (...) {
+        std::cerr << "Logger threw during handling another exception" << '\n';
+      }
+    }
+  }
 
   void process(const market_events::EventType& market_event) {
     auto timestamp = Ticks::rdtscp();
