@@ -5,8 +5,8 @@
 
 #include "domain/security_storage.h"
 
-#include "exchange/domain/requests.h"
 #include "exchange/domain/market_events.h"
+#include "exchange/domain/requests.h"
 #include "exchange/input/order_storage.h"
 
 #include <boost/hof/match.hpp>
