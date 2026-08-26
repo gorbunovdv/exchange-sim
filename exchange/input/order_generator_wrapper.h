@@ -56,7 +56,7 @@ public:
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(timestamp, request);
+    journal_.write(request, timestamp);
     return client_order_id;
   }
 
@@ -73,7 +73,7 @@ public:
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(timestamp, request);
+    journal_.write(request, timestamp);
     return client_cancellation_id;
   }
 
@@ -100,7 +100,7 @@ public:
     auto timestamp = Ticks::rdtscp();
     request.origin_time = timestamp;
     sink_.push(request);
-    journal_.write(timestamp, request);
+    journal_.write(request, timestamp);
     return client_replacement_id;
   }
 
@@ -153,19 +153,18 @@ public:
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}
 
+  ~OrderGeneratorWrapper() {
+    apply_stored_events();
+  }
+
   void process(const market_events::EventType& market_event) {
     auto timestamp = Ticks::rdtscp();
-    market_data_journal_.write(timestamp, market_event);
-    generator_.process(market_event);
-
-    event_buffer_.push_back(market_event);
+    event_buffer_.emplace_back(market_event, timestamp);
   }
 
   void process(const report::ReportType& report) {
     auto timestamp = Ticks::rdtscp();
-    report_journal_.write(timestamp, report);
-
-    report_buffer_.push_back(report);
+    report_buffer_.emplace_back(report, timestamp);
   }
 
   void run() {
@@ -184,11 +183,13 @@ public:
 
 private:
   void apply_stored_events() {
-    for (auto& event : event_buffer_) {
-      generator_.process(event);
+    for (const auto& [market_event, timestamp] : event_buffer_) {
+      market_data_journal_.write(market_event, timestamp);
+      generator_.process(market_event);
     }
     event_buffer_.clear();
-    for (auto& report : report_buffer_) {
+    for (const auto& [report, timestamp] : report_buffer_) {
+      report_journal_.write(report, timestamp);
       generator_interface_.handle(report);
       generator_.process(report);
     }
@@ -201,8 +202,8 @@ private:
   Journal<market_events::EventType>& market_data_journal_;
   Journal<report::ReportType>& report_journal_;
 
-  std::vector<market_events::EventType> event_buffer_;
-  std::vector<report::ReportType> report_buffer_;
+  std::vector<Timestamped<market_events::EventType>> event_buffer_;
+  std::vector<Timestamped<report::ReportType>> report_buffer_;
 };
 
 }  // namespace exchange_sim

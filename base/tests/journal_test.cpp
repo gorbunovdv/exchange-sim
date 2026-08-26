@@ -24,7 +24,7 @@ using RecordJournal = Journal<Record>;
 void write_records(const std::filesystem::path& path, const std::vector<RecordJournal::value_type>& records) {
   RecordJournal journal("RecordJournal", path, JournalMode::WRITE, std::nullopt, records.size() + 1);
   for (const auto& record : records) {
-    journal.write(record.timestamp, record.value);
+    journal.write(record);
   }
 }
 
@@ -32,8 +32,8 @@ void write_records(const std::filesystem::path& path, const std::vector<RecordJo
 
 TEST(JournalTest, WriteReadTest) {
   static const std::vector<RecordJournal::value_type> records = {
-      {Ticks{0}, Record{.a = 1, .b = 2}},
-      {Ticks{1}, Record{.a = 2, .b = 1}},
+      {.object = Record{.a = 1, .b = 2}, .timestamp = Ticks{0}},
+      {.object = Record{.a = 2, .b = 1}, .timestamp = Ticks{1}},
   };
 
   TemporaryDirectory temp_dir("journal_test");
@@ -45,7 +45,7 @@ TEST(JournalTest, WriteReadTest) {
   for (const auto& record : records) {
     ASSERT_TRUE(journal.consume_if_available([&](const auto& actual) {
       EXPECT_EQ(actual.timestamp, record.timestamp);
-      EXPECT_EQ(actual.value, record.value);
+      EXPECT_EQ(actual.object, record.object);
     }));
   }
 
@@ -56,9 +56,9 @@ TEST(JournalTest, WriteReadTest) {
 
 TEST(JournalTest, IteratesOverAllRecords) {
   static const std::vector<RecordJournal::value_type> records = {
-      {Ticks{11}, Record{.a = 1, .b = 10}},
-      {Ticks{22}, Record{.a = 2, .b = 20}},
-      {Ticks{33}, Record{.a = 3, .b = 30}},
+      {.object = Record{.a = 1, .b = 10}, .timestamp = Ticks{11}},
+      {.object = Record{.a = 2, .b = 20}, .timestamp = Ticks{22}},
+      {.object = Record{.a = 3, .b = 30}, .timestamp = Ticks{33}},
   };
 
   TemporaryDirectory temp_dir("journal_iterator_test");
@@ -68,7 +68,7 @@ TEST(JournalTest, IteratesOverAllRecords) {
   RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
   for (const auto& [index, actual] : std::views::zip(std::views::iota(0), journal)) {
     EXPECT_EQ(actual.timestamp, records[index].timestamp);
-    EXPECT_EQ(actual.value, records[index].value);
+    EXPECT_EQ(actual.object, records[index].object);
   }
 }
 
@@ -81,7 +81,7 @@ TEST(JournalTest, BigEventsCount) {
   std::vector<RecordJournal::value_type> records;
   records.reserve(constRecordCount);
   for (size_t i = 0; i < constRecordCount; ++i) {
-    records.push_back({Ticks{i}, Record{.a = static_cast<int32_t>(i), .b = static_cast<int64_t>(i * 10)}});
+    records.emplace_back(Record{.a = static_cast<int32_t>(i), .b = static_cast<int64_t>(i * 10)}, Ticks{i});
   }
 
   write_records(temp_journal_file.path(), records);
@@ -92,7 +92,7 @@ TEST(JournalTest, BigEventsCount) {
   for (const auto& expected : records) {
     ASSERT_TRUE(journal.consume_if_available([&](const RecordJournal::value_type& actual) {
       EXPECT_EQ(actual.timestamp, expected.timestamp);
-      EXPECT_EQ(actual.value, expected.value);
+      EXPECT_EQ(actual.object, expected.object);
     }));
   }
   ASSERT_FALSE(journal.consume_if_available([](const RecordJournal::value_type&) {}));
@@ -133,7 +133,7 @@ TEST(JournalTest, WrongMode) {
 
   {
     RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
-    EXPECT_THROW(journal.write(Ticks{1}, Record{.a = 1, .b = 2}), std::runtime_error);
+    EXPECT_THROW(journal.write(Record{.a = 1, .b = 2}, Ticks{1}), std::runtime_error);
   }
 
   {

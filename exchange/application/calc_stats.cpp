@@ -67,7 +67,7 @@ public:
       return std::nullopt;
     }
 
-    const auto& [request_timestamp, request_object] = *request_iterator_;
+    const auto& [request_object, request_timestamp] = *request_iterator_;
 
     while (!current_reports_.empty() && current_reports_.front().timestamp < request_timestamp) {
       current_reports_.pop_front();
@@ -83,7 +83,7 @@ public:
             CHECK(report.origin_time >= request_timestamp,
                 "constMaxTimeDifference is too small, some reports are being missed");
           },
-          current_reports_.back().value);
+          current_reports_.back().object);
     }
 
     while (!current_market_events.empty() && current_market_events.front().timestamp < request_timestamp) {
@@ -102,7 +102,7 @@ public:
             CHECK(market_event.origin_time >= request_timestamp,
                 "constMaxTimeDifference is too small, some market events are being missed");
           },
-          current_market_events.back().value);
+          current_market_events.back().object);
     }
 
     while (!request_by_origin_time_.empty() && request_by_origin_time_.begin()->first < request_timestamp) {
