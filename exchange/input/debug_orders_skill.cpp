@@ -19,6 +19,7 @@ void DebugOrders::handle_request(const request::OrderAddRequest& request) {
       static_cast<double>(request.price.value()),
       static_cast<double>(request.quantity.value()));
 }
+
 void DebugOrders::handle_request(const request::OrderReplaceRequest& request) {
   DEBUG(
       "Sent request, type=OrderReplaceRequest"
@@ -33,6 +34,7 @@ void DebugOrders::handle_request(const request::OrderReplaceRequest& request) {
       static_cast<double>(request.price.value()),
       static_cast<double>(request.quantity.value()));
 }
+
 void DebugOrders::handle_request(const request::OrderCancelRequest& request) {
   DEBUG(
       "Sent request, type=OrderCancelRequest"
@@ -43,6 +45,7 @@ void DebugOrders::handle_request(const request::OrderCancelRequest& request) {
       request.client_cancellation_id.value(),
       request.security_id.value());
 }
+
 void DebugOrders::handle_market_event(const market_events::BookOrderEntry& snapshot) {
   DEBUG(
       "Received market data snapshot, type=BookOrderEntry"
@@ -55,6 +58,7 @@ void DebugOrders::handle_market_event(const market_events::BookOrderEntry& snaps
       static_cast<double>(snapshot.price.value()),
       static_cast<double>(snapshot.quantity.value()));
 }
+
 void DebugOrders::handle_market_event(const market_events::BookOrderChange& snapshot) {
   DEBUG(
       "Received market data snapshot, type=BookOrderChange"
@@ -66,6 +70,7 @@ void DebugOrders::handle_market_event(const market_events::BookOrderChange& snap
       static_cast<double>(snapshot.price.value()),
       static_cast<double>(snapshot.new_quantity.value()));
 }
+
 void DebugOrders::handle_market_event(const market_events::BookOrderDeletion& snapshot) {
   DEBUG(
       "Received market data snapshot, type=BookOrderDeletion"
@@ -74,6 +79,7 @@ void DebugOrders::handle_market_event(const market_events::BookOrderDeletion& sn
       snapshot.order_id.value(),
       snapshot.security_id.value());
 }
+
 void DebugOrders::handle_market_event(const market_events::Trade& snapshot) {
   DEBUG(
       "Received market data snapshot, type=Trade"
@@ -87,6 +93,7 @@ void DebugOrders::handle_market_event(const market_events::Trade& snapshot) {
       snapshot.aggressor_order_id.value(),
       snapshot.recipient_order_id.value());
 }
+
 void DebugOrders::handle_report(const report::OrderAccepted& report) {
   DEBUG(
       "Received report, type=OrderAccepted"
@@ -102,6 +109,7 @@ void DebugOrders::handle_report(const report::OrderAccepted& report) {
       static_cast<double>(report.price.value()),
       static_cast<double>(report.quantity.value()));
 }
+
 void DebugOrders::handle_report(const report::Trade& report) {
   DEBUG(
       "Received report, type=Trade"
@@ -118,6 +126,7 @@ void DebugOrders::handle_report(const report::Trade& report) {
       report.aggressor_order_id.value(),
       report.recipient_order_id.value());
 }
+
 void DebugOrders::handle_report(const report::OrderBookEntry& report) {
   DEBUG(
       "Received report, type=OrderBookEntry"
@@ -132,6 +141,7 @@ void DebugOrders::handle_report(const report::OrderBookEntry& report) {
       static_cast<double>(report.price.value()),
       static_cast<double>(report.quantity.value()));
 }
+
 void DebugOrders::handle_report(const report::OrderFilled& report) {
   DEBUG(
       "Received report, type=OrderFilled"
@@ -146,6 +156,7 @@ void DebugOrders::handle_report(const report::OrderFilled& report) {
       static_cast<double>(report.price.value()),
       magic_enum::enum_name(report.type));
 }
+
 void DebugOrders::handle_report(const report::OrderExpired& report) {
   DEBUG(
       "Received report, type=OrderExpired"
@@ -157,6 +168,7 @@ void DebugOrders::handle_report(const report::OrderExpired& report) {
       report.security_id.value(),
       magic_enum::enum_name(report.reason));
 }
+
 void DebugOrders::handle_report(const report::OrderCancelled& report) {
   DEBUG(
       "Received report, type=OrderCancelled"
@@ -169,6 +181,7 @@ void DebugOrders::handle_report(const report::OrderCancelled& report) {
       report.client_cancellation_id.value(),
       report.security_id.value());
 }
+
 void DebugOrders::handle_report(const report::OrderRejected& report) {
   DEBUG(
       "Received report, type=OrderRejected"
@@ -179,6 +192,7 @@ void DebugOrders::handle_report(const report::OrderRejected& report) {
       report.client_order_id.value(),
       magic_enum::enum_name(report.reason));
 }
+
 void DebugOrders::handle_report(const report::CancellationRejected& report) {
   DEBUG(
       "Received report, type=CancellationRejected"
@@ -190,6 +204,7 @@ void DebugOrders::handle_report(const report::CancellationRejected& report) {
       report.security_id.value(),
       magic_enum::enum_name(report.reason));
 }
+
 void DebugOrders::handle_report(const report::ReplacementAccepted& report) {
   DEBUG(
       "Received report, type=ReplacementAccepted"
@@ -206,6 +221,7 @@ void DebugOrders::handle_report(const report::ReplacementAccepted& report) {
       static_cast<double>(report.price.value()),
       static_cast<double>(report.quantity.value()));
 }
+
 void DebugOrders::handle_report(const report::ReplacementRejected& report) {
   DEBUG(
       "Received report, type=ReplacementRejected"
