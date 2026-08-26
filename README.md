@@ -99,8 +99,8 @@ Either different apps can be evaluated or one app across different labels.
 
 ## Core isolation
     
-    sudo just patch-grub && sudo reboot
-    sudo just apply-runtime
+    sudo just patch-grub ./configs/dmitrys-ubuntu.json && sudo reboot
+    sudo just apply-runtime ./configs/dmitrys-ubuntu.json
     just benchmark ./configs/dmitrys-ubuntu.json --apps single_threaded_event_loop_app --reps 10
     just evaluate  ./configs/dmitrys-ubuntu.json --apps single_threaded_event_loop_app --labels <label> --percentiles 50 99
 
