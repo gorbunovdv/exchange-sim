@@ -53,7 +53,8 @@
   },
   "calc_stats": {
     "output_file": "./results/requests_info.json",
-    "requests_to_skip": 1000
+    "requests_to_skip": 1000,
+    "max_time_difference_ms": 1
   },
   "benchmark_path": "./results/bench/"
 }

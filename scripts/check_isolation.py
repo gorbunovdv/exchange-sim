@@ -17,7 +17,7 @@ class CPUMetadata:
     def scaling_governor(self):
         scaling_governor_path = self.core_path / "cpufreq/scaling_governor"
         if not scaling_governor_path.exists():
-            raise Exception(f"Scaling governor file not found, path={scaling_governor_path}")
+            return None
         return scaling_governor_path.read_text().strip()
 
 
@@ -48,28 +48,28 @@ class IsolationMetadata:
     def _read_isolated(cls):
         SYS_ISOLATED = Path("/sys/devices/system/cpu/isolated")
         if not SYS_ISOLATED.exists():
-            raise Exception(f"Isolated CPUs file not found, path={SYS_ISOLATED}")
+            return None
         return cls.parse_cores(SYS_ISOLATED.read_text())
 
     @classmethod
     def _read_nohz_full(cls):
         SYS_NOHZ_FULL = Path("/sys/devices/system/cpu/nohz_full")
         if not SYS_NOHZ_FULL.exists():
-            raise Exception(f"Nohz full CPUs file not found, path={SYS_NOHZ_FULL}")
+            return None
         return cls.parse_cores(SYS_NOHZ_FULL.read_text())
 
     @staticmethod
     def _read_cmd_line_linux():
         CMD_LINE_LINUX = Path("/proc/cmdline")
         if not CMD_LINE_LINUX.exists():
-            raise Exception(f"Linux command line file not found, path={CMD_LINE_LINUX}")
+            return None
         return CMD_LINE_LINUX.read_text().strip()
 
     @staticmethod
     def _read_meminfo():
         MEMINFO = Path("/proc/meminfo")
         if not MEMINFO.exists():
-            raise Exception(f"Memory information file not found, path={MEMINFO}")
+            return None
         return {
             key.strip(): value.strip()
             for key, value in (line.split(": ", 1) for line in MEMINFO.read_text().strip().split("\n"))
@@ -79,32 +79,37 @@ class IsolationMetadata:
     def _read_no_turbo():
         NO_TURBO = Path("/sys/devices/system/cpu/intel_pstate/no_turbo")
         if not NO_TURBO.exists():
-            raise Exception(f"No turbo file not found, path={NO_TURBO}")
+            return None
         return NO_TURBO.read_text().strip()
 
     @staticmethod
     def _read_perf_event_paranoid():
         PERF_EVENT_PARANOID = Path("/proc/sys/kernel/perf_event_paranoid")
         if not PERF_EVENT_PARANOID.exists():
-            raise Exception(f"perf_event_paranoid file not found, path={PERF_EVENT_PARANOID}")
+            return None
         return PERF_EVENT_PARANOID.read_text().strip()
 
     @staticmethod
     def _read_kptrrestrict():
         KPTRRESTRICT = Path("/proc/sys/kernel/kptr_restrict")
         if not KPTRRESTRICT.exists():
-            raise Exception(f"kptrrestrict file not found, path={KPTRRESTRICT}")
+            return None
         return KPTRRESTRICT.read_text().strip()
 
     def get_metadata(self):
+        meminfo = self._read_meminfo()
         return {
             "isolated": self.isolated,
             "nohz_full": self.nohz_full,
             "cmd_line_linux": self._read_cmd_line_linux(),
             "no_turbo": self._read_no_turbo(),
-            "huge_page_size": self._read_meminfo()["Hugepagesize"],
-            "huge_page_count": self._read_meminfo()["HugePages_Total"],
-            "scaling_governor": CPUMetadata(f"cpu{self.isolated[0]}").scaling_governor(),
+            "huge_page_size": meminfo["Hugepagesize"] if meminfo is not None and "Hugepagesize" in meminfo else None,
+            "huge_page_count": meminfo["HugePages_Total"]
+            if meminfo is not None and "HugePages_Total" in meminfo
+            else None,
+            "scaling_governor": CPUMetadata(f"cpu{self.isolated[0]}").scaling_governor()
+            if self.isolated is not None and len(self.isolated) > 0
+            else None,
         }
 
     def check_cmd_line_linux(self, isolated):

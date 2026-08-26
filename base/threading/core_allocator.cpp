@@ -39,11 +39,16 @@ bool set_thread_name(const std::string& name) {
 }  // namespace
 
 void CoreLease::pin_thread(const std::string& name) const {
-  CHECK(pin_current_thread_to_core(cpu_id()),
-      "Could not pin thread to cpu_id={} type={}",
-      cpu_id().value(),
-      magic_enum::enum_name(core_type_));
+  CHECK(allocator_ != nullptr, "allocator is not set for CoreLease to pin thread");
   CHECK(set_thread_name(name), "Could not set thread name to {}", name);
+  if (!allocator_->core_pinning_disabled()) {
+    CHECK(pin_current_thread_to_core(cpu_id()),
+        "Could not pin thread to cpu_id={} type={}",
+        cpu_id().value(),
+        magic_enum::enum_name(core_type_));
+  } else {
+    WARNING("Core pinning is disabled, skipping thread_name={}", name);
+  }
 }
 
 CoreLease::~CoreLease() noexcept {
@@ -71,12 +76,12 @@ CoreLease::~CoreLease() noexcept {
 }
 
 CoreLease CoreAllocator::lease_core(CoreType type) {
+  if (disable_core_pinning_) {
+    return CoreLease{type, std::nullopt, this};
+  }
   std::lock_guard lock(mutex_);
   if (type == CoreType::DEDICATED) {
-    if (dedicated_cores_.empty()) {
-      ERROR("No dedicated cores available, returning shared");
-      return CoreLease{CoreType::SHARED, shared_core_, this};
-    }
+    CHECK(!dedicated_cores_.empty(), "No dedicated cores available");
     auto cpu_id = dedicated_cores_.back();
     dedicated_cores_.pop_back();
     return CoreLease{CoreType::DEDICATED, cpu_id, this};

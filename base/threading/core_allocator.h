@@ -51,7 +51,7 @@ public:
 private:
   friend class CoreAllocator;
 
-  explicit CoreLease(CoreType core_type, CpuID cpu_id, CoreAllocator* core_manager):
+  explicit CoreLease(CoreType core_type, std::optional<CpuID> cpu_id, CoreAllocator* core_manager):
       core_type_(core_type), cpu_id_(cpu_id), allocator_(core_manager) {}
 
   CoreType core_type_;
@@ -62,22 +62,30 @@ private:
 class CoreAllocator : NonMoveable {
 public:
   struct Config {
-    CpuID shared_core;
+    bool disable_core_pinning;
+    std::optional<CpuID> shared_core;
     std::vector<CpuID> dedicated_cores;
   };
 
-  explicit CoreAllocator(Config config): CoreAllocator(config.shared_core, std::move(config.dedicated_cores)) {}
+  explicit CoreAllocator(Config config):
+      CoreAllocator(config.disable_core_pinning, config.shared_core, std::move(config.dedicated_cores)) {}
 
-  explicit CoreAllocator(CpuID shared_core, std::vector<CpuID> dedicated_cores):
-      shared_core_(shared_core), dedicated_cores_(std::move(dedicated_cores)) {}
+  explicit CoreAllocator(
+      bool disable_core_pinning, std::optional<CpuID> shared_core, std::vector<CpuID> dedicated_cores):
+      disable_core_pinning_(disable_core_pinning),
+      shared_core_(shared_core),
+      dedicated_cores_(std::move(dedicated_cores)) {}
 
   CoreLease lease_core(CoreType type);
 
   void release_core(CpuID cpu_id, CoreType type);
 
+  bool core_pinning_disabled() const { return disable_core_pinning_; }
+
 private:
   mutable std::mutex mutex_;
-  CpuID shared_core_;
+  bool disable_core_pinning_;
+  std::optional<CpuID> shared_core_;
   std::vector<CpuID> dedicated_cores_;
 };
 

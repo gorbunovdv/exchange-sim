@@ -11,16 +11,22 @@ def main():
     if not cmd:
         raise Exception("No command provided")
     cores_json = json.loads(config.read_text())["cpu_cores"]
-    cores = [cores_json["shared_core"]] + cores_json["dedicated_cores"]
-    cmd = [
-        "systemd-run",
-        "--scope",
-        "--slice=hft.slice",
-        "-p",
-        "AllowedCPUs={}".format(",".join(map(str, cores))),
-        *cmd,
-        str(config),
-    ]
+    if not "disable_core_pinning" in cores_json or not cores_json["disable_core_pinning"]:
+        cores = [cores_json["shared_core"], *cores_json["dedicated_cores"]]
+        cmd = [
+            "systemd-run",
+            "--scope",
+            "--slice=hft.slice",
+            "-p",
+            "AllowedCPUs={}".format(",".join(map(str, cores))),
+            *cmd,
+            str(config),
+        ]
+    else:
+        cmd = [
+            *cmd,
+            str(config),
+        ]
     print(f"Running command: {cmd}")
     try:
         os.execvp(cmd[0], cmd)

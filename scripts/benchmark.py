@@ -33,6 +33,7 @@ def benchmark(
     no_aslr,
     huge_pages,
     skip_isolation_check,
+    skip_cache_drop,
 ):
     with plumbum.local.cwd(ROOT_PATH):
         plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
@@ -52,7 +53,8 @@ def benchmark(
         list(itertools.product(range(1, reps + 1), apps)), mininterval=10, maxinterval=10, desc="Running all apps"
     ):
         print(f"Running current_rep={rep} app={app} preset={preset}")
-        clear_cache()
+        if not skip_cache_drop:
+            clear_cache()
         benchmark_one(
             app=app,
             config_path=config_path,
@@ -95,6 +97,7 @@ def main():
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for each run")
     parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
     parser.add_argument("--skip-isolation-check", action="store_true", help="Skip isolation check")
+    parser.add_argument("--skip-cache-drop", action="store_true", help="Skip cache drop")
 
     parser.add_argument("config_path", help="Path to config")
 
@@ -113,6 +116,7 @@ def main():
         no_aslr=args.no_aslr,
         huge_pages=args.huge_pages,
         skip_isolation_check=args.skip_isolation_check,
+        skip_cache_drop=args.skip_cache_drop,
     )
 
 

@@ -20,7 +20,7 @@
 
 namespace exchange_sim {
 
-enum class JournalMode : std::uint8_t { READ, WRITE };
+enum class JournalMode : std::uint8_t { READ, WRITE, SYNCHRONIZED_WRITE };
 
 template<typename POD>
   requires(std::is_trivially_copyable_v<POD> && !std::is_pointer_v<POD>)
@@ -41,7 +41,7 @@ public:
       LoggableClass(name),
       name_(name),
       core_lease_(std::move(core_lease)),
-      stream_(journal_path, (mode == JournalMode::WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
+      stream_(journal_path, (mode == JournalMode::READ ? std::ios::in : std::ios::out) | std::ios::binary),
       mode_(mode),
       queue_(size.has_value() ? *size : 0),
       throughput_(name) {
@@ -54,8 +54,14 @@ public:
   }
 
   void write(Ticks timestamp, const POD& value) {
-    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
-    queue_.emplace(timestamp, value);
+    if (mode_ == JournalMode::SYNCHRONIZED_WRITE) {
+      value_type to_write{timestamp, value};
+      stream_.write(reinterpret_cast<const char*>(&to_write), sizeof(value_type));
+    } else if (mode_ == JournalMode::WRITE) {
+      queue_.emplace(timestamp, value);
+    } else {
+      CRITICAL("Journal is not writable");
+    }
   }
 
   template<typename Consumer>

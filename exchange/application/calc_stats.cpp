@@ -48,10 +48,12 @@ namespace {
 
 class RequestMatcher {
 public:
-  explicit RequestMatcher(const SecurityStorage& security_storage,
+  explicit RequestMatcher(std::chrono::nanoseconds max_time_difference,
+      const SecurityStorage& security_storage,
       const std::filesystem::path& market_events_path,
       const std::filesystem::path& reports_path,
       const std::filesystem::path& requests_path):
+      max_time_difference_(max_time_difference),
       market_data_journal_("Journal<market_events::EventType>", market_events_path, JournalMode::READ),
       report_journal_("Journal<report::ReportType>", reports_path, JournalMode::READ),
       request_journal_("Journal<request::RequestType>", requests_path, JournalMode::READ),
@@ -61,8 +63,6 @@ public:
       request_iterator_(request_journal_.begin()) {}
 
   std::optional<RequestStat> next() {
-    static constexpr std::chrono::nanoseconds constMaxTimeDifference = 1ms;
-
     if (request_iterator_ == request_journal_.end()) {
       return std::nullopt;
     }
@@ -74,7 +74,7 @@ public:
     }
     while (report_iterator_ != report_journal_.end() &&
         (current_reports_.empty() ||
-            current_reports_.back().timestamp.nanoseconds_distance(request_timestamp) < constMaxTimeDifference)) {
+            current_reports_.back().timestamp.nanoseconds_distance(request_timestamp) < max_time_difference_)) {
       current_reports_.push_back(*report_iterator_);
       ++report_iterator_;
       std::visit(
@@ -91,7 +91,7 @@ public:
     }
     while (market_data_iterator_ != market_data_journal_.end() &&
         (current_market_events.empty() ||
-            current_market_events.back().timestamp.nanoseconds_distance(request_timestamp) < constMaxTimeDifference)) {
+            current_market_events.back().timestamp.nanoseconds_distance(request_timestamp) < max_time_difference_)) {
       current_market_events.push_back(*market_data_iterator_);
       ++market_data_iterator_;
       std::visit(
@@ -149,6 +149,8 @@ private:
     stat.market_events_count++;
   };
 
+  std::chrono::nanoseconds max_time_difference_;
+
   Journal<market_events::EventType> market_data_journal_;
   Journal<report::ReportType> report_journal_;
   Journal<request::RequestType> request_journal_;
@@ -188,7 +190,9 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
 
   SecurityStorage security_storage(generate_securities(config));
 
-  RequestMatcher request_matcher(security_storage,
+  RequestMatcher request_matcher(
+      std::chrono::milliseconds(config["calc_stats"]["max_time_difference_ms"].as<uint32_t>()),
+      security_storage,
       config["journaling"]["market_events"].as<std::string>(),
       config["journaling"]["reports"].as<std::string>(),
       config["journaling"]["requests"].as<std::string>());

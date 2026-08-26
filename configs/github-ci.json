@@ -1,0 +1,59 @@
+{
+  "cpu_cores": {
+    "disable_core_pinning": true
+  },
+  "memory": {
+    "reserve_huge_os_pages": false
+  },
+  "securities": [
+    {
+      "symbol": "EURUSD",
+      "tick_size": 1,
+      "lot_size": 100,
+      "low_price": 1.0,
+      "high_price": 1000.0,
+      "max_amount": 1000
+    },
+    {
+      "symbol": "USDJPY",
+      "tick_size": 0.01,
+      "lot_size": 1000,
+      "low_price": 100,
+      "high_price": 100000,
+      "max_amount": 10000
+    }
+  ],
+  "logging": {
+    "type": "console",
+    "log_level": "info",
+    "format": "%(time) [%(thread_id)] %(short_source_location) %(log_level) %(logger) %(message)"
+  },
+  "order_generator": {
+    "seed": 0,
+    "min_active_orders_by_security": 500,
+    "max_active_orders_by_security": 10000,
+    "max_pending_transactions": 300
+  },
+  "journaling": {
+    "mode": "SYNCHRONIZED_WRITE",
+    "market_events": "./results/market_data.bin",
+    "requests": "./results/requests.bin",
+    "reports": "./results/reports.bin"
+  },
+  "results": {
+    "stats": "./results/stats.json",
+    "metadata": "./results/metadata.json",
+    "perf": "./results/perf.txt",
+    "logs": "./results/logs.txt"
+  },
+  "matching_engine": {
+  },
+  "exchange_dispatcher": {
+  },
+  "calc_stats": {
+    "output_file": "./results/requests_info.json",
+    "requests_to_skip": 1000,
+    "max_time_difference_ms": 100
+  },
+  "benchmark_path": "./results/bench/"
+}

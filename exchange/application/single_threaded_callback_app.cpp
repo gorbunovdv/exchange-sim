@@ -32,20 +32,25 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   static constexpr size_t constJournalSize = 1 << 20;
 
+  JournalMode mode =
+      config["journaling"].contains("mode") && config["journaling"]["mode"].as<std::string>() == "SYNCHRONIZED_WRITE" ?
+      JournalMode::SYNCHRONIZED_WRITE :
+      JournalMode::WRITE;
+
   Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
+      mode,
+      mode == JournalMode::WRITE ? std::optional{runtime->core_allocator().lease_core(CoreType::SHARED)} : std::nullopt,
       constJournalSize);
   Journal<report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
+      mode,
+      mode == JournalMode::WRITE ? std::optional{runtime->core_allocator().lease_core(CoreType::SHARED)} : std::nullopt,
       constJournalSize);
   Journal<request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
+      mode,
+      mode == JournalMode::WRITE ? std::optional{runtime->core_allocator().lease_core(CoreType::SHARED)} : std::nullopt,
       constJournalSize);
 
   using MarketDataInternalSinkType =

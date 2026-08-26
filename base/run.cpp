@@ -44,12 +44,18 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
         requested_huge_pages,
         expected_huge_pages);
   }
+  bool disable_core_pinning = config.contains("cpu_cores") && config["cpu_cores"].contains("disable_core_pinning") &&
+      config["cpu_cores"]["disable_core_pinning"].get_boolean();
   Runtime::Config rt_config{
       .core_allocator_config = {
-          .shared_core = CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()},
-          .dedicated_cores = std::vector{std::from_range,
-              config["cpu_cores"]["dedicated_cores"].get_array() |
-                  std::views::transform([](auto&& v) { return CpuID{v.template as<uint32_t>()}; })},
+          .disable_core_pinning = disable_core_pinning,
+          .shared_core = disable_core_pinning ? std::nullopt :
+                                                std::optional{CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()}},
+          .dedicated_cores = disable_core_pinning ?
+              std::vector<CpuID>{} :
+              std::vector{std::from_range,
+                  config["cpu_cores"]["dedicated_cores"].get_array() |
+                      std::views::transform([](auto&& v) { return CpuID{v.template as<uint32_t>()}; })},
       }};
   auto runtime = std::make_shared<Runtime>(rt_config);
   LoggingBackend::LoggingConfig logging_config{
@@ -62,7 +68,8 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
           magic_enum::enum_cast<quill::LogLevel>(
               config["logging"]["log_level"].as<std::string>(), magic_enum::case_insensitive)),
       .format = quill::PatternFormatterOptions(config["logging"]["format"].as<std::string>()),
-      .cpu_id = runtime->core_allocator().lease_core(CoreType::SHARED).cpu_id(),
+      .cpu_id = !disable_core_pinning ? std::optional{runtime->core_allocator().lease_core(CoreType::SHARED).cpu_id()} :
+                                        std::nullopt,
   };
   LoggingBackend::init(logging_config);
   INFO("Initialized logging backend");

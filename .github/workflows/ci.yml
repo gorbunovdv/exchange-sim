@@ -60,12 +60,27 @@ jobs:
           just verify-headers gcc-release
           just build gcc-release
 
+      - name: Run linter
+        run: |
+          just lint clang-debug
+
       - name: Run tests from scratch
         run: |
           just test clang-debug-asan
           just test gcc-debug-asan
           just test clang-debug-tsan
 
-      - name: Run linter
+      - name: Try running benchmark
         run: |
-          just lint clang-debug
+          just benchmark ./configs/github-ci.json \
+            --apps single_threaded_callback_app single_threaded_event_loop_app \
+            --timeout 10 \
+            --hard-timeout 5 \
+            --skip-isolation-check \
+            --skip-cache-drop \
+            --reps 3 \
+            --label github-ci
+          just evaluate ./configs/github-ci.json \
+            --label github-ci \
+            --apps single_threaded_callback_app single_threaded_event_loop_app
+          
