@@ -31,7 +31,7 @@ class IsolationMetadata:
     def parse_cores(text):
         cpus: set[int] = set()
         text = text.strip()
-        if not text:
+        if not text or text == "(null)":
             return []
         for part in text.split(","):
             part = part.strip()
