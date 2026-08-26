@@ -154,7 +154,9 @@ class IsolationMetadata:
             if meminfo["Hugepagesize"] != "1048576 kB":
                 raise Exception(f"Huge pages size is not 1GB, found: {meminfo['Hugepagesize']}")
             if int(meminfo["HugePages_Free"]) < huge_pages:
-                raise Exception(f"Not enough huge pages, expected at least {huge_pages}")
+                raise Exception(
+                    f"Not enough huge pages, expected at least {huge_pages}, count={meminfo['HugePages_Free']}"
+                )
         self.check_cmd_line_linux(isolated)
 
 
