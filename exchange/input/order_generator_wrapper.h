@@ -11,6 +11,7 @@
 #include "exchange/domain/requests.h"
 #include "exchange/input/order_storage.h"
 
+#include <boost/container/static_vector.hpp>
 #include <boost/hof/match.hpp>
 
 #include <utility>
@@ -156,33 +157,52 @@ public:
     auto timestamp = Ticks::rdtscp();
     market_data_journal_.write(timestamp, market_event);
     generator_.process(market_event);
+
+    event_buffer_.push_back(market_event);
   }
 
   void process(const report::ReportType& report) {
     auto timestamp = Ticks::rdtscp();
     report_journal_.write(timestamp, report);
-    generator_interface_.handle(report);
-    generator_.process(report);
+
+    report_buffer_.push_back(report);
   }
 
   void run() {
     while (!generator_interface_.asked_to_stop()) {
+      apply_stored_events();
       generator_.generate_event();
     }
   }
 
   void generate_event() {
     if (!generator_interface_.asked_to_stop()) {
+      apply_stored_events();
       generator_.generate_event();
     }
   }
 
 private:
+  void apply_stored_events() {
+    for (auto& event : event_buffer_) {
+      generator_.process(event);
+    }
+    event_buffer_.clear();
+    for (auto& report : report_buffer_) {
+      generator_interface_.handle(report);
+      generator_.process(report);
+    }
+    report_buffer_.clear();
+  }
+
   GeneratorInterface<SinkType> generator_interface_;
   OrderGenerator<GeneratorInterface<SinkType>> generator_;
 
   Journal<market_events::EventType>& market_data_journal_;
   Journal<report::ReportType>& report_journal_;
+
+  std::vector<market_events::EventType> event_buffer_;
+  std::vector<report::ReportType> report_buffer_;
 };
 
 }  // namespace exchange_sim
