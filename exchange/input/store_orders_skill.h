@@ -2,7 +2,7 @@
 
 #include "base/strong_type.h"
 
-#include "domain/security.h"
+#include "domain/security_storage.h"
 
 #include "exchange/input/order_storage.h"
 

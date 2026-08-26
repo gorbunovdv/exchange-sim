@@ -1,7 +1,8 @@
 #include "debug_orders_skill.h"
 
-namespace exchange_sim::generator_interface_skills {
+#include "base/logging/logging_backend.h"
 
+namespace exchange_sim::generator_interface_skills {
 
 void DebugOrders::handle_request(const request::OrderAddRequest& request) {
   DEBUG(

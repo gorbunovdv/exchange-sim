@@ -1,7 +1,5 @@
 #pragma once
 
-#include "base/logging/logging_backend.h"
-
 #include "domain/security_storage.h"
 
 #include "exchange/domain/market_events.h"
