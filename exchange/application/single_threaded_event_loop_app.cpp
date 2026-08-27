@@ -10,8 +10,11 @@
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
+#include "exchange/input/debug_orders_skill.h"
+#include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
+#include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -115,14 +118,16 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   auto sinks = std::make_unique<Sinks>();
 
-  OrderGeneratorWrapper<SimpleOrderGenerator, GeneratorInterface, Sinks::RequestSinkType> order_generator_wrapper(
-      stop_token,
-      security_storage,
-      request_journal,
-      market_data_journal,
-      report_journal,
-      sinks->request_sink,
-      config["order_generator"]);
+  OrderGeneratorWrapper<SimpleOrderGenerator,
+      GeneratorInterface<Sinks::RequestSinkType, generator_interface_skills::StoreOrders>,
+      Sinks::RequestSinkType>
+      order_generator_wrapper(stop_token,
+          security_storage,
+          request_journal,
+          market_data_journal,
+          report_journal,
+          sinks->request_sink,
+          config["order_generator"]);
   MatchingEngine<StlL3BookContainer, Sinks::EngineEventSinkType> matching_engine(
       config["matching_engine"], security_storage, sinks->engine_event_sink);
   ExchangeDispatcher event_dispatcher(

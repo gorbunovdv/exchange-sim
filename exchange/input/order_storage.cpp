@@ -1,6 +1,5 @@
 #include "order_storage.h"
 
-#include "base/macros.h"
 #include "base/one_of.h"
 
 namespace exchange_sim {

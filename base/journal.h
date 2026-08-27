@@ -7,6 +7,7 @@
 #include "base/threading/core_allocator.h"
 #include "base/throughput.h"
 #include "base/time/rdtsc.h"
+#include "base/time/timestamped.h"
 
 #include <boost/stl_interfaces/iterator_interface.hpp>
 #include <cpptrace/from_current.hpp>
@@ -26,10 +27,7 @@ template<typename POD>
   requires(std::is_trivially_copyable_v<POD> && !std::is_pointer_v<POD>)
 class Journal : NonMoveable, public LoggableClass {
 public:
-  struct value_type {
-    Ticks timestamp;
-    POD value;
-  };
+  using value_type = Timestamped<POD>;
 
   static constexpr size_t value_size = sizeof(value_type);
 
@@ -53,9 +51,14 @@ public:
     }
   }
 
-  void write(Ticks timestamp, const POD& value) {
+  void write(const POD& value, Ticks timestamp) {
     CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
-    queue_.emplace(timestamp, value);
+    queue_.emplace(value, timestamp);
+  }
+
+  void write(const value_type& structure) {
+    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
+    queue_.emplace(structure);
   }
 
   template<typename Consumer>
@@ -96,6 +99,13 @@ public:
 
       CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
       return *current_value_;
+    }
+
+    const Journal::value_type* operator->() const {
+      using ::exchange_sim::get_logger;
+
+      CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
+      return &(*current_value_);
     }
 
     bool operator==(std::default_sentinel_t) const { return is_eof_; }
