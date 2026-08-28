@@ -2,6 +2,7 @@
 
 #include "domain/types.h"
 
+#include "exchange/book_containers/book_container_concept.h"
 #include "exchange/domain/types.h"
 
 #include <list>
@@ -32,12 +33,12 @@ private:
   std::list<OrderType> level_;
 };
 
-template<typename ActiveOrder, typename UniqueIDGetter>
+template<BookRecord ActiveOrder>
 class StlL3BookContainer {
 public:
   using OrderType = ActiveOrder;
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
-  using UniqueID = decltype(UniqueIDGetter{}(std::declval<OrderType>()));
+  using UniqueID = decltype(std::declval<ActiveOrder>().id());
 
   template<typename Comparator>
   using HalfBookType = std::map<Price, BookLevelType, Comparator>;
@@ -68,14 +69,14 @@ public:
   template<Direction direction>
   void push_back(const OrderType& order) {
     auto it = half<direction>()[order.price].push_back(order);
-    active_orders_.emplace(unique_id_getter_(order), it);
+    active_orders_.emplace(order.id(), it);
   }
 
   template<Direction direction>
   void erase_front() {
     auto& current_level = half<direction>().begin()->second;
     auto& current_order = current_level.front();
-    active_orders_.erase(unique_id_getter_(current_order));
+    active_orders_.erase(current_order.id());
     current_level.erase_front();
   }
 
@@ -105,7 +106,6 @@ private:
     }
   }
 
-  [[no_unique_address]] UniqueIDGetter unique_id_getter_;
   BuyBook buy_;
   SellBook sell_;
   std::unordered_map<UniqueID, typename BookLevelType::iterator> active_orders_;

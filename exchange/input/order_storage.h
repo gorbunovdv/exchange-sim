@@ -8,24 +8,18 @@
 
 namespace exchange_sim {
 
-struct Order {
-  ClientID client_id;
-  ClientOrderID client_order_id;
-  SecurityID security_id;
-
-  enum class State : std::uint8_t { SENT, ACCEPTED, ACTIVE, CANCEL_SENT, REPLACE_SENT };
-
-  State state;
-  bool filled;
-};
-
-constexpr std::string_view format_as(Order::State state) {
-  return magic_enum::enum_name(state);
-}
-
 class OrderStorage {
 public:
-  OrderStorage() = default;
+  struct Order {
+    ClientID client_id;
+    ClientOrderID client_order_id;
+    SecurityID security_id;
+
+    enum class State : std::uint8_t { SENT, ACCEPTED, ACTIVE, CANCEL_SENT, REPLACE_SENT };
+
+    State state;
+    bool filled;
+  };
 
   void handle(const request::OrderAddRequest& request);
   void handle(const request::OrderCancelRequest& request);
@@ -60,5 +54,9 @@ private:
   OrderContainer orders_;
   ActiveOrderContainer active_orders_;
 };
+
+constexpr std::string_view format_as(OrderStorage::Order::State state) {
+  return magic_enum::enum_name(state);
+}
 
 }  // namespace exchange_sim

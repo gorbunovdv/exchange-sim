@@ -10,6 +10,8 @@
 
 using namespace exchange_sim;
 
+using Order = OrderStorage::Order;
+
 void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest request, Order::State state) {
   storage.handle(request);
   if (state == Order::State::SENT) {

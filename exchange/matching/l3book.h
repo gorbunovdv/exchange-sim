@@ -10,7 +10,7 @@
 
 namespace exchange_sim {
 
-template<template<typename, typename> class BookContainerType>
+template<template<typename> class BookContainerType>
 class L3Book {
 public:
   explicit L3Book(
@@ -18,9 +18,7 @@ public:
       security_(security),
       risk_checker_(security),
       order_id_counter_(order_id_counter),
-      trade_id_counter_(trade_id_counter) {
-    static_assert(BookContainer<BookContainerType<ActiveOrder, UniqueIDGetter>>);
-  }
+      trade_id_counter_(trade_id_counter) {}
 
   void add(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
     if (request.direction == Direction::BUY) {
@@ -71,10 +69,11 @@ private:
     ClientOrderID client_order_id;
     Price price;
     Amount quantity;
+
+    auto id() const { return std::pair{client_id, client_order_id}; }
   };
 
-  using UniqueIDGetter =
-      decltype([](const ActiveOrder& order) { return std::make_pair(order.client_id, order.client_order_id); });
+  static_assert(BookContainer<BookContainerType<ActiveOrder>>);
 
   template<Direction current_order_direction>
   void add_impl(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
@@ -314,7 +313,7 @@ private:
 
   const Security& security_;
   RiskChecker risk_checker_;
-  BookContainerType<ActiveOrder, UniqueIDGetter> book_container_;
+  BookContainerType<ActiveOrder> book_container_;
 
   Counter<ExchangeOrderID>& order_id_counter_;
   Counter<ExchangeTradeID>& trade_id_counter_;

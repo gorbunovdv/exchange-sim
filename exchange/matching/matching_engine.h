@@ -13,7 +13,7 @@
 
 namespace exchange_sim {
 
-template<template<typename, typename> class BookContainer, engine_events::Sink SinkType>
+template<template<typename> class BookContainer, engine_events::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
   explicit MatchingEngine(const glz::generic&, SecurityStorage& security_storage, SinkType& sink):
