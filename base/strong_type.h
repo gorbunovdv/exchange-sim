@@ -17,7 +17,9 @@ public:
   template<typename T>
     requires(!std::same_as<std::remove_cvref_t<T>, StrongType> && std::constructible_from<Underlying, T &&>)
   explicit constexpr StrongType(T&& value) noexcept(std::is_nothrow_constructible_v<Underlying, T&&>):
-      value_(std::forward<T>(value)) {}
+      value_(std::forward<T>(value)) {
+    static_assert(sizeof(StrongType) == sizeof(UnderlyingType));
+  }
 
   constexpr UnderlyingType value() const { return value_; }
 

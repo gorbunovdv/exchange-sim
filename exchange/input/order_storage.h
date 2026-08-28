@@ -41,12 +41,8 @@ public:
   const auto& active_orders() const { return active_orders_; }
 
 private:
-  using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-    return std::hash<uint64_t>()((std::hash<ClientID>()(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
-  });
-
-  using OrderContainer = std::unordered_map<std::pair<ClientID, ClientOrderID>, Order, PairHash>;
-  using ActiveOrderContainer = IndexedMap<std::pair<ClientID, ClientOrderID>, Order, PairHash>;
+  using OrderContainer = std::unordered_map<std::pair<ClientID, ClientOrderID>, Order>;
+  using ActiveOrderContainer = IndexedMap<std::pair<ClientID, ClientOrderID>, Order>;
 
   OrderContainer::iterator find_order(ClientID client_id, ClientOrderID client_order_id);
 

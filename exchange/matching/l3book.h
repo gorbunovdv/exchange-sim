@@ -320,11 +320,3 @@ private:
 };
 
 }  // namespace exchange_sim
-
-template<>
-struct std::hash<std::pair<exchange_sim::ClientID, exchange_sim::ClientOrderID>> {
-  size_t operator()(const std::pair<exchange_sim::ClientID, exchange_sim::ClientOrderID>& pair) const noexcept {
-    return std::hash<uint64_t>{}(((std::hash<exchange_sim::ClientID>{}(pair.first) << 32) |
-        std::hash<exchange_sim::ClientOrderID>{}(pair.second)));
-  }
-};
