@@ -136,7 +136,7 @@ struct Hashable {};
 template<typename Underlying, typename Tag, typename... Skills>
   requires std::derived_from<exchange_sim::StrongType<Underlying, Tag, Skills...>, exchange_sim::skills::Hashable>
 struct std::hash<exchange_sim::StrongType<Underlying, Tag, Skills...>> {
-  size_t operator()(const exchange_sim::StrongType<Underlying, Tag, Skills...>& value) const {
+  size_t operator()(const exchange_sim::StrongType<Underlying, Tag, Skills...>& value) const noexcept {
     return std::hash<Underlying>()(value.value());
   }
 };
