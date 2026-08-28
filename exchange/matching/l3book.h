@@ -10,6 +10,11 @@
 
 namespace exchange_sim {
 
+struct MergedClientIDs : StrongType<std::pair<ClientID, ClientOrderID>, struct MergedClientIDTag, skills::EqualTo> {
+  explicit constexpr MergedClientIDs(ClientID client_id, ClientOrderID client_order_id):
+      StrongType(std::pair{client_id, client_order_id}) {}
+};
+
 template<template<typename> class BookContainerType>
 class L3Book {
 public:
@@ -37,7 +42,7 @@ public:
   }
 
   void cancel(const request::OrderCancelRequest& request, engine_events::Sink auto& sink) {
-    if (auto order_opt = book_container_.extract_order(std::pair{request.client_id, request.client_order_id});
+    if (auto order_opt = book_container_.extract_order(MergedClientIDs{request.client_id, request.client_order_id});
         order_opt.has_value()) {
       auto order = order_opt.value();
       sink.push(engine_events::OrderCancelled{
@@ -70,7 +75,7 @@ private:
     Price price;
     Amount quantity;
 
-    auto id() const { return std::pair{client_id, client_order_id}; }
+    auto id() const { return MergedClientIDs{client_id, client_order_id}; }
   };
 
   static_assert(BookContainer<BookContainerType<ActiveOrder>>);
@@ -87,7 +92,7 @@ private:
       });
       return;
     }
-    if (book_container_.contains(std::pair{request.client_id, request.client_order_id})) {
+    if (book_container_.contains(MergedClientIDs{request.client_id, request.client_order_id})) {
       sink.push(engine_events::OrderRejected{
           .origin_time = request.origin_time,
           .security_id = security_.security_id,
@@ -166,7 +171,7 @@ private:
       return;
     }
     if (request.client_order_id != request.client_replacement_id &&
-        book_container_.contains(std::pair{request.client_id, request.client_replacement_id})) {
+        book_container_.contains(MergedClientIDs{request.client_id, request.client_replacement_id})) {
       sink.push(engine_events::ReplacementRejected{
           .origin_time = request.origin_time,
           .client_id = request.client_id,
@@ -177,7 +182,8 @@ private:
       });
       return;
     }
-    if (auto current_order_opt = book_container_.extract_order(std::pair{request.client_id, request.client_order_id});
+    if (auto current_order_opt =
+            book_container_.extract_order(MergedClientIDs{request.client_id, request.client_order_id});
         current_order_opt.has_value()) {
       auto current_order = current_order_opt.value();
       ExchangeOrderID new_order_id = generate_order_id();
@@ -321,9 +327,10 @@ private:
 
 }  // namespace exchange_sim
 
-template<typename T1, typename T2>
-struct std::hash<std::pair<T1, T2>> {
-  size_t operator()(const std::pair<T1, T2>& p) const {
-    return std::hash<uint64_t>()(std::hash<T1>()(p.first) << 32) ^ std::hash<T2>()(p.second);
+template<>
+struct std::hash<exchange_sim::MergedClientIDs> {
+  constexpr std::size_t operator()(const exchange_sim::MergedClientIDs& merged_client_id) const noexcept {
+    return std::hash<uint64_t>{}((static_cast<uint64_t>(merged_client_id.value().first.value()) << 32) |
+        merged_client_id.value().second.value());
   }
 };
