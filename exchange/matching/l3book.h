@@ -177,8 +177,7 @@ private:
       });
       return;
     }
-    if (auto current_order_opt =
-            book_container_.extract_order(std::pair{request.client_id, request.client_order_id});
+    if (auto current_order_opt = book_container_.extract_order(std::pair{request.client_id, request.client_order_id});
         current_order_opt.has_value()) {
       auto current_order = current_order_opt.value();
       ExchangeOrderID new_order_id = generate_order_id();
@@ -325,6 +324,7 @@ private:
 template<>
 struct std::hash<std::pair<exchange_sim::ClientID, exchange_sim::ClientOrderID>> {
   size_t operator()(const std::pair<exchange_sim::ClientID, exchange_sim::ClientOrderID>& pair) const noexcept {
-    return std::hash<uint64_t>{}(((std::hash<exchange_sim::ClientID>{}(pair.first) << 32) | std::hash<exchange_sim::ClientOrderID>{}(pair.second)));
+    return std::hash<uint64_t>{}(((std::hash<exchange_sim::ClientID>{}(pair.first) << 32) |
+        std::hash<exchange_sim::ClientOrderID>{}(pair.second)));
   }
 };
