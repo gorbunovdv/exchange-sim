@@ -39,6 +39,7 @@ concept BookContainer = BookLevel<typename std::remove_cvref_t<BookContainerType
     requires(std::remove_cvref_t<BookContainerType> book_container,
         std::remove_cvref_t<BookContainerType>::OrderType order) {
       { book_container.contains(order.id()) } -> std::same_as<bool>;
+      { book_container.find(order.id()) } -> std::same_as<typename std::remove_cvref_t<BookContainerType>::OrderType*>;
       {
         book_container.template half<Direction::BUY>()
       } -> HalfBook<typename std::remove_cvref_t<BookContainerType>::OrderType>;

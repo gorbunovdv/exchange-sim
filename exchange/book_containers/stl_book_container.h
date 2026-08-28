@@ -48,6 +48,13 @@ public:
 
   bool contains(UniqueID id) const { return active_orders_.contains(id); }
 
+  OrderType* find(UniqueID id) {
+    if (auto it = active_orders_.find(id); it != active_orders_.end()) {
+      return &(*it->second);
+    }
+    return nullptr;
+  }
+
   template<Direction direction>
   constexpr auto& half() {
     if constexpr (direction == Direction::BUY) {

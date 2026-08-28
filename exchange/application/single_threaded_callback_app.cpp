@@ -9,7 +9,9 @@
 
 #include "exchange/book_containers/stl_book_container.h"
 #include "exchange/domain/engine_events.h"
+#include "exchange/input/debug_orders_skill.h"
 #include "exchange/input/generator_interface.h"
+#include "exchange/input/maintain_book_skill.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/input/store_orders_skill.h"
@@ -70,7 +72,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
   OrderGeneratorWrapper<SimpleOrderGenerator,
-      GeneratorInterface<MatchingEngineSinkType, generator_interface_skills::StoreOrders>,
+      GeneratorInterface<MatchingEngineSinkType,
+          generator_interface_skills::StoreOrders,
+          generator_interface_skills::MaintainBook<StlL3BookContainer>>,
       MatchingEngineSinkType>
       order_generator(runtime->stop_token(),
           security_storage,

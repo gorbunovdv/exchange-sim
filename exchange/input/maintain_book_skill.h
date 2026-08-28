@@ -7,13 +7,11 @@
 
 namespace exchange_sim::generator_interface_skills {
 
-template<template<typename, typename> typename BookContainerType>
+template<template<typename> typename BookContainerType>
 class BookStorage {
 public:
-  BookStorage() { static_assert(BookContainer<BookContainerType<ActiveOrder, UniqueIDGetter>>); }
-
   void handle(const market_events::BookOrderEntry& event) {
-    ActiveOrder order{event.order_id, event.quantity};
+    ActiveOrder order{event.order_id, event.price, event.quantity, event.direction};
     if (event.direction == Direction::BUY) {
       book_container_.template push_back<Direction::BUY>(order);
     } else {
@@ -22,20 +20,15 @@ public:
   }
 
   void handle(const market_events::BookOrderChange& event) {
-    CHECK(book_container_.extract_order(event.order_id).has_value(),
-        "Order has not been found in L3Book, order_id={}",
-        event.order_id);
-    if (event.direction == Direction::BUY) {
-      book_container_.template push_back<Direction::BUY>(ActiveOrder{event.order_id, event.new_quantity});
-    } else {
-      book_container_.template erase_front<Direction::SELL>(ActiveOrder{event.order_id, event.new_quantity});
-    }
+    auto* order = book_container_.find(event.order_id);
+    CHECK(order != nullptr, "Order has not been found in L3Book, order_id={}", event.order_id.value());
+    order->quantity = event.new_quantity;
   }
 
   void handle(const market_events::BookOrderDeletion& event) {
     CHECK(book_container_.extract_order(event.order_id).has_value(),
         "Order has not been found in L3Book, order_id={}",
-        event.order_id);
+        event.order_id.value());
   }
 
   const auto& container() const { return book_container_; }
@@ -43,15 +36,19 @@ public:
 private:
   struct ActiveOrder {
     ExchangeOrderID order_id;
+    Price price;
     Amount quantity;
+    Direction direction;
+
+    auto id() const { return order_id; }
   };
 
-  using UniqueIDGetter = decltype([](const ActiveOrder& active_order) { return active_order.order_id; });
+  static_assert(BookContainer<BookContainerType<ActiveOrder>>);
 
-  BookContainerType<ActiveOrder, UniqueIDGetter> book_container_;
+  BookContainerType<ActiveOrder> book_container_;
 };
 
-template<template<typename, typename> typename BookContainerType>
+template<template<typename> typename BookContainerType>
 class MaintainBook {
 public:
   explicit MaintainBook(const SecurityStorage& security_storage): security_storage_(security_storage) {}
