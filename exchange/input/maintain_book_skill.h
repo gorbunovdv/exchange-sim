@@ -51,7 +51,8 @@ private:
 template<template<typename> typename BookContainerType>
 class MaintainBook {
 public:
-  explicit MaintainBook(const SecurityStorage& security_storage): security_storage_(security_storage) {}
+  explicit MaintainBook(const SecurityStorage& security_storage):
+      security_storage_(security_storage), book_storage_(security_storage_.size()) {}
 
   template<typename EventType>
   void handle_market_event(const EventType& event) {
