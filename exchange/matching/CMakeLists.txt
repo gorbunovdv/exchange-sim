@@ -1,11 +1,11 @@
 find_package(GTest REQUIRED)
 
 add_library(matching risk_checker.cpp)
-target_link_libraries(matching PUBLIC base exchange_domain)
+target_link_libraries(matching PUBLIC base exchange_domain book_containers)
 target_sources(matching PUBLIC
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
-    FILES l3book.h matching_engine.h risk_checker.h stl_book_container.h book_container_concept.h
+    FILES l3book.h matching_engine.h risk_checker.h
 )
 
 add_executable(risk_checker_test tests/risk_checker_test.cpp)

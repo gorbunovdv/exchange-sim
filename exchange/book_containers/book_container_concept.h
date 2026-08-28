@@ -33,7 +33,7 @@ concept BookContainer = BookLevel<typename std::remove_cvref_t<BookContainerType
                             typename std::remove_cvref_t<BookContainerType>::OrderType> &&
     requires(std::remove_cvref_t<BookContainerType> book_container,
         std::remove_cvref_t<BookContainerType>::OrderType order) {
-      { book_container.contains(ClientID{0}, ClientOrderID{0}) } -> std::same_as<bool>;
+      { book_container.contains(std::declval<typename BookContainerType::UniqueID>()) } -> std::same_as<bool>;
       {
         book_container.template half<Direction::BUY>()
       } -> HalfBook<typename std::remove_cvref_t<BookContainerType>::OrderType>;
@@ -51,7 +51,7 @@ concept BookContainer = BookLevel<typename std::remove_cvref_t<BookContainerType
       { book_container.template erase_front<Direction::BUY>() };
       { book_container.template erase_front<Direction::SELL>() };
       {
-        book_container.extract_order(ClientID{0}, ClientOrderID{0})
+        book_container.extract_order(std::declval<typename BookContainerType::UniqueID>())
       } -> std::same_as<std::optional<typename std::remove_cvref_t<BookContainerType>::OrderType>>;
     };
 

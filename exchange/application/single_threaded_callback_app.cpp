@@ -7,13 +7,13 @@
 #include "domain/generate_securities.h"
 #include "domain/security.h"
 
+#include "exchange/book_containers/stl_book_container.h"
 #include "exchange/domain/engine_events.h"
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
-#include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
 
 #include <cpptrace/cpptrace.hpp>

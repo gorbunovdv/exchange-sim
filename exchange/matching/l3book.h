@@ -4,24 +4,13 @@
 
 #include "domain/security.h"
 
+#include "exchange/book_containers/book_container_concept.h"
 #include "exchange/domain/requests.h"
-#include "exchange/matching/book_container_concept.h"
 #include "exchange/matching/risk_checker.h"
 
 namespace exchange_sim {
 
-struct ActiveOrder {
-  Ticks origin_time;
-  Direction direction;
-  ExchangeOrderID order_id;
-  ClientID client_id;
-  ClientOrderID client_order_id;
-  Price price;
-  Amount quantity;
-};
-
-template<template<typename> class BookContainerType>
-  requires BookContainer<BookContainerType<ActiveOrder>>
+template<template<typename, typename> class BookContainerType>
 class L3Book {
 public:
   explicit L3Book(
@@ -29,7 +18,9 @@ public:
       security_(security),
       risk_checker_(security),
       order_id_counter_(order_id_counter),
-      trade_id_counter_(trade_id_counter) {}
+      trade_id_counter_(trade_id_counter) {
+    static_assert(BookContainer<BookContainerType<ActiveOrder, UniqueIDGetter>>);
+  }
 
   void add(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
     if (request.direction == Direction::BUY) {
@@ -48,7 +39,7 @@ public:
   }
 
   void cancel(const request::OrderCancelRequest& request, engine_events::Sink auto& sink) {
-    if (auto order_opt = book_container_.extract_order(request.client_id, request.client_order_id);
+    if (auto order_opt = book_container_.extract_order(std::pair{request.client_id, request.client_order_id});
         order_opt.has_value()) {
       auto order = order_opt.value();
       sink.push(engine_events::OrderCancelled{
@@ -72,6 +63,19 @@ public:
   }
 
 private:
+  struct ActiveOrder {
+    Ticks origin_time;
+    Direction direction;
+    ExchangeOrderID order_id;
+    ClientID client_id;
+    ClientOrderID client_order_id;
+    Price price;
+    Amount quantity;
+  };
+
+  using UniqueIDGetter =
+      decltype([](const ActiveOrder& order) { return std::make_pair(order.client_id, order.client_order_id); });
+
   template<Direction current_order_direction>
   void add_impl(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
     if (auto outcome = risk_checker_.reject_request(request); outcome.has_value()) {
@@ -84,7 +88,7 @@ private:
       });
       return;
     }
-    if (book_container_.contains(request.client_id, request.client_order_id)) {
+    if (book_container_.contains(std::pair{request.client_id, request.client_order_id})) {
       sink.push(engine_events::OrderRejected{
           .origin_time = request.origin_time,
           .security_id = security_.security_id,
@@ -163,7 +167,7 @@ private:
       return;
     }
     if (request.client_order_id != request.client_replacement_id &&
-        book_container_.contains(request.client_id, request.client_replacement_id)) {
+        book_container_.contains(std::pair{request.client_id, request.client_replacement_id})) {
       sink.push(engine_events::ReplacementRejected{
           .origin_time = request.origin_time,
           .client_id = request.client_id,
@@ -174,7 +178,7 @@ private:
       });
       return;
     }
-    if (auto current_order_opt = book_container_.extract_order(request.client_id, request.client_order_id);
+    if (auto current_order_opt = book_container_.extract_order(std::pair{request.client_id, request.client_order_id});
         current_order_opt.has_value()) {
       auto current_order = current_order_opt.value();
       ExchangeOrderID new_order_id = generate_order_id();
@@ -310,10 +314,17 @@ private:
 
   const Security& security_;
   RiskChecker risk_checker_;
-  BookContainerType<ActiveOrder> book_container_;
+  BookContainerType<ActiveOrder, UniqueIDGetter> book_container_;
 
   Counter<ExchangeOrderID>& order_id_counter_;
   Counter<ExchangeTradeID>& trade_id_counter_;
 };
 
 }  // namespace exchange_sim
+
+template<typename T1, typename T2>
+struct std::hash<std::pair<T1, T2>> {
+  size_t operator()(const std::pair<T1, T2>& p) const {
+    return std::hash<uint64_t>()(std::hash<T1>()(p.first) << 32) ^ std::hash<T2>()(p.second);
+  }
+};

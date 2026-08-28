@@ -7,6 +7,7 @@
 #include "domain/generate_securities.h"
 #include "domain/security_storage.h"
 
+#include "exchange/book_containers/stl_book_container.h"
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
@@ -16,7 +17,6 @@
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
-#include "exchange/matching/stl_book_container.h"
 #include "exchange/output/exchange_dispatcher.h"
 
 #include <boost/container/static_vector.hpp>

@@ -1,7 +1,7 @@
 #include "base/callback_sink.h"
 
+#include "exchange/book_containers/stl_book_container.h"
 #include "exchange/matching/matching_engine.h"
-#include "exchange/matching/stl_book_container.h"
 
 #include <glaze/glaze.hpp>
 #include <gtest/gtest.h>

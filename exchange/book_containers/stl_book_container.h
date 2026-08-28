@@ -32,11 +32,12 @@ private:
   std::list<OrderType> level_;
 };
 
-template<typename ActiveOrder>
+template<typename ActiveOrder, typename UniqueIDGetter>
 class StlL3BookContainer {
 public:
   using OrderType = ActiveOrder;
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
+  using UniqueID = decltype(UniqueIDGetter{}(std::declval<OrderType>()));
 
   template<typename Comparator>
   using HalfBookType = std::map<Price, BookLevelType, Comparator>;
@@ -44,9 +45,7 @@ public:
   using BuyBook = HalfBookType<std::greater<Price>>;
   using SellBook = HalfBookType<std::less<Price>>;
 
-  bool contains(ClientID client_id, ClientOrderID order_id) const {
-    return active_orders_.contains(std::make_pair(client_id, order_id));
-  }
+  bool contains(UniqueID id) const { return active_orders_.contains(id); }
 
   template<Direction direction>
   constexpr auto& half() {
@@ -68,20 +67,20 @@ public:
 
   template<Direction direction>
   void push_back(const OrderType& order) {
-    active_orders_.emplace(
-        std::make_pair(order.client_id, order.client_order_id), half<direction>()[order.price].push_back(order));
+    auto it = half<direction>()[order.price].push_back(order);
+    active_orders_.emplace(unique_id_getter_(order), it);
   }
 
   template<Direction direction>
   void erase_front() {
     auto& current_level = half<direction>().begin()->second;
     auto& current_order = current_level.front();
-    active_orders_.erase(std::make_pair(current_order.client_id, current_order.client_order_id));
+    active_orders_.erase(unique_id_getter_(current_order));
     current_level.erase_front();
   }
 
-  std::optional<OrderType> extract_order(ClientID client_id, ClientOrderID order_id) {
-    auto iterator = active_orders_.find(std::make_pair(client_id, order_id));
+  std::optional<OrderType> extract_order(UniqueID id) {
+    auto iterator = active_orders_.find(id);
     if (iterator == active_orders_.end()) {
       return std::nullopt;
     }
@@ -97,10 +96,6 @@ public:
   }
 
 private:
-  using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-    return std::hash<uint64_t>()((std::hash<ClientID>()(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
-  });
-
   template<Direction direction>
   void erase_from_level(Price price, StlL3BookLevel<OrderType>::iterator iterator) {
     auto it = half<direction>().find(price);
@@ -110,9 +105,10 @@ private:
     }
   }
 
+  [[no_unique_address]] UniqueIDGetter unique_id_getter_;
   BuyBook buy_;
   SellBook sell_;
-  std::unordered_map<std::pair<ClientID, ClientOrderID>, typename BookLevelType::iterator, PairHash> active_orders_;
+  std::unordered_map<UniqueID, typename BookLevelType::iterator> active_orders_;
 };
 
 }  // namespace exchange_sim

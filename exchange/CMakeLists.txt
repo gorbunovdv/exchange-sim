@@ -1,6 +1,7 @@
 find_package(GTest REQUIRED)
 
 add_subdirectory(domain)
+add_subdirectory(book_containers)
 add_subdirectory(input)
 add_subdirectory(matching)
 add_subdirectory(output)
