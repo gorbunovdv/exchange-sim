@@ -31,8 +31,7 @@ namespace {
 template<typename SinkType>
 using AppOrderGenerator = OrderGeneratorWrapper<SimpleOrderGenerator,
     GeneratorInterface<SinkType,
-        generator_interface_skills::StoreOrders,
-        generator_interface_skills::MaintainBook<StlL3BookContainer>>,
+        generator_interface_skills::StoreOrders>,
     SinkType>;
 
 template<typename SinkType>
