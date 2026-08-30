@@ -75,6 +75,10 @@ private:
         max_active_orders_by_security_(max_active_orders_by_security),
         max_quiet_state_sent_orders_count_(max_quiet_state_sent_orders_count),
         max_beat_filled_orders_count_(max_beat_filled_orders_count),
+        max_book_order_amount_([](const Security& security, uint32_t max_beat_filled_orders_count) {
+          Amount current(ceil(security.max_amount.value() / (max_beat_filled_orders_count + 1)));
+          return current - (current % security.lot_size);
+        }(security_, max_beat_filled_orders_count_)),
         random_(random) {
       switch_to_shift_state();
     }
@@ -103,7 +107,9 @@ private:
     enum class State : uint8_t { SHIFT, QUIET, REPLENISH };
     enum class EventType : uint8_t { CANCEL, ADD, REPLACE, BEAT, SMALL_BEAT };
 
-    using EventTypeStorage = boost::container::static_vector<EventType, 5>;
+    // EventType should be instantiated in order for magic_enum to work
+    static_assert(std::to_underlying(EventType::CANCEL) == 0);
+    using EventTypeStorage = boost::container::static_vector<EventType, magic_enum::enum_count<EventType>()>;
 
     void generate_event_quiet_state() {
       EventTypeStorage order_types;
@@ -250,7 +256,7 @@ private:
       auto order_to_replace_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
       auto [direction, price] = generate_new_order_price_direction();
-      Amount amount = random_.rand_decimal<Amount>(security_.lot_size, security_.max_amount, security_.lot_size);
+      Amount amount = random_.rand_decimal<Amount>(security_.lot_size, max_book_order_amount_, security_.lot_size);
 
       interface_.send_order_replace_request(active_orders[order_to_replace_index].client_id,
           active_orders[order_to_replace_index].client_order_id,
@@ -343,9 +349,15 @@ private:
       enum class BeatOrderType : uint8_t { ADD, REPLACE };
 
       boost::container::static_vector<BeatOrderType, 2> order_types{BeatOrderType::ADD};
-      if (interface_.order_storage()[security_id_].active_orders().size() > min_active_orders_by_security_) {
-        order_types.push_back(BeatOrderType::REPLACE);
-      }
+      /* todo(gorbunovdv): Rewrite the whole replace generation logic in both Generators
+       * Currently OrderStorage does not separate orders by Direction
+       * In order to maintain the book, we must select the order to replace with the same direction as the beat
+       * direction, otherwise the quantity will dissapear from the other side of the book
+       */
+
+      // if (interface_.order_storage()[security_id_].active_orders().size() > min_active_orders_by_security_) {
+      //   order_types.push_back(BeatOrderType::REPLACE);
+      // }
 
       BeatOrderType type = order_types[random_.rand_int<size_t>(0, order_types.size() - 1)];
       switch (type) {
@@ -383,6 +395,8 @@ private:
     const uint32_t max_active_orders_by_security_;
     const uint32_t max_quiet_state_sent_orders_count_;
     const uint32_t max_beat_filled_orders_count_;
+
+    const Amount max_book_order_amount_;
 
     Random& random_;
 
