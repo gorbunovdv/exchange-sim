@@ -80,6 +80,13 @@ private:
           return current - (current % security.lot_size);
         }(security_, max_beat_filled_orders_count_)),
         random_(random) {
+      CHECK(max_book_order_amount_ > security_.lot_size,
+          "max_book_order_amount must be greater than lot_size,"
+          " max_book_order_amount_={}"
+          " lot_size={}",
+          static_cast<double>(max_book_order_amount_.value()),
+          static_cast<double>(security_.lot_size.value()));
+
       switch_to_shift_state();
     }
 
@@ -231,7 +238,7 @@ private:
 
     void generate_add_request() {
       auto [direction, price] = generate_new_order_price_direction();
-      Amount amount = random_.rand_decimal<Amount>(security_.lot_size, security_.max_amount, security_.lot_size);
+      Amount amount = random_.rand_decimal<Amount>(security_.lot_size, max_book_order_amount_, security_.lot_size);
       interface_.send_order_add_request(
           ClientID{0}, security_id_, OrderTimeInForce::LIMIT, OrderType::LIMIT, direction, price, amount);
     }
