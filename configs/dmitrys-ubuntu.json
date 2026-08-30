@@ -33,7 +33,7 @@
   "order_generator": {
     "seed": 0,
     "min_active_orders_by_security": 500,
-    "max_active_orders_by_security": 10000,
+    "max_active_orders_by_security": 50000,
     "max_pending_transactions": 300,
     "max_quiet_state_sent_orders_count": 10000,
     "max_beat_filled_orders_count": 10
