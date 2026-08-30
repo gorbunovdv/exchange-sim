@@ -51,7 +51,7 @@ private:
 template<template<typename> typename BookContainerType>
 class MaintainBook {
 public:
-  using BookStorage = BookStorage<BookContainerType>;
+  using BookStorage = exchange_sim::generator_interface_skills::BookStorage<BookContainerType>;
 
   explicit MaintainBook(const SecurityStorage& security_storage):
       security_storage_(security_storage), book_storage_(security_storage_.size()) {}

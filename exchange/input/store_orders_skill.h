@@ -10,7 +10,7 @@ namespace exchange_sim::generator_interface_skills {
 
 class StoreOrders {
 public:
-  using OrderStorage = OrderStorage;
+  using OrderStorage = exchange_sim::OrderStorage;
 
   explicit StoreOrders(const SecurityStorage& security_storage):
       security_storage_(security_storage), order_storage_(security_storage_.size()) {}
