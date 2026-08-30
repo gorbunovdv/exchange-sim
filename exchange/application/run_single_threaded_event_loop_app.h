@@ -1,36 +1,22 @@
-#include "base/forward_sink.h"
+#pragma once
 #include "base/journal.h"
-#include "base/logging/quill_sinks.h"
-#include "base/macros.h"
-#include "base/run.h"
+#include "base/threading/runtime.h"
 
 #include "domain/generate_securities.h"
 #include "domain/security_storage.h"
 
-#include "exchange/book_containers/stl_book_container.h"
+#include "exchange/domain/engine_events.h"
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
-#include "exchange/input/debug_orders_skill.h"
-#include "exchange/input/generator_interface.h"
-#include "exchange/input/order_generator_wrapper.h"
-#include "exchange/input/shift_order_generator.h"
-#include "exchange/input/simple_order_generator.h"
-#include "exchange/input/store_orders_skill.h"
-#include "exchange/matching/matching_engine.h"
-#include "exchange/output/exchange_dispatcher.h"
 
 #include <boost/container/static_vector.hpp>
-#include <cpptrace/from_current.hpp>
-#include <quill/Backend.h>
+#include <glaze/glaze.hpp>
 
-#include <iostream>
-
-using namespace exchange_sim;
+#include <memory>
 
 namespace exchange_sim {
 
-namespace {
 template<typename T>
 class WrapVector {
 public:
@@ -90,11 +76,9 @@ struct Sinks {
   }
 };
 
-
-template<typename GeneratorInterface>
-using OrderGenerator = ShiftOrderGenerator<StlL3BookContainer, GeneratorInterface>;
-
-
+template<template<typename> typename OrderGenerator,
+    template<typename> typename MatchingEngine,
+    template<typename, typename> typename ExchangeDispatcher>
 void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
   dedicated_core.pin_thread("run_single_threaded_callback_app");
@@ -123,19 +107,14 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   auto sinks = std::make_unique<Sinks>();
 
-  OrderGeneratorWrapper<OrderGenerator,
-      GeneratorInterface<Sinks::RequestSinkType,
-          generator_interface_skills::StoreOrders,
-          generator_interface_skills::MaintainBook<StlL3BookContainer>>,
-      Sinks::RequestSinkType>
-      order_generator_wrapper(stop_token,
-          security_storage,
-          request_journal,
-          market_data_journal,
-          report_journal,
-          sinks->request_sink,
-          config["order_generator"]);
-  MatchingEngine<StlL3BookContainer, Sinks::EngineEventSinkType> matching_engine(
+  OrderGenerator order_generator_wrapper(stop_token,
+      security_storage,
+      request_journal,
+      market_data_journal,
+      report_journal,
+      sinks->request_sink,
+      config["order_generator"]);
+  MatchingEngine<Sinks::EngineEventSinkType> matching_engine(
       config["matching_engine"], security_storage, sinks->engine_event_sink);
   ExchangeDispatcher event_dispatcher(
       config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
@@ -161,29 +140,5 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
   }
 }
 
-}  // namespace
 
 }  // namespace exchange_sim
-
-int main(int argc, char* argv[]) {
-  int exit_code = 0;
-  CPPTRACE_TRY {
-    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
-    run_single_threaded_event_loop_app(runtime, config);
-    quill::Backend::stop();
-  }
-  CPPTRACE_CATCH(...) {
-    try {
-      throw;
-    } catch (const std::exception& e) {
-      std::cerr << "Exception occurred: " << e.what() << '\n';
-      exit_code = 1;
-    } catch (...) {
-      std::cerr << "Unknown exception occurred" << '\n';
-      exit_code = 1;
-    }
-    std::cerr << "\nStacktrace:\n";
-    cpptrace::from_current_exception().print_with_snippets();
-  }
-  return exit_code;
-}
