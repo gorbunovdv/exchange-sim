@@ -10,13 +10,17 @@
 namespace exchange_sim {
 
 template<typename OrderType>
-concept BookRecord = requires(const OrderType& order) { order.id(); };
+concept BookRecord = requires(OrderType order) {
+  order.id();
+  { order.price } -> std::same_as<Price&>;
+  { order.quantity } -> std::same_as<Amount&>;
+  { order.direction } -> std::same_as<Direction&>;
+};
 
 template<typename BookLevelType, typename OrderType>
 concept BookLevel = BookRecord<OrderType> &&
-    requires(std::remove_cvref_t<BookLevelType> level,
-        const OrderType& order,
-        std::remove_cvref_t<BookLevelType>::iterator it) {
+    requires(
+        std::remove_cvref_t<BookLevelType> level, OrderType order, std::remove_cvref_t<BookLevelType>::iterator it) {
       { level.empty() } -> std::same_as<bool>;
       { level.front() } -> std::same_as<OrderType&>;
       { level.push_back(order) } -> std::same_as<typename std::remove_cvref_t<BookLevelType>::iterator>;

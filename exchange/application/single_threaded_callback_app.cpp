@@ -72,9 +72,7 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
 
   OrderGeneratorWrapper<SimpleOrderGenerator,
-      GeneratorInterface<MatchingEngineSinkType,
-          generator_interface_skills::StoreOrders,
-          generator_interface_skills::MaintainBook<StlL3BookContainer>>,
+      GeneratorInterface<MatchingEngineSinkType, generator_interface_skills::StoreOrders>,
       MatchingEngineSinkType>
       order_generator(runtime->stop_token(),
           security_storage,
