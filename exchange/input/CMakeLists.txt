@@ -24,5 +24,5 @@ target_link_libraries(shift_order_generator INTERFACE abstract_order_generator)
 target_sources(shift_order_generator INTERFACE
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
-    FILES simple_order_generator.h
+    FILES shift_order_generator.h
 )

@@ -71,6 +71,8 @@ private:
         interface_(interface),
         security_(security),
         security_id_(security.security_id),
+        order_storage_(interface_.order_storage()[security_id_]),
+        book_storage_(interface_.book_storage()[security_id_]),
         min_active_orders_by_security_(min_active_orders_by_security),
         max_active_orders_by_security_(max_active_orders_by_security),
         max_quiet_state_sent_orders_count_(max_quiet_state_sent_orders_count),
@@ -105,7 +107,7 @@ private:
           break;
         }
         default: {
-          CRITICAL("Unknown state occured, state={}", static_cast<uint8_t>(state_));
+          CRITICAL("Unknown state occurred, state={}", static_cast<uint8_t>(state_));
         }
       }
     }
@@ -114,13 +116,13 @@ private:
     enum class State : uint8_t { SHIFT, QUIET, REPLENISH };
     enum class EventType : uint8_t { CANCEL, ADD, REPLACE, BEAT, SMALL_BEAT };
 
-    // EventType should be instantiated in order for magic_enum to work
+    // EventType should be instantiated for magic_enum to work
     static_assert(std::to_underlying(EventType::CANCEL) == 0);
     using EventTypeStorage = boost::container::static_vector<EventType, magic_enum::enum_count<EventType>()>;
 
     void generate_event_quiet_state() {
       EventTypeStorage order_types;
-      size_t active_orders_count = interface_.order_storage()[security_id_].active_orders().size();
+      size_t active_orders_count = order_storage_.active_orders().size();
       if (active_orders_count > min_active_orders_by_security_) {
         order_types.push_back(EventType::CANCEL);
         order_types.push_back(EventType::SMALL_BEAT);
@@ -142,18 +144,15 @@ private:
     }
 
     void generate_event_shift_state() {
-      if (interface_.order_storage()[security_id_].active_orders().empty() ||
-          (interface_.book_storage()[security_id_].container().template half<Direction::BUY>().best_price() <=
-                  next_middle_price_ &&
-              interface_.book_storage()[security_id_].container().template half<Direction::SELL>().best_price() >
-                  next_middle_price_)) {
+      if (order_storage_.active_orders().empty() ||
+          (book_storage_.container().template half<Direction::BUY>().best_price() <= next_middle_price_ &&
+              book_storage_.container().template half<Direction::SELL>().best_price() > next_middle_price_)) {
         switch_to_replenish_state();
         generate_event_replenish_state();
         return;
       }
 
-      CHECK(interface_.order_storage()[security_id_].active_orders().size() > 0,
-          "Invalid state, no active orders during shift state");
+      CHECK(order_storage_.active_orders().size() > 0, "Invalid state, no active orders during shift state");
 
       EventTypeStorage order_types{EventType::CANCEL, EventType::BEAT};
 
@@ -164,7 +163,7 @@ private:
     }
 
     void generate_event_replenish_state() {
-      if (interface_.order_storage()[security_id_].active_orders().size() >= active_orders_to_replenish_) {
+      if (order_storage_.active_orders().size() >= active_orders_to_replenish_) {
         switch_to_quiet_state();
         generate_event_quiet_state();
         return;
@@ -209,11 +208,11 @@ private:
           break;
         }
         case EventType::BEAT: {
-          generate_beat_request();
+          generate_beat_request(max_beat_filled_orders_count_);
           break;
         }
         case EventType::SMALL_BEAT: {
-          generate_small_beat_request();
+          generate_beat_request(1);
           break;
         }
         default: {
@@ -244,10 +243,10 @@ private:
     }
 
     void generate_cancel_request() {
-      CHECK(!interface_.order_storage()[security_id_].active_orders().empty(),
+      CHECK(!order_storage_.active_orders().empty(),
           "Active orders must not be empty for cancellation query, security id: {}",
           security_id_.value());
-      const auto& active_orders = interface_.order_storage().at(security_id_).active_orders();
+      const auto& active_orders = order_storage_.active_orders();
       auto order_to_cancel_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
       interface_.send_order_cancel_request(active_orders[order_to_cancel_index].client_id,
@@ -256,10 +255,10 @@ private:
     }
 
     void generate_replace_request() {
-      CHECK(!interface_.order_storage()[security_id_].active_orders().empty(),
+      CHECK(!order_storage_.active_orders().empty(),
           "Active orders must not be empty for replacement query, security_id={}",
           security_id_.value());
-      const auto& active_orders = interface_.order_storage().at(security_id_).active_orders();
+      const auto& active_orders = order_storage_.active_orders();
       auto order_to_replace_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
       auto [direction, price] = generate_new_order_price_direction();
@@ -276,7 +275,7 @@ private:
     template<Direction direction>
     std::tuple<Price, Amount> generate_beat_price_amount(size_t max_filled_orders_count) {
       size_t filled_orders_count = random_.rand_int<size_t>(0, max_filled_orders_count);
-      auto& half_book = interface_.book_storage()[security_id_].container().template half<direction>();
+      auto& half_book = book_storage_.container().template half<direction>();
 
       Amount amount{0};
       std::optional<Price> price;
@@ -310,11 +309,16 @@ private:
       }
       if (level_iterator != half_book.end() && order_iterator != level_iterator->second.end()) {
         price = order_iterator->price;
-        Amount max_amount = security_.max_amount - amount;
-        max_amount = std::min(max_amount, order_iterator->quantity - security_.lot_size);
-        max_amount = std::max(max_amount, security_.lot_size);
-        amount +=
-            random_.rand_decimal(amount > Amount{0} ? Amount{0} : security_.lot_size, max_amount, security_.lot_size);
+        if (amount == Amount{0}) {
+          amount += random_.rand_decimal(security_.lot_size, order_iterator->quantity, security_.lot_size);
+        } else {
+          Amount max_amount = security_.max_amount - amount;
+          max_amount = std::min(max_amount, order_iterator->quantity - security_.lot_size);
+          if (amount <= Amount{0}) {
+            max_amount = std::max(max_amount, security_.lot_size);
+          }
+          amount += random_.rand_decimal(Amount{0}, max_amount, security_.lot_size);
+        }
       }
       CHECK(price.has_value(), "Nullopt price during generation");
       CHECK(amount > Amount{0}, "Zero amount during generation");
@@ -327,28 +331,22 @@ private:
         CHECK(middle_price_ != next_middle_price_, "Middle price is equal to next middle price");
         possible_directions = {middle_price_ < next_middle_price_ ? Direction::BUY : Direction::SELL};
       } else {
-        if (!interface_.book_storage()[security_id_].container().template half<Direction::SELL>().empty()) {
+        if (!book_storage_.container().template half<Direction::SELL>().empty()) {
           possible_directions.push_back(Direction::BUY);
         }
-        if (!interface_.book_storage()[security_id_].container().template half<Direction::BUY>().empty()) {
+        if (!book_storage_.container().template half<Direction::BUY>().empty()) {
           possible_directions.push_back(Direction::SELL);
         }
       }
+      CHECK(!possible_directions.empty(), "No possible directions to beat");
       return possible_directions[random_.rand_int<size_t>(0, possible_directions.size() - 1)];
     }
 
-    void generate_beat_request() {
+    void generate_beat_request(uint32_t max_beat_filled_orders_count) {
       Direction direction = generate_beat_direction();
       auto [price, amount] = direction == Direction::BUY ?
-          generate_beat_price_amount<Direction::SELL>(max_beat_filled_orders_count_) :
-          generate_beat_price_amount<Direction::BUY>(max_beat_filled_orders_count_);
-      generate_exact_beat_request(direction, price, amount);
-    }
-
-    void generate_small_beat_request() {
-      Direction direction = generate_beat_direction();
-      auto [price, amount] = direction == Direction::BUY ? generate_beat_price_amount<Direction::SELL>(1) :
-                                                           generate_beat_price_amount<Direction::BUY>(1);
+          generate_beat_price_amount<Direction::SELL>(max_beat_filled_orders_count) :
+          generate_beat_price_amount<Direction::BUY>(max_beat_filled_orders_count);
       generate_exact_beat_request(direction, price, amount);
     }
 
@@ -359,7 +357,7 @@ private:
       /* todo(gorbunovdv): Rewrite the whole replace generation logic in both Generators
        * Currently OrderStorage does not separate orders by Direction
        * In order to maintain the book, we must select the order to replace with the same direction as the beat
-       * direction, otherwise the quantity will dissapear from the other side of the book
+       * direction, otherwise the quantity will disappear from the other side of the book
        */
 
       // if (interface_.order_storage()[security_id_].active_orders().size() > min_active_orders_by_security_) {
@@ -374,10 +372,10 @@ private:
           break;
         }
         case BeatOrderType::REPLACE: {
-          CHECK(!interface_.order_storage()[security_id_].active_orders().empty(),
+          CHECK(!order_storage_.active_orders().empty(),
               "Active orders must not be empty for replacement query, security_id={}",
               security_id_.value());
-          const auto& active_orders = interface_.order_storage().at(security_id_).active_orders();
+          const auto& active_orders = order_storage_.active_orders();
           auto order_to_replace_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
           interface_.send_order_replace_request(active_orders[order_to_replace_index].client_id,
@@ -398,6 +396,13 @@ private:
 
     const Security& security_;
     const SecurityID security_id_;
+
+    using OrderStorage = GeneratorInterface::OrderStorage;
+    using BookStorage = GeneratorInterface::BookStorage;
+
+    const OrderStorage& order_storage_;
+    const BookStorage& book_storage_;
+
     const uint32_t min_active_orders_by_security_;
     const uint32_t max_active_orders_by_security_;
     const uint32_t max_quiet_state_sent_orders_count_;

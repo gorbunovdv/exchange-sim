@@ -59,7 +59,7 @@ public:
 
 private:
   static consteval Price min_price() {
-    return direction == Direction::BUY ? std::numeric_limits<Price>::min() : std::numeric_limits<Price>::max();
+    return direction == Direction::BUY ? std::numeric_limits<Price>::lowest() : std::numeric_limits<Price>::max();
   }
 
   Map half_book_;

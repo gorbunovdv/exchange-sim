@@ -74,6 +74,4 @@ int main(int argc, char* argv[]) {
     cpptrace::from_current_exception().print_with_snippets();
   }
   return exit_code;
-}  //
-// Created by gorbunovdv on 8/30/26.
-//
+}

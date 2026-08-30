@@ -152,7 +152,12 @@ struct std::numeric_limits<exchange_sim::StrongType<Underlying, Tag, Skills...>>
   static constexpr exchange_sim::StrongType<Underlying, Tag, Skills...> min() {
     return exchange_sim::StrongType<Underlying, Tag, Skills...>{std::numeric_limits<Underlying>::min()};
   }
+
   static constexpr exchange_sim::StrongType<Underlying, Tag, Skills...> max() {
     return exchange_sim::StrongType<Underlying, Tag, Skills...>{std::numeric_limits<Underlying>::max()};
+  }
+
+  static constexpr exchange_sim::StrongType<Underlying, Tag, Skills...> lowest() {
+    return exchange_sim::StrongType<Underlying, Tag, Skills...>{std::numeric_limits<Underlying>::lowest()};
   }
 };

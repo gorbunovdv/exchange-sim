@@ -51,6 +51,8 @@ private:
 template<template<typename> typename BookContainerType>
 class MaintainBook {
 public:
+  using BookStorage = BookStorage<BookContainerType>;
+
   explicit MaintainBook(const SecurityStorage& security_storage):
       security_storage_(security_storage), book_storage_(security_storage_.size()) {}
 
@@ -70,7 +72,7 @@ public:
 
 private:
   const SecurityStorage& security_storage_;
-  StrongTypeIndexedVector<SecurityID, BookStorage<BookContainerType>> book_storage_;
+  StrongTypeIndexedVector<SecurityID, BookStorage> book_storage_;
 };
 
 }  // namespace exchange_sim::generator_interface_skills
