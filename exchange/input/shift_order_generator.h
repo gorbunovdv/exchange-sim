@@ -81,7 +81,8 @@ private:
           Amount current(ceil(security.max_amount.value() / (max_beat_filled_orders_count + 1)));
           return current - (current % security.lot_size);
         }(security_, max_beat_filled_orders_count_)),
-        random_(random) {
+        random_(random),
+        middle_price_(security_.low_price) {
       CHECK(max_book_order_amount_ > security_.lot_size,
           "max_book_order_amount must be greater than lot_size,"
           " max_book_order_amount_={}"
@@ -193,7 +194,7 @@ private:
         next_middle_price_ = random_.rand_decimal<Price>(
             middle_price_ + security_.tick_size, security_.high_price, security_.tick_size);
       }
-      
+
       current_state_sent_orders_count_ = 0;
     }
 
@@ -430,7 +431,7 @@ private:
 
     State state_ = State::REPLENISH;
 
-    Price middle_price_{0};
+    Price middle_price_;
     Price next_middle_price_{0};
 
     size_t current_state_sent_orders_count_ = 0;
