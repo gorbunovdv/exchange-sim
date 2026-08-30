@@ -35,7 +35,8 @@ using AppShiftOrderGenerator = ShiftOrderGenerator<StlL3BookContainer, Generator
 template<typename SinkType>
 using AppOrderGenerator = OrderGeneratorWrapper<AppShiftOrderGenerator,
     GeneratorInterface<SinkType,
-        generator_interface_skills::StoreOrders, generator_interface_skills::MaintainBook<StlL3BookContainer>>,
+        generator_interface_skills::StoreOrders,
+        generator_interface_skills::MaintainBook<StlL3BookContainer>>,
     SinkType>;
 
 
@@ -73,6 +74,6 @@ int main(int argc, char* argv[]) {
     cpptrace::from_current_exception().print_with_snippets();
   }
   return exit_code;
-}//
+}  //
 // Created by gorbunovdv on 8/30/26.
 //

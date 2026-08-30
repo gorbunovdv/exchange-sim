@@ -28,7 +28,8 @@ using AppShiftOrderGenerator = ShiftOrderGenerator<StlL3BookContainer, Generator
 template<typename SinkType>
 using AppOrderGenerator = OrderGeneratorWrapper<AppShiftOrderGenerator,
     GeneratorInterface<SinkType,
-        generator_interface_skills::StoreOrders, generator_interface_skills::MaintainBook<StlL3BookContainer>>,
+        generator_interface_skills::StoreOrders,
+        generator_interface_skills::MaintainBook<StlL3BookContainer>>,
     SinkType>;
 
 template<typename SinkType>
