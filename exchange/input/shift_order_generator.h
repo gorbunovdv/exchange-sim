@@ -173,6 +173,11 @@ private:
 
     void switch_to_shift_state() {
       state_ = State::SHIFT;
+      if (middle_price_ == security_.high_price || random_.rand_int(0, 1)) {
+        next_middle_price_ = random_.rand_decimal<Price>(security_.low_price, middle_price_ - security_.tick_size, security_.tick_size);
+      } else {
+        next_middle_price_ = random_.rand_decimal<Price>(middle_price_ + security_.tick_size, security_.high_price, security_.tick_size);
+      }
       next_middle_price_ = random_.rand_decimal<Price>(
           security_.low_price, security_.high_price - security_.tick_size, security_.tick_size);
       current_state_sent_orders_count_ = 0;
@@ -314,9 +319,6 @@ private:
         } else {
           Amount max_amount = security_.max_amount - amount;
           max_amount = std::min(max_amount, order_iterator->quantity - security_.lot_size);
-          if (amount <= Amount{0}) {
-            max_amount = std::max(max_amount, security_.lot_size);
-          }
           amount += random_.rand_decimal(Amount{0}, max_amount, security_.lot_size);
         }
       }
