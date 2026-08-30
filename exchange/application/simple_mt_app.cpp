@@ -1,14 +1,9 @@
 #include "base/journal.h"
 #include "base/run.h"
-#include "base/thread_receiver.h"
 
 #include "domain/generate_securities.h"
-#include "domain/security_storage.h"
 
 #include "exchange/book_containers/stl_book_container.h"
-#include "exchange/domain/market_events.h"
-#include "exchange/domain/reports.h"
-#include "exchange/domain/requests.h"
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/maintain_book_skill.h"
 #include "exchange/input/order_generator_wrapper.h"

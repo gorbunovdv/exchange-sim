@@ -1,27 +1,18 @@
-#include "base/forward_sink.h"
 #include "base/journal.h"
-#include "base/logging/quill_sinks.h"
-#include "base/macros.h"
 #include "base/run.h"
 
 #include "domain/generate_securities.h"
-#include "domain/security_storage.h"
 
 #include "exchange/book_containers/stl_book_container.h"
-#include "exchange/domain/market_events.h"
-#include "exchange/domain/reports.h"
-#include "exchange/domain/requests.h"
 #include "exchange/input/debug_orders_skill.h"
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
-#include "exchange/input/shift_order_generator.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
 #include "run_single_threaded_event_loop_app.h"
 
-#include <boost/container/static_vector.hpp>
 #include <cpptrace/from_current.hpp>
 #include <quill/Backend.h>
 
