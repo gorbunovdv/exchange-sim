@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/logging/loggable_class.h"
+
 #include "domain/security.h"
 
 #include <unordered_map>
@@ -7,7 +9,7 @@
 
 namespace exchange_sim {
 
-class SecurityStorage {
+class SecurityStorage : public LoggableClass {
 public:
   explicit SecurityStorage(const std::vector<SecurityConfig>& securities);
 
@@ -21,6 +23,8 @@ public:
   const std::vector<Security>& securities() const { return securities_; }
 
 private:
+  void validate_security(Security security) const;
+
   std::vector<Security> securities_;
   std::unordered_map<Symbol, SecurityID> id_by_symbol_;
 };

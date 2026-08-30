@@ -29,8 +29,40 @@ public:
 
   void erase(iterator iterator) { level_.erase(iterator); }
 
+  auto begin() const { return level_.begin(); }
+  auto end() const { return level_.end(); }
+
 private:
   std::list<OrderType> level_;
+};
+
+template<typename ActiveOrder, Direction direction>
+class StlL3HalfBook {
+public:
+  using Map = std::map<Price,
+      StlL3BookLevel<ActiveOrder>,
+      std::conditional_t<direction == Direction::BUY, std::greater<Price>, std::less<Price>>>;
+  using iterator = Map::iterator;
+  using const_iterator = Map::const_iterator;
+
+  auto key_comp() const { return half_book_.key_comp(); }
+  bool empty() const { return half_book_.empty(); }
+
+  auto begin(this auto&& self) { return self.half_book_.begin(); }
+  auto end(this auto&& self) { return self.half_book_.end(); }
+  auto find(this auto&& self, Price price) { return self.half_book_.find(price); }
+
+  auto& operator[](Price price) { return half_book_[price]; }
+  iterator erase(const_iterator it) { return half_book_.erase(it); }
+
+  Price best_price() const { return half_book_.empty() ? min_price() : half_book_.begin()->first; }
+
+private:
+  static consteval Price min_price() {
+    return direction == Direction::BUY ? std::numeric_limits<Price>::min() : std::numeric_limits<Price>::max();
+  }
+
+  Map half_book_;
 };
 
 template<BookRecord ActiveOrder>
@@ -39,12 +71,6 @@ public:
   using OrderType = ActiveOrder;
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
   using UniqueID = decltype(std::declval<ActiveOrder>().id());
-
-  template<typename Comparator>
-  using HalfBookType = std::map<Price, BookLevelType, Comparator>;
-
-  using BuyBook = HalfBookType<std::greater<Price>>;
-  using SellBook = HalfBookType<std::less<Price>>;
 
   bool contains(UniqueID id) const { return active_orders_.contains(id); }
 
@@ -56,20 +82,20 @@ public:
   }
 
   template<Direction direction>
-  constexpr auto& half() {
+  constexpr auto& half(this auto&& self) {
     if constexpr (direction == Direction::BUY) {
-      return buy_;
+      return std::forward_like<decltype(self)>(self.buy_);
     } else {
-      return sell_;
+      return std::forward_like<decltype(self)>(self.sell_);
     }
   }
 
   template<Direction direction>
-  constexpr auto& opposite_half() {
+  constexpr auto& opposite_half(this auto&& self) {
     if constexpr (direction == Direction::BUY) {
-      return sell_;
+      return std::forward_like<decltype(self)>(self.sell_);
     } else {
-      return buy_;
+      return std::forward_like<decltype(self)>(self.buy_);
     }
   }
 
@@ -113,8 +139,8 @@ private:
     }
   }
 
-  BuyBook buy_;
-  SellBook sell_;
+  StlL3HalfBook<ActiveOrder, Direction::BUY> buy_;
+  StlL3HalfBook<ActiveOrder, Direction::SELL> sell_;
   std::unordered_map<UniqueID, typename BookLevelType::iterator> active_orders_;
 };
 

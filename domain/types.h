@@ -12,6 +12,7 @@ namespace exchange_sim {
 
 using Price = StrongType<boost::decimal::decimal64_t,
     struct PriceTag,
+    skills::NumericLimits,
     skills::EqualTo,
     skills::Ordered,
     skills::Addable,
@@ -22,6 +23,7 @@ using Price = StrongType<boost::decimal::decimal64_t,
 
 using Amount = StrongType<boost::decimal::decimal32_t,
     struct AmountTag,
+    skills::NumericLimits,
     skills::EqualTo,
     skills::Ordered,
     skills::Addable,

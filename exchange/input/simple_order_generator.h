@@ -85,8 +85,9 @@ private:
     const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
     auto order_to_cancel_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
-    interface_.send_order_cancel_request(
-        ClientID{0}, active_orders[order_to_cancel_index].client_order_id, security_id);
+    interface_.send_order_cancel_request(active_orders[order_to_cancel_index].client_id,
+        active_orders[order_to_cancel_index].client_order_id,
+        security_id);
   }
 
   void generate_replace_order_request(SecurityID security_id) {
@@ -103,7 +104,7 @@ private:
 
     auto direction = random_.rand_enum<Direction>();
 
-    interface_.send_order_replace_request(ClientID{0},
+    interface_.send_order_replace_request(active_orders[order_to_replace_index].client_id,
         active_orders[order_to_replace_index].client_order_id,
         security_id,
         direction,

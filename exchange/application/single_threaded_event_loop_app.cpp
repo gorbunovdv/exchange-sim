@@ -14,6 +14,7 @@
 #include "exchange/input/debug_orders_skill.h"
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
+#include "exchange/input/shift_order_generator.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
@@ -90,6 +91,10 @@ struct Sinks {
 };
 
 
+template<typename GeneratorInterface>
+using OrderGenerator = ShiftOrderGenerator<StlL3BookContainer, GeneratorInterface>;
+
+
 void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
   dedicated_core.pin_thread("run_single_threaded_callback_app");
@@ -118,8 +123,10 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   auto sinks = std::make_unique<Sinks>();
 
-  OrderGeneratorWrapper<SimpleOrderGenerator,
-      GeneratorInterface<Sinks::RequestSinkType, generator_interface_skills::StoreOrders>,
+  OrderGeneratorWrapper<OrderGenerator,
+      GeneratorInterface<Sinks::RequestSinkType,
+          generator_interface_skills::StoreOrders,
+          generator_interface_skills::MaintainBook<StlL3BookContainer>>,
       Sinks::RequestSinkType>
       order_generator_wrapper(stop_token,
           security_storage,
