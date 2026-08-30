@@ -174,11 +174,11 @@ private:
     void switch_to_shift_state() {
       state_ = State::SHIFT;
       if (middle_price_ == security_.high_price || random_.rand_int(0, 1)) {
-        next_middle_price_ =
-            random_.rand_decimal<Price>(security_.low_price + security_.tick_size, middle_price_ - security_.tick_size, security_.tick_size);
+        next_middle_price_ = random_.rand_decimal<Price>(
+            security_.low_price + security_.tick_size, middle_price_ - security_.tick_size, security_.tick_size);
       } else {
-        next_middle_price_ =
-            random_.rand_decimal<Price>(middle_price_ + security_.tick_size, security_.high_price - security_.tick_size, security_.tick_size);
+        next_middle_price_ = random_.rand_decimal<Price>(
+            middle_price_ + security_.tick_size, security_.high_price - security_.tick_size, security_.tick_size);
       }
       current_state_sent_orders_count_ = 0;
     }
