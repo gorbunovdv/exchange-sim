@@ -29,6 +29,9 @@ public:
 
   void erase(iterator iterator) { level_.erase(iterator); }
 
+  auto begin(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).begin(); }
+  auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).end(); }
+
 private:
   std::list<OrderType> level_;
 };
@@ -56,20 +59,20 @@ public:
   }
 
   template<Direction direction>
-  constexpr auto& half() {
+  constexpr auto& half(this auto&& self) {
     if constexpr (direction == Direction::BUY) {
-      return buy_;
+      return std::forward_like<decltype(self)>(self.buy_);
     } else {
-      return sell_;
+      return std::forward_like<decltype(self)>(self.sell_);
     }
   }
 
   template<Direction direction>
-  constexpr auto& opposite_half() {
+  constexpr auto& opposite_half(this auto&& self) {
     if constexpr (direction == Direction::BUY) {
-      return sell_;
+      return std::forward_like<decltype(self)>(self.sell_);
     } else {
-      return buy_;
+      return std::forward_like<decltype(self)>(self.buy_);
     }
   }
 

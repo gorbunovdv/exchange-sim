@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/logging/logging_backend.h"
+
 #include "domain/security_storage.h"
 
 #include "exchange/book_containers/book_container_concept.h"

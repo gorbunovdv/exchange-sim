@@ -20,6 +20,8 @@ public:
       order_id_counter_(order_id_counter),
       trade_id_counter_(trade_id_counter) {}
 
+  const auto& container() const { return book_container_; }
+
   void add(const request::OrderAddRequest& request, engine_events::Sink auto& sink) {
     if (request.direction == Direction::BUY) {
       add_impl<Direction::BUY>(request, sink);

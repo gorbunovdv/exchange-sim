@@ -10,3 +10,7 @@ add_subdirectory(application)
 add_executable(matching_output_test tests/matching_output_test.cpp)
 target_link_libraries(matching_output_test PUBLIC matching exchange_dispatcher gtest::gtest)
 gtest_discover_tests(matching_output_test DISCOVERY_MODE PRE_TEST)
+
+add_executable(book_storage_test tests/book_storage_test.cpp)
+target_link_libraries(book_storage_test PUBLIC abstract_order_generator matching exchange_dispatcher gtest::gtest)
+gtest_discover_tests(book_storage_test DISCOVERY_MODE PRE_TEST)
