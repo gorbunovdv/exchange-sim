@@ -3,6 +3,7 @@
 
 #include "domain/generate_securities.h"
 
+#include "exchange/application/run_single_threaded_event_loop_app.h"
 #include "exchange/book_containers/stl_book_container.h"
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/order_generator_wrapper.h"
@@ -10,7 +11,6 @@
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
-#include "exchange/application/run_single_threaded_event_loop_app.h"
 
 #include <cpptrace/from_current.hpp>
 #include <quill/Backend.h>

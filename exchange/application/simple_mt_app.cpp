@@ -3,6 +3,7 @@
 
 #include "domain/generate_securities.h"
 
+#include "exchange/application/run_multi_threaded_app.h"
 #include "exchange/book_containers/stl_book_container.h"
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/maintain_book_skill.h"
@@ -11,7 +12,6 @@
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
-#include "exchange/application/run_multi_threaded_app.h"
 
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
