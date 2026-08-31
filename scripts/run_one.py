@@ -48,7 +48,7 @@ def run_one(
     if not skip_isolation_check:
         check_isolation(path=config_path)
     if perf and perf_path is None:
-        temp_perf_file = tempfile.NamedTemporaryFile(mode="w") # noqa: SIM115
+        temp_perf_file = tempfile.NamedTemporaryFile(mode="w")  # noqa: SIM115
         perf_path = temp_perf_file.name
     config = load_config(config_path)
     if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
