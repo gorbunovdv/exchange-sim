@@ -26,13 +26,13 @@ Compiler versions used for development are GCC 15.2.0 and Clang 21.1.8.
 ## Architecture at a glance
 
 The lifecycle of a single order is as follows: 
-- SimpleOrderGenerator creates an order.
+- OrderGenerator creates an order.
 - The request is passed to MatchingEngine via respective transport.
 - MatchingEngine passes request to L3Book that maintains the respective security.
 - L3Book performs basic risk checks using RiskChecker.
 - L3Book updates the l3 book and outputs engine events to ExchangeDispatcher via respective transport.
 - ExchangeDispatcher converts internal engine events to market data events and report events.
-- ExchangeDispatcher sends them to SimpleOrderGenerator via respective transport.
+- ExchangeDispatcher sends them to OrderGenerator via respective transport.
 
 The transport layer is based on the Sink concept implemented using callbacks, queues or spsc queues.
 
@@ -62,7 +62,7 @@ A more thorough architecture is located in [architecture.md](docs/architecture.m
 ## Order generation
 
 There are currently two order generators implemented: `SimpleOrderGenerator` and `ShiftOrderGenerator`. 
-Take a look at the [benchmarking.md](docs/order_generation.md) for details.
+Take a look at the [order_generation.md](docs/order_generation.md) for details.
 
 ## Designs
 
@@ -85,7 +85,7 @@ Currently `shift_mt_app` is not supported because of the current implementation 
 
 ## What we're measuring
 
-Latency is measured e2e, a tsc timestamp is taken once the SimpleOrderGenerator emits the request and a tsc timestamp is taken 
+Latency is measured e2e, a tsc timestamp is taken once the OrderGenerator emits the request and a tsc timestamp is taken 
 once it receives the market data/reports back. All requests/reports/market data events are written to respective POD Journals
 along with timestamps, calc_stats then matches events by origin_time and calculates the round-trips. Currently,
 first_report/first_market_event and last_report/last_market_event round trips are calculated.
@@ -127,8 +127,8 @@ The benchmark must be run on a machine with isolated cores and performance setti
 
 - Currently both order generators use only one ClientID{0}.
 - Currently `shift_mt_app` is not supported because of the current implementation of the shift design.
-- The number of securities is two, it comes from the config.
-- Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. It will not be tested in CI and it should be used for development purposes only.
+- Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. 
+It will not be tested in CI and it should be used for development purposes only.
 
 ## Future plans
 

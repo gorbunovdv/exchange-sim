@@ -18,10 +18,9 @@ yield a completely different design.
 Wiring utilities include:
 
 - `CallbackSink` - `push` to the sink calls a stored `std::function` straight ahead.
-- `CallbackReceiver` is the sink itself which calls `BaseClass::process` on the stored `BaseClass`.
+- `CallbackReceiver` is the sink itself which calls `BaseClass::process` on the stored `BaseClass`. A push to this `Sink` immediately invokes the `Processor`
 - `ForwardSink` - `push` forwards the object through to a different `Sink` by pointer.
-- `CallbackReceiver<EventType, ProcessorType>` - constructs `Processor` along with a `CallbackSink` connected to it: 
-a push to this `Sink` immediately invokes the `Processor`
+- `CallbackReceiver<EventType, ProcessorType>` - constructs `Processor` along with a `CallbackSink` connected to it:
 - `ThreadReceiver<EventType, ProcessorType>` - constructs `Processor`, `SPSCQueue` and `std::jthread` pinned to its own leased core. 
 This thread constantly pops objects from `SPSCQueue` and feeds them to `Processor`.
 
@@ -37,8 +36,8 @@ Those are three applications that implement the same stage graph:
 
 ### Client side
 
-`SimpleOrderGenerator` decides what order it should send to the exchange. It sends a random stream of Add/Replace/Cancel with 
-random security, price and amount chosen at random as well. `OrderGeneratorWrapper` provides `SimpleOrderGenerator` with `GeneratorInterface`
+`OrderGenerator` decides what order it should send to the exchange. It sends a random stream of Add/Replace/Cancel with 
+random security, price and amount chosen at random as well. `OrderGeneratorWrapper` provides `OrderGenerator` with `GeneratorInterface`
 to provide convenient interface to send orders to the exchange, maintain correct order state using `OrderStorage` and maintain counters for
 pending transactions/active orders.
 
@@ -60,7 +59,7 @@ Book storage itself is behind the `BookContainer` concept, `StlL3BookContainer` 
 
 The exact implementation of each stage is separated from the pipeline. There are three pipeline designs available: `multithreaded`, `event_loop` and `callback`.
 
-It is possible to wire any implementations of each stage to any pipeline design. `run_multithreaded_app` is a templated function, so it's possible to use any OrderGenerator, 
+It is possible to wire any implementations of each stage to any pipeline design. `run_multi_threaded_app` is a templated function, so it's possible to use any OrderGenerator, 
 any MatchingEngine and any EventDispatcher with it.
 
 ### OrderGenerator

@@ -23,8 +23,9 @@ therefore selects new `middle_price`. Then it generates beats in the direction o
 
 ### REPLENISH
 
-`REPLENISH` stage represents a stage when there are too few orders in the book. It generates new limit orders until `active_orders_count >= min_active_orders_count`.
-New orders are generated with random prices and quantities. After that it transitions to `QUIET` stage.
+`REPLENISH` stage represents a stage when there are too few orders in the book. It selects the new order count and it generates 
+new limit orders until `active_orders_count >= new_order_count`. New orders are generated with random prices and quantities. 
+After that it transitions to `QUIET` stage.
 
 ### QUIET
 
@@ -38,7 +39,7 @@ cancel order could not be generated if `active_orders_count == min_active_orders
 
 ### Beats
 
-Beat is generated using an existing order book. It selects direction randomly, selects the number of orders to be filled and generates 
- the amount so that these orders could be fully filled by beat. Although future beats are planned to be using both replace and add orders,
-currently only add orders are supported because of the design of OrderStorage.
+Beat is generated using an existing order book. It selects direction randomly (or uses the direction of shift during `SHIFT` stage), 
+selects the number of orders to be filled and generates the amount so that these orders could be fully filled by beat. 
+Although future beats are planned to be using both replace and add orders, currently only add orders are supported because of the design of OrderStorage.
 
