@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/logging/logging_backend.h"
+
 #include <magic_enum/magic_enum.hpp>
 
 #include <random>
