@@ -228,11 +228,11 @@ private:
           break;
         }
         case EventType::BEAT: {
-          generate_beat_request(max_beat_filled_orders_count_, false);
+          generate_beat_request(max_beat_filled_orders_count_);
           break;
         }
         case EventType::SMALL_BEAT: {
-          generate_beat_request(1, true);
+          generate_beat_request(1);
           break;
         }
         default: {
@@ -359,15 +359,15 @@ private:
       return possible_directions[random_.rand_int<size_t>(0, possible_directions.size() - 1)];
     }
 
-    void generate_beat_request(uint32_t max_beat_filled_orders_count, bool small_beat) {
+    void generate_beat_request(uint32_t max_beat_filled_orders_count) {
       Direction direction = generate_beat_direction();
       auto [price, amount] = direction == Direction::BUY ?
           generate_beat_price_amount<Direction::SELL>(max_beat_filled_orders_count) :
           generate_beat_price_amount<Direction::BUY>(max_beat_filled_orders_count);
-      generate_exact_beat_request(direction, price, amount, small_beat);
+      generate_exact_beat_request(direction, price, amount);
     }
 
-    void generate_exact_beat_request(Direction direction, Price price, Amount amount, bool small_beat) {
+    void generate_exact_beat_request(Direction direction, Price price, Amount amount) {
       enum class BeatOrderType : uint8_t { ADD, REPLACE };
 
       boost::container::static_vector<BeatOrderType, 2> order_types{BeatOrderType::ADD};
@@ -377,9 +377,9 @@ private:
        * direction, otherwise the quantity will disappear from the other side of the book
        */
 
-      if (small_beat && order_storage_.active_orders().size() > min_active_orders_by_security_ + 1) {
-        order_types.push_back(BeatOrderType::REPLACE);
-      }
+      // if (interface_.order_storage()[security_id_].active_orders().size() > min_active_orders_by_security_) {
+      //   order_types.push_back(BeatOrderType::REPLACE);
+      // }
 
       BeatOrderType type = order_types[random_.rand_int<size_t>(0, order_types.size() - 1)];
       switch (type) {
