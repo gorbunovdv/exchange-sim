@@ -17,6 +17,8 @@
 
 namespace exchange_sim {
 
+namespace event_loop {
+
 template<typename T>
 class WrapVector {
 public:
@@ -76,6 +78,8 @@ struct Sinks {
   }
 };
 
+}  // namespace event_loop
+
 template<template<typename> typename OrderGenerator,
     template<typename> typename MatchingEngine,
     template<typename, typename> typename ExchangeDispatcher>
@@ -105,7 +109,7 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   auto stop_token = runtime->stop_token();
 
-  auto sinks = std::make_unique<Sinks>();
+  auto sinks = std::make_unique<event_loop::Sinks>();
 
   OrderGenerator order_generator_wrapper(stop_token,
       security_storage,
@@ -114,7 +118,7 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
       report_journal,
       sinks->request_sink,
       config["order_generator"]);
-  MatchingEngine<Sinks::EngineEventSinkType> matching_engine(
+  MatchingEngine<event_loop::Sinks::EngineEventSinkType> matching_engine(
       config["matching_engine"], security_storage, sinks->engine_event_sink);
   ExchangeDispatcher event_dispatcher(
       config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
