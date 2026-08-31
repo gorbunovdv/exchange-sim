@@ -23,25 +23,25 @@ public:
       interface_(generator_interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       random_(config["seed"].as<std::uint32_t>()) {
-    uint32_t min_active_orders_by_security_ = config["min_active_orders_by_security"].as<std::uint32_t>();
-    uint32_t max_active_orders_by_security_ = config["max_active_orders_by_security"].as<std::uint32_t>();
-    uint32_t max_quiet_state_sent_orders_count_ = config["max_quiet_state_sent_orders_count"].as<std::uint32_t>();
-    uint32_t max_beat_filled_orders_count_ = config["max_beat_filled_orders_count"].as<std::uint32_t>();
-    CHECK(min_active_orders_by_security_ <= max_active_orders_by_security_,
+    uint32_t min_active_orders_by_security = config["min_active_orders_by_security"].as<std::uint32_t>();
+    uint32_t max_active_orders_by_security = config["max_active_orders_by_security"].as<std::uint32_t>();
+    uint32_t max_quiet_state_sent_orders_count = config["max_quiet_state_sent_orders_count"].as<std::uint32_t>();
+    uint32_t max_beat_filled_orders_count = config["max_beat_filled_orders_count"].as<std::uint32_t>();
+    CHECK(min_active_orders_by_security <= max_active_orders_by_security,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
-        min_active_orders_by_security_,
-        max_active_orders_by_security_);
-    CHECK(min_active_orders_by_security_ > 0,
+        min_active_orders_by_security,
+        max_active_orders_by_security);
+    CHECK(min_active_orders_by_security > 0,
         "Min active orders must be greater than 0, min_active_orders_by_security={}",
-        min_active_orders_by_security_);
+        min_active_orders_by_security);
     generators_.reserve(interface_.security_storage().size());
     for (const Security& security : interface_.security_storage().securities()) {
       generators_.emplace_back(interface_,
           security,
-          min_active_orders_by_security_,
-          max_active_orders_by_security_,
-          max_quiet_state_sent_orders_count_,
-          max_beat_filled_orders_count_,
+          min_active_orders_by_security,
+          max_active_orders_by_security,
+          max_quiet_state_sent_orders_count,
+          max_beat_filled_orders_count,
           random_);
     }
   }
