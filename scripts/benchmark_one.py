@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 from pathlib import Path
 
 import plumbum
@@ -24,7 +25,11 @@ def benchmark_one(
     hard_timeout,
     huge_pages,
     skip_isolation_check,
+    build=True,
 ):
+    if build:
+        with plumbum.local.cwd(ROOT_PATH):
+            plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     if not skip_isolation_check:
         check_isolation(path=config_path)
     config = load_config(config_path)
@@ -51,6 +56,7 @@ def benchmark_one(
         perf_path = ROOT_PATH / config["results"]["perf"]
         perf_path.unlink(missing_ok=True)
         run_one(
+            build=False,
             preset=preset,
             app=app,
             config_path=config_path,

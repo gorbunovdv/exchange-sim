@@ -41,8 +41,12 @@ def run_one(
     hard_timeout,
     timeout,
     skip_isolation_check,
+    build=True,
     flog=sys.stdin,
 ):
+    if build:
+        with plumbum.local.cwd(ROOT_PATH):
+            plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     if not skip_isolation_check:
         check_isolation(path=config_path)
     config = load_config(config_path)

@@ -54,6 +54,7 @@ def benchmark(
         print(f"Running current_rep={rep} app={app} preset={preset}")
         clear_cache()
         benchmark_one(
+            build=False,
             app=app,
             config_path=config_path,
             preset=preset,
