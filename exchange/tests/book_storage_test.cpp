@@ -11,6 +11,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace exchange_sim;
+
 struct BookStorageMatchesMatchingEngineTestInput {
   TestInput input;
 };
@@ -71,7 +73,10 @@ INSTANTIATE_TEST_SUITE_P(BookStorageMatchesMatchingEngineTest,
         BookStorageMatchesMatchingEngineTestInput{AddLimit_Replace_Cancel},
         BookStorageMatchesMatchingEngineTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacementThenExpires},
         BookStorageMatchesMatchingEngineTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining},
-        BookStorageMatchesMatchingEngineTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires}),
+        BookStorageMatchesMatchingEngineTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires},
+        BookStorageMatchesMatchingEngineTestInput{ReplaceTradesOrderAndRests_Cancel},
+        BookStorageMatchesMatchingEngineTestInput{ReplaceTradesOrderAndDoesNotRest},
+        BookStorageMatchesMatchingEngineTestInput{IocTradesTwoLevelsThenExpires}),
     [](const ::testing::TestParamInfo<BookStorageMatchesMatchingEngineTestInput>& info) {
       return info.param.input.description;
     });

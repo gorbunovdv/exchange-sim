@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+using namespace exchange_sim;
+
 struct MatchingOutputTestInput {
   TestInput input;
 };
@@ -72,5 +74,8 @@ INSTANTIATE_TEST_SUITE_P(MatchingOutputTest,
         MatchingOutputTestInput{AddLimit_Replace_Cancel},
         MatchingOutputTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacementThenExpires},
         MatchingOutputTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining},
-        MatchingOutputTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires}),
+        MatchingOutputTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires},
+        MatchingOutputTestInput{ReplaceTradesOrderAndRests_Cancel},
+        MatchingOutputTestInput{ReplaceTradesOrderAndDoesNotRest},
+        MatchingOutputTestInput{IocTradesTwoLevelsThenExpires}),
     [](const ::testing::TestParamInfo<MatchingOutputTestInput>& info) { return info.param.input.description; });
