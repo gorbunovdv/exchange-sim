@@ -21,10 +21,6 @@ public:
     static_assert(sizeof(StrongType) == sizeof(UnderlyingType));
   }
 
-  constexpr StrongType()
-    requires std::default_initializable<UnderlyingType>
-  = default;
-
   constexpr UnderlyingType value() const { return value_; }
 
 private:
