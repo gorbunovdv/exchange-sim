@@ -4,7 +4,6 @@
 #include "exchange/domain/engine_events.h"
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
-#include "exchange/domain/requests.h"
 #include "exchange/input/maintain_book_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -25,14 +24,16 @@ class BookStorageMatchesMatchingEngineTest
 
 TEST_P(BookStorageMatchesMatchingEngineTest, MatchesMatchingEngine) {
   auto snapshot = [](const auto& container) {
-    std::map<Price, Amount> snapshot;
+    std::map<Price, std::vector<std::pair<ExchangeOrderID, Amount>>> snapshot;
 
     for (const auto& [price, level] : container.template half<Direction::BUY>()) {
-      if (!snapshot.contains(price)) {
-        snapshot.emplace(price, Amount{0});
-      }
       for (const auto& order : level) {
-        snapshot.emplace(price, snapshot.at(price) + order.quantity);
+        snapshot[price].emplace_back(order.order_id, order.quantity);
+      }
+    }
+    for (const auto& [price, level] : container.template half<Direction::SELL>()) {
+      for (const auto& order : level) {
+        snapshot[price].emplace_back(order.order_id, order.quantity);
       }
     }
     return snapshot;
@@ -53,9 +54,10 @@ TEST_P(BookStorageMatchesMatchingEngineTest, MatchesMatchingEngine) {
 
   for (const auto& request : test.input.requests) {
     matching_engine.process(request);
-    SecurityID security_id = std::visit([](const auto& request) { return request.security_id; }, request);
-    EXPECT_EQ(snapshot(maintain_book_skill.book_storage()[security_id].container()),
-        snapshot(matching_engine.books()[security_id].container()));
+    for (const Security& security : storage().securities()) {
+      EXPECT_EQ(snapshot(maintain_book_skill.book_storage()[security.security_id].container()),
+          snapshot(matching_engine.books()[security.security_id].container()));
+    }
   }
 }
 
