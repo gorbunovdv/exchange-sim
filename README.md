@@ -30,7 +30,7 @@ The lifecycle of a single order is as follows:
 - ExchangeDispatcher converts internal engine events to market data events and report events.
 - ExchangeDispatcher sends them to SimpleOrderGenerator via respective transport.
 
-The transport layer is based on the Sink concept that is implemented using callbacks, queues or spsc queues.
+The transport layer is based on the Sink concept implemented using callbacks, queues or spsc queues.
 
 A more thorough architecture is located in [architecture.md](docs/architecture.md).
 
@@ -49,6 +49,7 @@ A more thorough architecture is located in [architecture.md](docs/architecture.m
     base/time/          Tsc timestamping suite
 
     exchange/application/   Applications: single_threaded_event_loop_app, calc_stats and so on
+    exchange/book_containers/   Different implementations of L3 book
     exchange/domain/        Exchange-specific types: requests, reports, engine_events and so on
     exchange/input/         Order generation classes: SimpleOrderGenerator, OrderGeneratorWrapper and so on
     exchange/matching/      Matching related classes, matching engine and l3 book implementation
@@ -64,7 +65,7 @@ There are three apps that implement different design and transport between compo
 | `single_threaded_event_loop_app` | Queues                                 | Single event-loop on one thread                                     |
 | `multi_threaded_app`             | Single-producer-single-consumer queues | Each component on a separate thread that is pinned to separate core |
 
-Components are shared between these apps, only transport/threading design is different. Design overhead is measured and not assumed.
+Components are shared between these apps, only the transport/threading design is different. Design overhead is measured and not assumed.
 
 ## What we're measuring
 
