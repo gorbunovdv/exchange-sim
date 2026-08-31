@@ -17,7 +17,7 @@ Compiler versions used for development are GCC 15.2.0 and Clang 21.1.8.
 
 ## Quickstart
 
-    sudo just bootstrap
+    just bootstrap
     just build
     just test
 
