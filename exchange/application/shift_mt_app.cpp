@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
     const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
-    exchange_sim::run_multi_threaded_event_loop_app<AppOrderGenerator, AppMatchingEngine, AppExchangeDispatcher>(
+    exchange_sim::run_multi_threaded_app<AppOrderGenerator, AppMatchingEngine, AppExchangeDispatcher>(
         runtime, config);
     quill::Backend::stop();
   }
