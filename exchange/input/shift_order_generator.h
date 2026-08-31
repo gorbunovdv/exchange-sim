@@ -242,15 +242,15 @@ private:
     }
 
     std::tuple<Direction, Price> generate_new_order_price_direction() {
-      Price left_side = middle_price_ - security_.low_price + security_.tick_size;
-      Price right_side = security_.high_price - middle_price_;
+      Price left_side = middle_price_ - security_.low_price;
+      Price right_side = security_.high_price - middle_price_ - security_.tick_size;
       Price diff = random_.rand_decimal<Price>(Price{0}, left_side + right_side, security_.tick_size);
-      if (diff < left_side) {
+      if (diff <= left_side) {
         return {Direction::BUY,
             middle_price_ - std::min(diff, random_.rand_decimal<Price>(Price{0}, left_side, security_.tick_size))};
       } else {
         return {Direction::SELL,
-            middle_price_ +
+            middle_price_ + security_.tick_size +
                 std::min(diff - left_side, random_.rand_decimal<Price>(Price{0}, right_side, security_.tick_size))};
       }
     }
