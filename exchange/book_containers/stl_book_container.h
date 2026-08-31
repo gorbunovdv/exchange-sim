@@ -29,8 +29,8 @@ public:
 
   void erase(iterator iterator) { level_.erase(iterator); }
 
-  auto begin() const { return level_.begin(); }
-  auto end() const { return level_.end(); }
+  auto begin(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).begin(); }
+  auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).end(); }
 
 private:
   std::list<OrderType> level_;

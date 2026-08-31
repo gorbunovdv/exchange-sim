@@ -16,7 +16,7 @@ namespace exchange_sim {
 template<template<typename> class BookContainer, engine_events::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
-  explicit MatchingEngine(const glz::generic&, SecurityStorage& security_storage, SinkType& sink):
+  explicit MatchingEngine(const glz::generic&, const SecurityStorage& security_storage, SinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     static_assert(request::Processor<MatchingEngine>);
 
@@ -29,6 +29,8 @@ public:
   void process(const request::RequestType& request) {
     std::visit([this](const auto& request) { this->process_object(request); }, request);
   }
+
+  const auto& books() const { return books_; }
 
 private:
   void process_object(const request::OrderAddRequest& request) {
@@ -75,7 +77,7 @@ private:
     books_[request.security_id].cancel(request, sink_);
   }
 
-  SecurityStorage& security_storage_;
+  const SecurityStorage& security_storage_;
   SinkType& sink_;
   StrongTypeIndexedVector<SecurityID, L3Book<BookContainer>> books_;
 
