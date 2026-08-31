@@ -156,7 +156,8 @@ def main():
     parser.add_argument("--preset", default="clang-release", type=str, help="CMake preset")
     parser.add_argument("--apps", nargs="+", type=str, help="Application that will be compared")
     parser.add_argument("--no-fingerprint-check", action="store_true", help="Do not check for correct fingerprints")
-    parser.add_argument("--labels", nargs="*", type=str, help="Labels that will be used for comparison")
+    parser.add_argument("--labels", nargs="+", type=str, help="Labels that will be used for comparison")
+    parser.add_argument("--app-label-pairs", nargs="+", type=str, help="Pairs of apps and labels to compare")
     parser.add_argument(
         "--percentiles",
         nargs="+",
@@ -178,15 +179,23 @@ def main():
     )
     args = parser.parse_args()
 
-    if not args.apps or len(args.apps) > 2:
-        raise Exception("Apps count must be less than 2 and nonempty")
-    app1, app2 = args.apps[0], args.apps[min(1, len(args.apps) - 1)]
-    if not args.labels or len(args.labels) == 0:
-        label1, label2 = "", ""
+    if not args.app_label_pairs:
+        if not args.apps or len(args.apps) > 2:
+            raise Exception("Apps count must be less than 2 and nonempty")
+        app1, app2 = args.apps[0], args.apps[min(1, len(args.apps) - 1)]
+        if not args.labels or len(args.labels) == 0:
+            label1, label2 = "", ""
+        else:
+            if len(args.labels) > 2:
+                raise Exception("Labels count must be less than 2")
+            label1, label2 = args.labels[0], args.labels[min(1, len(args.labels) - 1)]
     else:
-        if len(args.labels) > 2:
-            raise Exception("Labels count must be less than 2")
-        label1, label2 = args.labels[0], args.labels[min(1, len(args.labels) - 1)]
+        if args.apps or args.labels:
+            raise Exception("Either pairs or apps/labels could be specified, but not both")
+        if len(args.app_label_pairs) != 2:
+            raise Exception("App-label pairs count must be strictly 2")
+        app1, label1 = args.app_label_pairs[0].split(":")
+        app2, label2 = args.app_label_pairs[1].split(":")
 
     evaluate_runs(
         config_path=args.config_file,
