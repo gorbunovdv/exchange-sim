@@ -10,7 +10,7 @@
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
-#include "run_single_threaded_event_loop_app.h"
+#include "exchange/application/run_single_threaded_event_loop_app.h"
 
 #include <cpptrace/from_current.hpp>
 #include <quill/Backend.h>
