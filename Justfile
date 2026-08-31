@@ -74,6 +74,9 @@ lint-from-scratch preset='clang-debug':
 run *args:
     python3 ./scripts/run_isolated.py {{ args }}
 
+run-one *args:
+    python3 ./scripts/run_one.py {{ args }}
+
 act:
     gh act --container-architecture linux/amd64
 
