@@ -30,16 +30,16 @@ class MaintainBookMatchesMatchingEngineTest
 
 TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   auto snapshot = [](const auto& container) {
-    std::map<Price, std::vector<std::pair<ExchangeOrderID, Amount>>> snapshot;
+    std::map<Price, std::vector<std::tuple<Direction, ExchangeOrderID, Amount>>> snapshot;
 
     for (const auto& [price, level] : container.template half<Direction::BUY>()) {
       for (const auto& order : level) {
-        snapshot[price].emplace_back(order.order_id, order.quantity);
+        snapshot[price].emplace_back(Direction::BUY, order.order_id, order.quantity);
       }
     }
     for (const auto& [price, level] : container.template half<Direction::SELL>()) {
       for (const auto& order : level) {
-        snapshot[price].emplace_back(order.order_id, order.quantity);
+        snapshot[price].emplace_back(Direction::SELL, order.order_id, order.quantity);
       }
     }
     return snapshot;
