@@ -22,7 +22,7 @@
       "lot_size": 0.1,
       "low_price": 100,
       "high_price": 100000,
-      "max_amount": 1000000
+      "max_amount": 100000
     }
   ],
   "logging": {
