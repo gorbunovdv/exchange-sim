@@ -19,7 +19,7 @@ namespace exchange_sim {
 template<template<typename> typename OrderGenerator,
     template<typename> typename MatchingEngine,
     template<typename, typename> typename ExchangeDispatcher>
-void run_multi_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
+void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
   dedicated_core.pin_thread("run_multi_threaded_app");
 

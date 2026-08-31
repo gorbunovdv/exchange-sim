@@ -18,6 +18,7 @@ yield a completely different design.
 Wiring utilities include:
 
 - `CallbackSink` - `push` to the sink calls a stored `std::function` straight ahead.
+- `CallbackReceiver` is the sink itself which calls `BaseClass::process` on the stored `BaseClass`.
 - `ForwardSink` - `push` forwards the object through to a different `Sink` by pointer.
 - `CallbackReceiver<EventType, ProcessorType>` - constructs `Processor` along with a `CallbackSink` connected to it: 
 a push to this `Sink` immediately invokes the `Processor`
@@ -54,3 +55,28 @@ Book storage itself is behind the `BookContainer` concept, `StlL3BookContainer` 
 ### Output
 
 `ExchangeDispatcher` converts internal engine events emitted by `L3Book`/`MatchingEngine` into two streams: market data events and reports.
+
+### Connectors
+
+The exact implementation of each stage is separated from the pipeline. There are three pipeline designs available: `multithreaded`, `event_loop` and `callback`.
+
+It is possible to wire any implementations of each stage to any pipeline design. `run_multithreaded_app` is a templated function, so it's possible to use any OrderGenerator, 
+any MatchingEngine and any EventDispatcher with it.
+
+### OrderGenerator
+
+Although it's possible to wire any implementation of `OrderGenerator`, it's more convenient to use implemented `OrderGeneratorWrapper` along with `GeneratorInterface`.
+
+GeneratorInterface is a simple interface that allows to simplify the code by providing a common interface for different OrderGenerator implementations. This common
+interface allows not to worry about ClientOrderID sent by the OrderGenerator. It also allows to connect different Skills to it. Current available skills are `DebugOrders` 
+(which prints all requests, market data and reports to stdout), `StoreOrders` (which maintains a list of currently active orders) and `MaintainBook` (which maintains a full L3 book).
+Those skills are implemented in `exchange_sim::generator_interface_skills` and could be used via templates.
+
+`OrderGeneratorWrapper` itself is a wrapper that links `GeneratorInterface` with `OrderGenerator`. It also maintains journaling of all requests, market data and reports for future
+evaluation and benchmarking.
+
+### MatchingEngine
+
+`MatchingEngine` along with `L3Book` are actually responsible for matching orders and maintaining the order book. They are templated, so any
+underlying containers could be used with them. Currently, the only implemented container is `StlBookContainer` which uses `std::map<Price, std::list<Order>>` as underlying data
+structure.
