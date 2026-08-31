@@ -5,6 +5,8 @@ ROOT_DIR := justfile_directory()
 PATH := ROOT_DIR + "/.venv/bin:" + env_var("PATH")
 CPU_COUNT := num_cpus()
 
+import? 'extra/Justfile'
+
 default:
     @just --list
 
