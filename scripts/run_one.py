@@ -1,6 +1,5 @@
 import argparse
 import sys
-import tempfile
 from pathlib import Path
 
 import plumbum
@@ -44,13 +43,11 @@ def run_one(
     skip_isolation_check,
     flog=sys.stdin,
 ):
-    temp_perf_file = None
     if not skip_isolation_check:
         check_isolation(path=config_path)
-    if perf and perf_path is None:
-        temp_perf_file = tempfile.NamedTemporaryFile(mode="w")  # noqa: SIM115
-        perf_path = temp_perf_file.name
     config = load_config(config_path)
+    if perf and perf_path is None:
+        perf_path = config["results"]["perf"]
     if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
         huge_pages = config["memory"]["huge_os_pages_count"]
     cmd = plumbum.local[ROOT_PATH / f"cmake-build-{preset}/exchange/application" / app][config_path]
@@ -79,9 +76,8 @@ def run_one(
             124,
         ),
     )
-    if temp_perf_file is not None:
-        print(Path(temp_perf_file.name).read_text())
-        temp_perf_file.close()
+    if flog == sys.stdout:
+        print(Path(perf_path).read_text())
 
 
 def main():
