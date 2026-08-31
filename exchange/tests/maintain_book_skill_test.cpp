@@ -13,18 +13,22 @@
 
 using namespace exchange_sim;
 
-struct BookStorageMatchesMatchingEngineTestInput {
+namespace {
+
+struct MaintainBookMatchesMatchingEngineTestInput {
   TestInput input;
 };
 
-std::ostream& operator<<(std::ostream& os, const BookStorageMatchesMatchingEngineTestInput& test) {
+std::ostream& operator<<(std::ostream& os, const MaintainBookMatchesMatchingEngineTestInput& test) {
   return os << test.input.description;
 }
 
-class BookStorageMatchesMatchingEngineTest
-    : public ::testing::TestWithParam<BookStorageMatchesMatchingEngineTestInput> {};
+class MaintainBookMatchesMatchingEngineTest
+    : public ::testing::TestWithParam<MaintainBookMatchesMatchingEngineTestInput> {};
 
-TEST_P(BookStorageMatchesMatchingEngineTest, MatchesMatchingEngine) {
+}  // namespace
+
+TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   auto snapshot = [](const auto& container) {
     std::map<Price, std::vector<std::pair<ExchangeOrderID, Amount>>> snapshot;
 
@@ -43,7 +47,7 @@ TEST_P(BookStorageMatchesMatchingEngineTest, MatchesMatchingEngine) {
 
   const auto& test = GetParam();
 
-  generator_interface_skills::MaintainBook<StlL3BookContainer> maintain_book_skill(storage());
+  generator_interface_skills::MaintainBook<StlL3BookContainer> maintain_book_skill(security_storage());
   CallbackSink market_data_sink([&](market_events::EventType&& event) {
     std::visit([&](auto&& event) { maintain_book_skill.handle_market_event(event); }, event);
   });
@@ -52,31 +56,31 @@ TEST_P(BookStorageMatchesMatchingEngineTest, MatchesMatchingEngine) {
   CallbackSink engine_events_sink([&](engine_events::EventType&& event) { exchange_dispatcher.process(event); });
 
   MatchingEngine<StlL3BookContainer, decltype(engine_events_sink)> matching_engine(
-      glz::generic{}, storage(), engine_events_sink);
+      glz::generic{}, security_storage(), engine_events_sink);
 
   for (const auto& request : test.input.requests) {
     matching_engine.process(request);
-    for (const Security& security : storage().securities()) {
+    for (const Security& security : security_storage().securities()) {
       EXPECT_EQ(snapshot(maintain_book_skill.book_storage()[security.security_id].container()),
           snapshot(matching_engine.books()[security.security_id].container()));
     }
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(BookStorageMatchesMatchingEngineTest,
-    BookStorageMatchesMatchingEngineTest,
-    ::testing::Values(BookStorageMatchesMatchingEngineTestInput{AddLimit_Cancel},
-        BookStorageMatchesMatchingEngineTestInput{AddIoc_Expire},
-        BookStorageMatchesMatchingEngineTestInput{Cancel_Reject},
-        BookStorageMatchesMatchingEngineTestInput{Replace_Reject},
-        BookStorageMatchesMatchingEngineTestInput{AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst},
-        BookStorageMatchesMatchingEngineTestInput{AddLimit_Replace_Cancel},
-        BookStorageMatchesMatchingEngineTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacementThenExpires},
-        BookStorageMatchesMatchingEngineTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining},
-        BookStorageMatchesMatchingEngineTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires},
-        BookStorageMatchesMatchingEngineTestInput{ReplaceTradesOrderAndRests_Cancel},
-        BookStorageMatchesMatchingEngineTestInput{ReplaceTradesOrderAndDoesNotRest},
-        BookStorageMatchesMatchingEngineTestInput{IocTradesTwoLevelsThenExpires}),
-    [](const ::testing::TestParamInfo<BookStorageMatchesMatchingEngineTestInput>& info) {
+INSTANTIATE_TEST_SUITE_P(MaintainBookMatchesMatchingEngineTest,
+    MaintainBookMatchesMatchingEngineTest,
+    ::testing::Values(MaintainBookMatchesMatchingEngineTestInput{AddLimit_Cancel()},
+        MaintainBookMatchesMatchingEngineTestInput{AddIoc_Expire()},
+        MaintainBookMatchesMatchingEngineTestInput{Cancel_Reject()},
+        MaintainBookMatchesMatchingEngineTestInput{Replace_Reject()},
+        MaintainBookMatchesMatchingEngineTestInput{AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst()},
+        MaintainBookMatchesMatchingEngineTestInput{AddLimit_Replace_Cancel()},
+        MaintainBookMatchesMatchingEngineTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacement_Expire()},
+        MaintainBookMatchesMatchingEngineTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining()},
+        MaintainBookMatchesMatchingEngineTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2_Expire()},
+        MaintainBookMatchesMatchingEngineTestInput{ReplaceTradesOrderAndRests_Cancel()},
+        MaintainBookMatchesMatchingEngineTestInput{ReplaceTradesOrderAndDoesNotRest()},
+        MaintainBookMatchesMatchingEngineTestInput{IocTradesTwoLevels_Expire()}),
+    [](const ::testing::TestParamInfo<MaintainBookMatchesMatchingEngineTestInput>& info) {
       return info.param.input.description;
     });

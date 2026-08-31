@@ -13,6 +13,8 @@
 
 using namespace exchange_sim;
 
+namespace {
+
 struct MatchingOutputTestInput {
   TestInput input;
 };
@@ -22,6 +24,8 @@ std::ostream& operator<<(std::ostream& os, const MatchingOutputTestInput& test) 
 }
 
 class MatchingOutputTest : public ::testing::TestWithParam<MatchingOutputTestInput> {};
+
+}  // namespace
 
 TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   auto compare_event = []<typename VariantType>(const VariantType& actual, const VariantType& expected) {
@@ -47,7 +51,7 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
       ExchangeDispatcher<decltype(market_data_sink), decltype(report_generator_sink)>>
       exchange_dispatcher(glz::generic{}, market_data_sink, report_generator_sink);
   MatchingEngine<StlL3BookContainer, std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>> matching_engine(
-      glz::generic{}, storage(), exchange_dispatcher.get_sink());
+      glz::generic{}, security_storage(), exchange_dispatcher.get_sink());
 
   for (auto request : test.input.requests) {
     matching_engine.process(request);
@@ -66,16 +70,16 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
 
 INSTANTIATE_TEST_SUITE_P(MatchingOutputTest,
     MatchingOutputTest,
-    ::testing::Values(MatchingOutputTestInput{AddLimit_Cancel},
-        MatchingOutputTestInput{AddIoc_Expire},
-        MatchingOutputTestInput{Cancel_Reject},
-        MatchingOutputTestInput{Replace_Reject},
-        MatchingOutputTestInput{AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst},
-        MatchingOutputTestInput{AddLimit_Replace_Cancel},
-        MatchingOutputTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacementThenExpires},
-        MatchingOutputTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining},
-        MatchingOutputTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2ThenExpires},
-        MatchingOutputTestInput{ReplaceTradesOrderAndRests_Cancel},
-        MatchingOutputTestInput{ReplaceTradesOrderAndDoesNotRest},
-        MatchingOutputTestInput{IocTradesTwoLevelsThenExpires}),
+    ::testing::Values(MatchingOutputTestInput{AddLimit_Cancel()},
+        MatchingOutputTestInput{AddIoc_Expire()},
+        MatchingOutputTestInput{Cancel_Reject()},
+        MatchingOutputTestInput{Replace_Reject()},
+        MatchingOutputTestInput{AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst()},
+        MatchingOutputTestInput{AddLimit_Replace_Cancel()},
+        MatchingOutputTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacement_Expire()},
+        MatchingOutputTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining()},
+        MatchingOutputTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2_Expire()},
+        MatchingOutputTestInput{ReplaceTradesOrderAndRests_Cancel()},
+        MatchingOutputTestInput{ReplaceTradesOrderAndDoesNotRest()},
+        MatchingOutputTestInput{IocTradesTwoLevels_Expire()}),
     [](const ::testing::TestParamInfo<MatchingOutputTestInput>& info) { return info.param.input.description; });
