@@ -35,11 +35,14 @@ def is_significant_pair(pct1, pct2, rel_threshold, abs_threshold):
 
 
 class SingleRunEvaluation:
-    def __init__(self, percentiles, relative_threshold, absolute_threshold, min_event_count_threshold):
+    def __init__(
+        self, percentiles, relative_threshold, absolute_threshold, min_event_count_threshold, max_trades_count
+    ):
         self.percentiles = percentiles
         self.relative_threshold = relative_threshold
         self.absolute_threshold = absolute_threshold
         self.min_event_count_threshold = min_event_count_threshold
+        self.max_trades_count = max_trades_count
 
     def print_metric_table(self, metric, rbgbp):
         metrics_table = []
@@ -52,7 +55,7 @@ class SingleRunEvaluation:
                 )
             pct_items = [pct_dict[percentile] for percentile in self.percentiles]
             trades_count = pct_items[0][0]
-            if trades_count < self.min_event_count_threshold:
+            if trades_count < self.min_event_count_threshold or group.trades_count > self.max_trades_count:
                 continue
             row = [group.symbol, group.type, group.trades_count, trades_count]
             for item in pct_items:
@@ -72,11 +75,12 @@ class SingleRunEvaluation:
 
 
 class MultiRunEvaluation:
-    def __init__(self, percentiles, rel_threshold, abs_threshold, min_event_count_threshold):
+    def __init__(self, percentiles, rel_threshold, abs_threshold, min_event_count_threshold, max_trades_count):
         self.percentiles = percentiles
         self.rel_threshold = rel_threshold
         self.abs_threshold = abs_threshold
         self.min_event_count_threshold = min_event_count_threshold
+        self.max_trades_count = max_trades_count
 
     def print_metric_table_comparison(self, metric, rbgbp1, rbgbp2):
         metrics_table = []
@@ -97,7 +101,7 @@ class MultiRunEvaluation:
             pct1_items = [pct_dict1[percentile] for percentile in self.percentiles]
             pct2_items = [pct_dict2[percentile] for percentile in self.percentiles]
             trades_count = min(pct1_items[0][0], pct2_items[0][0])
-            if trades_count < self.min_event_count_threshold:
+            if trades_count < self.min_event_count_threshold or group.trades_count > self.max_trades_count:
                 continue
             row = [group.symbol, group.type, group.trades_count, trades_count]
             for item1, item2 in zip(pct1_items, pct2_items, strict=True):
@@ -134,16 +138,17 @@ def evaluate_runs(
     rel_threshold,
     abs_threshold,
     min_event_count_threshold,
+    max_trades_count,
 ):
     if app1 == app2 and label1 == label2:
         sb = SingleBenchmarkResults(config_path, preset, app1, label1, no_fingerprint_check)
-        es = SingleRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold)
+        es = SingleRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold, max_trades_count)
         for metric in latency_fields:
             es.print_metric_table(metric, sb.results_by_group_by_percentile(metric))
     else:
         sb1 = SingleBenchmarkResults(config_path, preset, app1, label1, no_fingerprint_check)
         sb2 = SingleBenchmarkResults(config_path, preset, app2, label2, no_fingerprint_check)
-        em = MultiRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold)
+        em = MultiRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold, max_trades_count)
         for metric in latency_fields:
             em.print_metric_table_comparison(
                 metric, sb1.results_by_group_by_percentile(metric), sb2.results_by_group_by_percentile(metric)
@@ -158,6 +163,7 @@ def main():
     parser.add_argument("--no-fingerprint-check", action="store_true", help="Do not check for correct fingerprints")
     parser.add_argument("--labels", nargs="+", type=str, help="Labels that will be used for comparison")
     parser.add_argument("--app-label-pairs", nargs="+", type=str, help="Pairs of apps and labels to compare")
+    parser.add_argument("--max-trades-count", type=int, default=10, help="Maximum number of trades to consider")
     parser.add_argument(
         "--percentiles",
         nargs="+",
@@ -209,6 +215,7 @@ def main():
         rel_threshold=args.relative_threshold,
         abs_threshold=args.absolute_threshold,
         min_event_count_threshold=args.min_event_count_threshold,
+        max_trades_count=args.max_trades_count,
     )
 
 
