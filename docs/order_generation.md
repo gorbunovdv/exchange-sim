@@ -30,16 +30,18 @@ After that it transitions to `QUIET` stage.
 ### QUIET
 
 `QUIET` stage represents a stage when there are enough orders in the book. It generates all types of event: add order, replace order, cancel order and beats.
-Beats are specifically generated small: no more than one order could be fully filled by beat.
 
-Types of generated events are limited by the current state: add order could not be generated if `active_orders_count == max_active_orders_count`, 
+The current state limits types of generated events: add order could not be generated if `active_orders_count == max_active_orders_count`, 
 cancel order could not be generated if `active_orders_count == min_active_orders_count` and so on.
+
+After each beat QUIET stage replenishes the book with the exact orders that have been beat. Partly filled orders are not replenished.
 
 `QUIET` stage ends once it sends `max_quiet_state_sent_orders_count` orders.
 
 ### Beats
 
 Beat is generated using an existing order book. It selects direction randomly (or uses the direction of shift during `SHIFT` stage), 
-selects the number of orders to be filled and generates the amount so that these orders could be fully filled by beat. 
+selects the number of levels to be fully filled and generates the amount so that these orders could be fully filled by beat. The level after the last is beat
+by amount that doesn't reduce the level to none.
 Although future beats are planned to be using both replace and add orders, currently only add orders are supported because of the design of OrderStorage.
 
