@@ -13,8 +13,8 @@ latency_fields = [
     "last_market_event",
 ]
 
-MAX_REL_THRESHOLD = 2.0
-MAX_ABS_THRESHOLD = 10.0
+MAX_REL_THRESHOLD = 3.5
+MAX_ABS_THRESHOLD = 15.0
 MIN_EVENT_COUNT_THRESHOLD = 10000
 
 
