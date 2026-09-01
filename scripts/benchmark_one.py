@@ -33,6 +33,8 @@ def benchmark_one(
     if not skip_isolation_check:
         check_isolation(path=config_path)
     config = load_config(config_path)
+    if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
+        huge_pages = config["memory"]["huge_os_pages_count"]
     log_path = ROOT_PATH / config["results"]["logs"]
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with plumbum.local.cwd(ROOT_PATH), open(log_path, "w") as flog:

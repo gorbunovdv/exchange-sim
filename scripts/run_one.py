@@ -42,7 +42,7 @@ def run_one(
     timeout,
     skip_isolation_check,
     build=True,
-    flog=sys.stdin,
+    flog=sys.stdout,
 ):
     if build:
         with plumbum.local.cwd(ROOT_PATH):
@@ -62,11 +62,11 @@ def run_one(
         if huge_pages:
             env = env[f"MIMALLOC_RESERVE_HUGE_OS_PAGES={huge_pages}"]
         cmd = env[cmd]
-        if perf:
-            perf_cmd = plumbum.local["perf"]["stat"]["-o"][perf_path]
-            for perf_param in perf:
-                perf_cmd = perf_cmd["-e"][perf_param]
-            cmd = perf_cmd["--"][cmd]
+    if perf:
+        perf_cmd = plumbum.local["perf"]["stat"]["-o"][perf_path]
+        for perf_param in perf:
+            perf_cmd = perf_cmd["-e"][perf_param]
+        cmd = perf_cmd["--"][cmd]
     if no_aslr:
         cmd = plumbum.local["setarch"]["--addr-no-randomize"][cmd]
     cmd = plumbum.local["timeout"]["-s"]["INT"]["-k"][hard_timeout][timeout][cmd]
@@ -80,7 +80,7 @@ def run_one(
             124,
         ),
     )
-    if flog == sys.stdout:
+    if perf and flog == sys.stdout:
         print(Path(perf_path).read_text())
 
 

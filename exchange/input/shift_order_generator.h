@@ -344,11 +344,12 @@ private:
         }
       }
       if (level_iterator != half_book.end() && order_iterator != level_iterator->second.end()) {
-        price = order_iterator->price;
         Amount deducted_amount = [&](Amount quantity) {
           if (amount == Amount{0}) {
-            return random_.rand_decimal(
-                security_.lot_size, std::min(quantity, security_.max_amount), security_.lot_size);
+            return random_.rand_decimal(security_.lot_size,
+                std::min(quantity > security_.lot_size ? quantity - security_.lot_size : security_.lot_size,
+                    security_.max_amount),
+                security_.lot_size);
           }
           Amount max_amount = security_.max_amount - amount;
           max_amount = std::min(max_amount, quantity - security_.lot_size);
@@ -356,15 +357,18 @@ private:
         }(std::accumulate(order_iterator, level_iterator->second.end(), Amount{0}, [](Amount acc, const auto& order) {
           return acc + order.quantity;
         }));
-        Amount amount_left = deducted_amount;
-        while (order_iterator != level_iterator->second.end() && amount_left >= order_iterator->quantity) {
-          amount_left -= order_iterator->quantity;
-          if (state_ == State::QUIET) {
-            refills_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
+        if (deducted_amount != Amount{0}) {
+          price = order_iterator->price;
+          Amount amount_left = deducted_amount;
+          while (order_iterator != level_iterator->second.end() && amount_left >= order_iterator->quantity) {
+            amount_left -= order_iterator->quantity;
+            if (state_ == State::QUIET) {
+              refills_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
+            }
+            order_iterator++;
           }
-          order_iterator++;
+          amount += deducted_amount;
         }
-        amount += deducted_amount;
       }
       CHECK(price.has_value(), "Nullopt price during generation");
       CHECK(amount > Amount{0}, "Zero amount during generation");

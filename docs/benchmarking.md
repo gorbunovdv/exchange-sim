@@ -89,9 +89,9 @@ Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
 ### Single mode
 
 Single mode evaluates one app/label. It calculates the percentiles and the drift of this percentile across the runs: `median +- drift (relative%)`. 
-The bucket is flagged as `INCONSISTENT` when relative drift is more than 2% and absolute drift is more than 10ns.
+The bucket is flagged as `INCONSISTENT` when relative drift is more than 3.5% and absolute drift is more than 15ns.
 
 ### Compare mode
 
 Compare mode compares either two apps or two labels (or both): `delta_median +- (drift_1 + drift_2) (relative%)`. 
-The verdict is `IMPROVED`/`REGRESSED` in case `abs(delta_median) > drift_1 + drift_2 + 10` and `relative` is more than 2%.
+The verdict is `IMPROVED`/`REGRESSED` in case `abs(delta_median) > drift_1 + drift_2 + 15` and `relative` is more than 3.5%.

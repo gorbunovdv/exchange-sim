@@ -86,7 +86,7 @@ def main():
         "--label", required=False, help="Label to mark current run (by default it's 'git-{sha256:6}[-dirty]'"
     )
     parser.add_argument("--reps", type=int, default=5, help="Repetitions of run to make")
-    parser.add_argument("--apps", nargs="+", type=str, help="Applications to run")
+    parser.add_argument("--apps", nargs="*", type=str, help="Applications to run")
     parser.add_argument("--mimalloc-verbose-show-stats", action="store_true", help="Show mimalloc verbose stats")
     parser.add_argument("--use-perf", action="store_true", help="Use perf")
     parser.add_argument("--perf-parameters", nargs="*", default=DEFAULT_PERF, help="Parameters to pass to perf")

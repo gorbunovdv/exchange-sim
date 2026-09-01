@@ -21,7 +21,7 @@ Compiler versions used for development are GCC 15.2.0 and Clang 21.1.8.
     just build
     just test
 
-    just benchmark --apps simple_el_app shift_cb_app ./configs/dmitrys-ubuntu.json
+    just benchmark ./configs/dmitrys-ubuntu.json --apps simple_el_app shift_cb_app
 
 ## Architecture at a glance
 
@@ -52,7 +52,7 @@ A more thorough architecture is located in [architecture.md](docs/architecture.m
     base/threading/     Core isolation suite
     base/time/          Tsc timestamping suite
 
-    exchange/application/   Applications: single_threaded_event_loop_app, calc_stats and so on
+    exchange/application/   Applications: shift_el_app, calc_stats and so on
     exchange/book_containers/   Different implementations of L3 book
     exchange/domain/        Exchange-specific types: requests, reports, engine_events and so on
     exchange/input/         Order generation classes: SimpleOrderGenerator, OrderGeneratorWrapper and so on
@@ -116,8 +116,8 @@ Either different apps can be evaluated or one app across different labels.
     
     sudo just patch-grub ./configs/dmitrys-ubuntu.json && sudo reboot
     sudo just apply-runtime ./configs/dmitrys-ubuntu.json
-    just benchmark ./configs/dmitrys-ubuntu.json --apps single_threaded_event_loop_app --reps 10
-    just evaluate  ./configs/dmitrys-ubuntu.json --apps single_threaded_event_loop_app --labels <label> --percentiles 50 99
+    just benchmark ./configs/dmitrys-ubuntu.json --apps shift_el_app --reps 10
+    just evaluate  ./configs/dmitrys-ubuntu.json --apps shift_el_app --labels <label> --percentiles 50 99
 
 The benchmark must be run on a machine with isolated cores and performance settings applied.
 

@@ -23,13 +23,13 @@ Wiring utilities include:
 - `ThreadReceiver<EventType, ProcessorType>` - constructs `Processor`, `SPSCQueue` and `std::jthread` pinned to its own leased core. 
 This thread constantly pops objects from `SPSCQueue` and feeds them to `Processor`.
 
-Those are three applications that implement the same stage graph:
+Those are three designs that implement the same stage graph:
 
-| Application                      | Transport                                                                                                           |
-|----------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| `single_threaded_callback_app`   | `CallbackReceiver`/`CallbackSink`s are used, so all events are passed to next stage immediately                     |
-| `single_threaded_event_loop_app` | `WrapVector` is used as `Sink`, so each next stage is fed by all events that were pushed by previous stage in batch |
-| `multi_threaded_app`             | `ThreadReceiver` is used, so each stage is placed on separate thread pinned to separate core                        |
+| Design           | Transport                                                                                                           |
+|------------------|---------------------------------------------------------------------------------------------------------------------|
+| `callback`       | `CallbackReceiver`/`CallbackSink`s are used, so all events are passed to next stage immediately                     |
+| `event_loop`     | `WrapVector` is used as `Sink`, so each next stage is fed by all events that were pushed by previous stage in batch |
+| `multi_threaded` | `ThreadReceiver` is used, so each stage is placed on separate thread pinned to separate core                        |
 
 ## Pipeline
 
