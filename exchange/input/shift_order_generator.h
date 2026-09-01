@@ -27,6 +27,7 @@ public:
     uint32_t max_active_orders_by_security = config["max_active_orders_by_security"].as<std::uint32_t>();
     uint32_t max_quiet_state_sent_orders_count = config["max_quiet_state_sent_orders_count"].as<std::uint32_t>();
     uint32_t max_beat_filled_orders_count = config["max_beat_filled_orders_count"].as<std::uint32_t>();
+    interface_.reserve(max_active_orders_by_security);
     CHECK(min_active_orders_by_security <= max_active_orders_by_security,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security,
@@ -83,9 +84,7 @@ private:
         }(security_, max_beat_filled_orders_count_)),
         random_(random),
         middle_price_(security_.low_price) {
-      refill_queue_.reserve(max_beat_filled_orders_count_);
-      order_storage_.reserve(max_active_orders_by_security_);
-      book_storage_.reserve(max_active_orders_by_security_);
+      refills_.reserve(max_beat_filled_orders_count_);
       CHECK(max_book_order_amount_ > security_.lot_size,
           "max_book_order_amount must be greater than lot_size,"
           " max_book_order_amount_={}"
@@ -125,9 +124,9 @@ private:
     using EventTypeStorage = boost::container::static_vector<EventType, magic_enum::enum_count<EventType>()>;
 
     void generate_event_quiet_state() {
-      if (!refill_queue_.empty()) {
-        auto [direction, price, amount] = refill_queue_.back();
-        refill_queue_.pop_back();
+      if (!refills_.empty()) {
+        auto [direction, price, amount] = refills_.back();
+        refills_.pop_back();
         interface_.send_order_add_request(
             ClientID{0}, security_id_, OrderTimeInForce::LIMIT, OrderType::LIMIT, direction, price, amount);
       } else {
@@ -186,7 +185,7 @@ private:
 
     void switch_to_shift_state() {
       state_ = State::SHIFT;
-      refill_queue_.clear();
+      refills_.clear();
 
       enum class ShiftDirection : std::uint8_t { UP, DOWN };
 
@@ -221,7 +220,7 @@ private:
     }
 
     void switch_to_quiet_state() {
-      refill_queue_.clear();
+      refills_.clear();
       state_ = State::QUIET;
       current_state_sent_orders_count_ = 0;
       active_orders_to_replenish_ = 0;
@@ -329,7 +328,7 @@ private:
         price = order_iterator->price;
         amount += order_iterator->quantity;
         if (state_ == State::QUIET) {
-          refill_queue_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
+          refills_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
         }
         filled_orders_count--;
         order_iterator++;
@@ -430,8 +429,8 @@ private:
     using OrderStorage = GeneratorInterface::OrderStorage;
     using BookStorage = GeneratorInterface::BookStorage;
 
-    OrderStorage& order_storage_;
-    BookStorage& book_storage_;
+    const OrderStorage& order_storage_;
+    const BookStorage& book_storage_;
 
     const uint32_t min_active_orders_by_security_;
     const uint32_t max_active_orders_by_security_;
@@ -450,7 +449,7 @@ private:
     size_t current_state_sent_orders_count_ = 0;
     size_t active_orders_to_replenish_ = 0;
 
-    std::vector<std::tuple<Direction, Price, Amount>> refill_queue_;
+    std::vector<std::tuple<Direction, Price, Amount>> refills_;
   };
 
   GeneratorInterface& interface_;

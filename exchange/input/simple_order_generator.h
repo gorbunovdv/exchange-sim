@@ -24,6 +24,7 @@ public:
       max_active_orders_by_security_(config["max_active_orders_by_security"].as<std::uint32_t>()),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       random_(config["seed"].as<std::uint32_t>()) {
+    interface_.reserve(max_active_orders_by_security_);
     CHECK(min_active_orders_by_security_ <= max_active_orders_by_security_,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security_,

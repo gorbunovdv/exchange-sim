@@ -75,7 +75,13 @@ public:
   void handle_request(const auto&) {}
   void handle_report(const auto&) {}
 
-  auto& book_storage() { return book_storage_; }
+  const auto& book_storage() const { return book_storage_; }
+
+  void reserve(size_t size) {
+    for (auto& storage : book_storage_) {
+      storage.reserve(size);
+    }
+  }
 
 private:
   const SecurityStorage& security_storage_;
