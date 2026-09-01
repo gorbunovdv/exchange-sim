@@ -65,7 +65,6 @@ concept BookContainer = BookLevel<typename std::remove_cvref_t<BookContainerType
       {
         book_container.extract_order(order.id())
       } -> std::same_as<std::optional<typename std::remove_cvref_t<BookContainerType>::OrderType>>;
-      { book_container.find(order.id()) } -> std::same_as<typename std::remove_cvref_t<BookContainerType>::OrderType*>;
     };
 
 }  // namespace exchange_sim

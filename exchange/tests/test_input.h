@@ -4,6 +4,8 @@
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
 
+#include <ostream>
+#include <string>
 #include <vector>
 
 namespace exchange_sim {
@@ -37,6 +39,10 @@ struct TestInput {
 
   std::string description;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const TestInput& input) {
+  return os << input.description;
+}
 
 inline TestInput AddLimit_Cancel() {
   return {
@@ -1817,6 +1823,23 @@ inline TestInput IocTradesTwoLevels_Expire() {
               },
           },
       .description = "IocTradesTwoLevels_Expire",
+  };
+}
+
+inline std::vector<TestInput> all_test_inputs() {
+  return {
+      AddLimit_Cancel(),
+      AddIoc_Expire(),
+      Cancel_Reject(),
+      Replace_Reject(),
+      AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst(),
+      AddLimit_Replace_Cancel(),
+      ReplaceLosesPriority_IocTradesOrder2ThenReplacement_Expire(),
+      IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining(),
+      RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2_Expire(),
+      ReplaceTradesOrderAndRests_Cancel(),
+      ReplaceTradesOrderAndDoesNotRest(),
+      IocTradesTwoLevels_Expire(),
   };
 }
 

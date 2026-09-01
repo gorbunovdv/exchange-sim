@@ -56,9 +56,11 @@ public:
   explicit MaintainBook(const SecurityStorage& security_storage):
       security_storage_(security_storage), book_storage_(security_storage_.size()) {}
 
-  template<typename EventType>
-  void handle_market_event(const EventType& event) {
-    if constexpr (!std::is_same_v<EventType, market_events::Trade>) {
+  void handle_market_event(const auto& event) {
+    if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(event)>, market_events::Trade>) {
+      static_assert(
+          requires { event.security_id; },
+          "Event passed to MaintainBook::handle_market_event must have security_id member");
       if (security_storage_.has_security(event.security_id)) {
         book_storage_[event.security_id].handle(event);
       }
