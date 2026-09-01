@@ -59,8 +59,9 @@ public:
   void handle_market_event(const auto& event) {
     if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(event)>, market_events::Trade>) {
       static_assert(
-          requires { event.security_id; },
-          "Event passed to MaintainBook::handle_market_event must have security_id member");
+          requires { book_storage_[event.security_id].handle(event); },
+          "Event passed to MaintainBook::handle_market_event must have security_id member and must be handled by "
+          "BookStorage");
       if (security_storage_.has_security(event.security_id)) {
         book_storage_[event.security_id].handle(event);
       }
