@@ -18,6 +18,9 @@ void StoreOrders::handle_request(const RequestType& request) {
 template<typename ReportType>
 void StoreOrders::handle_report(const ReportType& report) {
   if constexpr (!std::is_same_v<std::remove_cvref_t<decltype(report)>, report::Trade>) {
+    static_assert(
+        requires { order_storage_[report.security_id].handle(report); },
+        "Event passed to StoreOrders::handle_report must have security_id member and must be handled by OrderStorage");
     if (security_storage_.has_security(report.security_id)) {
       order_storage_[report.security_id].handle(report);
     }

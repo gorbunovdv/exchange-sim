@@ -11,41 +11,39 @@
 
 #include <gtest/gtest.h>
 
+#include <map>
+#include <utility>
+#include <variant>
+#include <vector>
+
 using namespace exchange_sim;
 
 namespace {
 
-struct MaintainBookMatchesMatchingEngineTestInput {
-  TestInput input;
-};
-
-std::ostream& operator<<(std::ostream& os, const MaintainBookMatchesMatchingEngineTestInput& test) {
-  return os << test.input.description;
-}
-
-class MaintainBookMatchesMatchingEngineTest
-    : public ::testing::TestWithParam<MaintainBookMatchesMatchingEngineTestInput> {};
+class MaintainBookMatchesMatchingEngineTest : public ::testing::TestWithParam<TestInput> {};
 
 }  // namespace
 
 TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   auto snapshot = [](const auto& container) {
-    std::map<Price, std::vector<std::tuple<Direction, ExchangeOrderID, Amount>>> snapshot;
+    std::map<std::pair<Direction, Price>, std::vector<std::pair<ExchangeOrderID, Amount>>> snapshot;
 
     for (const auto& [price, level] : container.template half<Direction::BUY>()) {
+      auto& snapshot_level = snapshot[{Direction::BUY, price}];
       for (const auto& order : level) {
-        snapshot[price].emplace_back(Direction::BUY, order.order_id, order.quantity);
+        snapshot_level.emplace_back(order.order_id, order.quantity);
       }
     }
     for (const auto& [price, level] : container.template half<Direction::SELL>()) {
+      auto& snapshot_level = snapshot[{Direction::SELL, price}];
       for (const auto& order : level) {
-        snapshot[price].emplace_back(Direction::SELL, order.order_id, order.quantity);
+        snapshot_level.emplace_back(order.order_id, order.quantity);
       }
     }
     return snapshot;
   };
 
-  const auto& test = GetParam();
+  const auto& input = GetParam();
 
   generator_interface_skills::MaintainBook<StlL3BookContainer> maintain_book_skill(security_storage());
   CallbackSink market_data_sink([&](market_events::EventType&& event) {
@@ -58,7 +56,7 @@ TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   MatchingEngine<StlL3BookContainer, decltype(engine_events_sink)> matching_engine(
       glz::generic{}, security_storage(), engine_events_sink);
 
-  for (const auto& request : test.input.requests) {
+  for (const auto& request : input.requests) {
     matching_engine.process(request);
     for (const Security& security : security_storage().securities()) {
       EXPECT_EQ(snapshot(maintain_book_skill.book_storage()[security.security_id].container()),
@@ -69,18 +67,5 @@ TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
 
 INSTANTIATE_TEST_SUITE_P(MaintainBookMatchesMatchingEngineTest,
     MaintainBookMatchesMatchingEngineTest,
-    ::testing::Values(MaintainBookMatchesMatchingEngineTestInput{AddLimit_Cancel()},
-        MaintainBookMatchesMatchingEngineTestInput{AddIoc_Expire()},
-        MaintainBookMatchesMatchingEngineTestInput{Cancel_Reject()},
-        MaintainBookMatchesMatchingEngineTestInput{Replace_Reject()},
-        MaintainBookMatchesMatchingEngineTestInput{AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst()},
-        MaintainBookMatchesMatchingEngineTestInput{AddLimit_Replace_Cancel()},
-        MaintainBookMatchesMatchingEngineTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacement_Expire()},
-        MaintainBookMatchesMatchingEngineTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining()},
-        MaintainBookMatchesMatchingEngineTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2_Expire()},
-        MaintainBookMatchesMatchingEngineTestInput{ReplaceTradesOrderAndRests_Cancel()},
-        MaintainBookMatchesMatchingEngineTestInput{ReplaceTradesOrderAndDoesNotRest()},
-        MaintainBookMatchesMatchingEngineTestInput{IocTradesTwoLevels_Expire()}),
-    [](const ::testing::TestParamInfo<MaintainBookMatchesMatchingEngineTestInput>& info) {
-      return info.param.input.description;
-    });
+    ::testing::ValuesIn(all_test_inputs()),
+    [](const ::testing::TestParamInfo<TestInput>& info) { return info.param.description; });

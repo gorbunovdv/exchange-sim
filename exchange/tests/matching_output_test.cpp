@@ -8,22 +8,15 @@
 
 #include <gtest/gtest.h>
 
-#include <string>
+#include <type_traits>
+#include <variant>
 #include <vector>
 
 using namespace exchange_sim;
 
 namespace {
 
-struct MatchingOutputTestInput {
-  TestInput input;
-};
-
-std::ostream& operator<<(std::ostream& os, const MatchingOutputTestInput& test) {
-  return os << test.input.description;
-}
-
-class MatchingOutputTest : public ::testing::TestWithParam<MatchingOutputTestInput> {};
+class MatchingOutputTest : public ::testing::TestWithParam<TestInput> {};
 
 }  // namespace
 
@@ -37,7 +30,7 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
         actual);
   };
 
-  auto test = GetParam();
+  const auto& input = GetParam();
 
   std::vector<market_events::EventType> actual_market_data;
   std::vector<report::ReportType> actual_reports;
@@ -53,33 +46,22 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   MatchingEngine<StlL3BookContainer, std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>> matching_engine(
       glz::generic{}, security_storage(), exchange_dispatcher.get_sink());
 
-  for (auto request : test.input.requests) {
+  for (auto request : input.requests) {
     matching_engine.process(request);
   }
 
-  ASSERT_EQ(test.input.expected_market_data.size(), actual_market_data.size());
-  for (size_t i = 0; i < test.input.expected_market_data.size(); ++i) {
-    compare_event(actual_market_data[i], test.input.expected_market_data[i]);
+  ASSERT_EQ(input.expected_market_data.size(), actual_market_data.size());
+  for (size_t i = 0; i < input.expected_market_data.size(); ++i) {
+    compare_event(actual_market_data[i], input.expected_market_data[i]);
   }
 
-  ASSERT_EQ(test.input.expected_reports.size(), actual_reports.size());
-  for (size_t i = 0; i < test.input.expected_reports.size(); ++i) {
-    compare_event(actual_reports[i], test.input.expected_reports[i]);
+  ASSERT_EQ(input.expected_reports.size(), actual_reports.size());
+  for (size_t i = 0; i < input.expected_reports.size(); ++i) {
+    compare_event(actual_reports[i], input.expected_reports[i]);
   }
 }
 
 INSTANTIATE_TEST_SUITE_P(MatchingOutputTest,
     MatchingOutputTest,
-    ::testing::Values(MatchingOutputTestInput{AddLimit_Cancel()},
-        MatchingOutputTestInput{AddIoc_Expire()},
-        MatchingOutputTestInput{Cancel_Reject()},
-        MatchingOutputTestInput{Replace_Reject()},
-        MatchingOutputTestInput{AddLimitTwoClientsSameClientOrderId_CancelSecond_CancelFirst()},
-        MatchingOutputTestInput{AddLimit_Replace_Cancel()},
-        MatchingOutputTestInput{ReplaceLosesPriority_IocTradesOrder2ThenReplacement_Expire()},
-        MatchingOutputTestInput{IocFullyTradesBestPricePartiallyTradesNextPrice_CancelRemaining()},
-        MatchingOutputTestInput{RejectedReplaceKeepsPriority_IocTradesOrder1ThenOrder2_Expire()},
-        MatchingOutputTestInput{ReplaceTradesOrderAndRests_Cancel()},
-        MatchingOutputTestInput{ReplaceTradesOrderAndDoesNotRest()},
-        MatchingOutputTestInput{IocTradesTwoLevels_Expire()}),
-    [](const ::testing::TestParamInfo<MatchingOutputTestInput>& info) { return info.param.input.description; });
+    ::testing::ValuesIn(all_test_inputs()),
+    [](const ::testing::TestParamInfo<TestInput>& info) { return info.param.description; });
