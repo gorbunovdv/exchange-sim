@@ -2,6 +2,7 @@
 
 #include "domain/types.h"
 
+#include "exchange/book_containers/book_container_concept.h"
 #include "exchange/domain/types.h"
 
 #include <list>
@@ -28,15 +29,19 @@ public:
 
   void erase(iterator iterator) { level_.erase(iterator); }
 
+  auto begin(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).begin(); }
+  auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).end(); }
+
 private:
   std::list<OrderType> level_;
 };
 
-template<typename ActiveOrder>
+template<BookRecord ActiveOrder>
 class StlL3BookContainer {
 public:
   using OrderType = ActiveOrder;
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
+  using UniqueID = decltype(std::declval<ActiveOrder>().id());
 
   template<typename Comparator>
   using HalfBookType = std::map<Price, BookLevelType, Comparator>;
@@ -44,44 +49,49 @@ public:
   using BuyBook = HalfBookType<std::greater<Price>>;
   using SellBook = HalfBookType<std::less<Price>>;
 
-  bool contains(ClientID client_id, ClientOrderID order_id) const {
-    return active_orders_.contains(std::make_pair(client_id, order_id));
+  bool contains(UniqueID id) const { return active_orders_.contains(id); }
+
+  OrderType* find(UniqueID id) {
+    if (auto it = active_orders_.find(id); it != active_orders_.end()) {
+      return &(*it->second);
+    }
+    return nullptr;
   }
 
   template<Direction direction>
-  constexpr auto& half() {
+  constexpr auto& half(this auto&& self) {
     if constexpr (direction == Direction::BUY) {
-      return buy_;
+      return std::forward_like<decltype(self)>(self.buy_);
     } else {
-      return sell_;
+      return std::forward_like<decltype(self)>(self.sell_);
     }
   }
 
   template<Direction direction>
-  constexpr auto& opposite_half() {
+  constexpr auto& opposite_half(this auto&& self) {
     if constexpr (direction == Direction::BUY) {
-      return sell_;
+      return std::forward_like<decltype(self)>(self.sell_);
     } else {
-      return buy_;
+      return std::forward_like<decltype(self)>(self.buy_);
     }
   }
 
   template<Direction direction>
   void push_back(const OrderType& order) {
-    active_orders_.emplace(
-        std::make_pair(order.client_id, order.client_order_id), half<direction>()[order.price].push_back(order));
+    auto it = half<direction>()[order.price].push_back(order);
+    active_orders_.emplace(order.id(), it);
   }
 
   template<Direction direction>
   void erase_front() {
     auto& current_level = half<direction>().begin()->second;
     auto& current_order = current_level.front();
-    active_orders_.erase(std::make_pair(current_order.client_id, current_order.client_order_id));
+    active_orders_.erase(current_order.id());
     current_level.erase_front();
   }
 
-  std::optional<OrderType> extract_order(ClientID client_id, ClientOrderID order_id) {
-    auto iterator = active_orders_.find(std::make_pair(client_id, order_id));
+  std::optional<OrderType> extract_order(UniqueID id) {
+    auto iterator = active_orders_.find(id);
     if (iterator == active_orders_.end()) {
       return std::nullopt;
     }
@@ -97,10 +107,6 @@ public:
   }
 
 private:
-  using PairHash = decltype([](const std::pair<ClientID, ClientOrderID>& key) {
-    return std::hash<uint64_t>()((std::hash<ClientID>()(key.first) << 32) ^ std::hash<ClientOrderID>()(key.second));
-  });
-
   template<Direction direction>
   void erase_from_level(Price price, StlL3BookLevel<OrderType>::iterator iterator) {
     auto it = half<direction>().find(price);
@@ -112,7 +118,7 @@ private:
 
   BuyBook buy_;
   SellBook sell_;
-  std::unordered_map<std::pair<ClientID, ClientOrderID>, typename BookLevelType::iterator, PairHash> active_orders_;
+  std::unordered_map<UniqueID, typename BookLevelType::iterator> active_orders_;
 };
 
 }  // namespace exchange_sim
