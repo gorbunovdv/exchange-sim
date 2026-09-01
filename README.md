@@ -77,8 +77,6 @@ There are six apps that implement different order generations, design and transp
 | `shift_el_app`  | Queues                                 | Shift          | Single event-loop on one thread                                     |
 | `shift_mt_app`  | Single-producer-single-consumer queues | Shift          | Each component on a separate thread that is pinned to separate core | 
 
-Components are shared between these apps, only the generators and transport/threading design are different. Design overhead is measured and not assumed.
-
 Empty app is `empty_app`. It's a separate app that does nothing.
 
 Currently `shift_mt_app` is not supported because of the current implementation of the shift design.

@@ -20,7 +20,6 @@ Wiring utilities include:
 - `CallbackSink` - `push` to the sink calls a stored `std::function` straight ahead.
 - `CallbackReceiver` is the sink itself which calls `BaseClass::process` on the stored `BaseClass`. A push to this `Sink` immediately invokes the `Processor`
 - `ForwardSink` - `push` forwards the object through to a different `Sink` by pointer.
-- `CallbackReceiver<EventType, ProcessorType>` - constructs `Processor` along with a `CallbackSink` connected to it:
 - `ThreadReceiver<EventType, ProcessorType>` - constructs `Processor`, `SPSCQueue` and `std::jthread` pinned to its own leased core. 
 This thread constantly pops objects from `SPSCQueue` and feeds them to `Processor`.
 
