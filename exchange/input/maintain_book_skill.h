@@ -35,6 +35,8 @@ public:
 
   const auto& container() const { return book_container_; }
 
+  void reserve(size_t size) { book_container_.reserve(size); }
+
 private:
   struct ActiveOrder {
     ExchangeOrderID order_id;
@@ -73,7 +75,7 @@ public:
   void handle_request(const auto&) {}
   void handle_report(const auto&) {}
 
-  const auto& book_storage() const { return book_storage_; }
+  auto& book_storage() { return book_storage_; }
 
 private:
   const SecurityStorage& security_storage_;

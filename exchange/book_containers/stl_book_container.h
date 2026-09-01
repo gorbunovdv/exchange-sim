@@ -57,6 +57,8 @@ public:
 
   Price best_price() const { return half_book_.empty() ? min_price() : half_book_.begin()->first; }
 
+  void reserve(size_t) {}
+
 private:
   static consteval Price min_price() {
     return direction == Direction::BUY ? std::numeric_limits<Price>::lowest() : std::numeric_limits<Price>::max();
@@ -127,6 +129,12 @@ public:
       erase_from_level<Direction::SELL>(current_order.price, order_iterator);
     }
     return current_order;
+  }
+
+  void reserve(size_t size) {
+    active_orders_.reserve(size);
+    buy_.reserve(size / 2);
+    sell_.reserve(size / 2);
   }
 
 private:

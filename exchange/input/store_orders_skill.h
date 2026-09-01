@@ -15,7 +15,7 @@ public:
   explicit StoreOrders(const SecurityStorage& security_storage):
       security_storage_(security_storage), order_storage_(security_storage_.size()) {}
 
-  const auto& order_storage() const { return order_storage_; }
+  auto& order_storage() { return order_storage_; }
 
   size_t pending_transactions() const;
 

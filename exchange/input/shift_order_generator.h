@@ -83,6 +83,9 @@ private:
         }(security_, max_beat_filled_orders_count_)),
         random_(random),
         middle_price_(security_.low_price) {
+      refill_queue_.reserve(max_beat_filled_orders_count_);
+      order_storage_.reserve(max_active_orders_by_security_);
+      book_storage_.reserve(max_active_orders_by_security_);
       CHECK(max_book_order_amount_ > security_.lot_size,
           "max_book_order_amount must be greater than lot_size,"
           " max_book_order_amount_={}"
@@ -115,28 +118,37 @@ private:
 
   private:
     enum class State : uint8_t { SHIFT, QUIET, REPLENISH };
-    enum class EventType : uint8_t { CANCEL, ADD, REPLACE, BEAT, SMALL_BEAT };
+    enum class EventType : uint8_t { CANCEL, ADD, REPLACE, BEAT };
 
     // EventType should be instantiated for magic_enum to work
     static_assert(std::to_underlying(EventType::CANCEL) == 0);
     using EventTypeStorage = boost::container::static_vector<EventType, magic_enum::enum_count<EventType>()>;
 
     void generate_event_quiet_state() {
-      EventTypeStorage order_types;
-      size_t active_orders_count = order_storage_.active_orders().size();
-      if (active_orders_count > min_active_orders_by_security_) {
-        order_types.push_back(EventType::CANCEL);
-        order_types.push_back(EventType::SMALL_BEAT);
+      if (!refill_queue_.empty()) {
+        auto [direction, price, amount] = refill_queue_.back();
+        refill_queue_.pop_back();
+        interface_.send_order_add_request(
+            ClientID{0}, security_id_, OrderTimeInForce::LIMIT, OrderType::LIMIT, direction, price, amount);
+      } else {
+        EventTypeStorage order_types;
+        size_t active_orders_count = order_storage_.active_orders().size();
+        if (active_orders_count > min_active_orders_by_security_) {
+          order_types.push_back(EventType::CANCEL);
+        }
+        if (active_orders_count > min_active_orders_by_security_ + max_beat_filled_orders_count_) {
+          order_types.push_back(EventType::BEAT);
+        }
+        if (active_orders_count < max_active_orders_by_security_) {
+          order_types.push_back(EventType::ADD);
+        }
+        if (active_orders_count > 0) {
+          order_types.push_back(EventType::REPLACE);
+        }
+        CHECK(order_types.size() > 0, "It's impossible to generate any order type");
+        EventType order_type = order_types[random_.rand_int<size_t>(0, order_types.size() - 1)];
+        generate_event_by_order_type(order_type);
       }
-      if (active_orders_count < max_active_orders_by_security_) {
-        order_types.push_back(EventType::ADD);
-      }
-      if (active_orders_count > 0) {
-        order_types.push_back(EventType::REPLACE);
-      }
-      CHECK(order_types.size() > 0, "It's impossible to generate any order type");
-      EventType order_type = order_types[random_.rand_int<size_t>(0, order_types.size() - 1)];
-      generate_event_by_order_type(order_type);
 
       ++current_state_sent_orders_count_;
       if (current_state_sent_orders_count_ >= max_quiet_state_sent_orders_count_) {
@@ -174,6 +186,7 @@ private:
 
     void switch_to_shift_state() {
       state_ = State::SHIFT;
+      refill_queue_.clear();
 
       enum class ShiftDirection : std::uint8_t { UP, DOWN };
 
@@ -208,6 +221,7 @@ private:
     }
 
     void switch_to_quiet_state() {
+      refill_queue_.clear();
       state_ = State::QUIET;
       current_state_sent_orders_count_ = 0;
       active_orders_to_replenish_ = 0;
@@ -229,10 +243,6 @@ private:
         }
         case EventType::BEAT: {
           generate_beat_request(max_beat_filled_orders_count_);
-          break;
-        }
-        case EventType::SMALL_BEAT: {
-          generate_beat_request(1);
           break;
         }
         default: {
@@ -318,6 +328,9 @@ private:
         }
         price = order_iterator->price;
         amount += order_iterator->quantity;
+        if (state_ == State::QUIET) {
+          refill_queue_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
+        }
         filled_orders_count--;
         order_iterator++;
       }
@@ -417,8 +430,8 @@ private:
     using OrderStorage = GeneratorInterface::OrderStorage;
     using BookStorage = GeneratorInterface::BookStorage;
 
-    const OrderStorage& order_storage_;
-    const BookStorage& book_storage_;
+    OrderStorage& order_storage_;
+    BookStorage& book_storage_;
 
     const uint32_t min_active_orders_by_security_;
     const uint32_t max_active_orders_by_security_;
@@ -436,6 +449,8 @@ private:
 
     size_t current_state_sent_orders_count_ = 0;
     size_t active_orders_to_replenish_ = 0;
+
+    std::vector<std::tuple<Direction, Price, Amount>> refill_queue_;
   };
 
   GeneratorInterface& interface_;
