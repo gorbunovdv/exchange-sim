@@ -26,7 +26,8 @@ public:
     uint32_t min_active_orders_by_security = config["min_active_orders_by_security"].as<std::uint32_t>();
     uint32_t max_active_orders_by_security = config["max_active_orders_by_security"].as<std::uint32_t>();
     uint32_t max_quiet_state_sent_orders_count = config["max_quiet_state_sent_orders_count"].as<std::uint32_t>();
-    uint32_t max_beat_filled_orders_count = config["max_beat_filled_orders_count"].as<std::uint32_t>();
+    uint32_t max_beat_filled_levels_count = config["max_beat_filled_levels_count"].as<std::uint32_t>();
+    uint32_t max_book_order_amount_in_lot_sizes = config["max_book_order_amount_in_lot_sizes"].as<std::uint32_t>();
     interface_.reserve(max_active_orders_by_security);
     CHECK(min_active_orders_by_security <= max_active_orders_by_security,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
@@ -42,7 +43,8 @@ public:
           min_active_orders_by_security,
           max_active_orders_by_security,
           max_quiet_state_sent_orders_count,
-          max_beat_filled_orders_count,
+          max_beat_filled_levels_count,
+          max_book_order_amount_in_lot_sizes,
           random_);
     }
   }
@@ -66,7 +68,8 @@ private:
         const uint32_t min_active_orders_by_security,
         const uint32_t max_active_orders_by_security,
         const uint32_t max_quiet_state_sent_orders_count,
-        const uint32_t max_beat_filled_orders_count,
+        const uint32_t max_beat_filled_levels_count,
+        const uint32_t max_book_order_amount_in_lot_sizes,
         Random& random):
         LoggableClass("PerSecurityGenerator_" + std::string(security.symbol.value())),
         interface_(interface),
@@ -77,14 +80,15 @@ private:
         min_active_orders_by_security_(min_active_orders_by_security),
         max_active_orders_by_security_(max_active_orders_by_security),
         max_quiet_state_sent_orders_count_(max_quiet_state_sent_orders_count),
-        max_beat_filled_orders_count_(max_beat_filled_orders_count),
-        max_book_order_amount_([](const Security& security, uint32_t max_beat_filled_orders_count) {
-          Amount current(ceil(security.max_amount.value() / (max_beat_filled_orders_count + 1)));
-          return current - (current % security.lot_size);
-        }(security_, max_beat_filled_orders_count_)),
+        max_beat_filled_levels_count_(max_beat_filled_levels_count),
+        max_book_order_amount_(max_book_order_amount_in_lot_sizes * security_.lot_size),
         random_(random),
         middle_price_(security_.low_price) {
-      refills_.reserve(max_beat_filled_orders_count_);
+      CHECK(max_book_order_amount_ <= security_.max_amount,
+          "Max book order amount must be less than or equal to max_amount, max_book_order_amount={} "
+          "security.max_amount={}",
+          static_cast<double>(max_book_order_amount_.value()),
+          static_cast<double>(security_.max_amount.value()));
       CHECK(max_book_order_amount_ > security_.lot_size,
           "max_book_order_amount must be greater than lot_size,"
           " max_book_order_amount_={}"
@@ -135,7 +139,7 @@ private:
         if (active_orders_count > min_active_orders_by_security_) {
           order_types.push_back(EventType::CANCEL);
         }
-        if (active_orders_count > min_active_orders_by_security_ + max_beat_filled_orders_count_) {
+        if (active_orders_count > min_active_orders_by_security_) {
           order_types.push_back(EventType::BEAT);
         }
         if (active_orders_count < max_active_orders_by_security_) {
@@ -241,7 +245,7 @@ private:
           break;
         }
         case EventType::BEAT: {
-          generate_beat_request(max_beat_filled_orders_count_);
+          generate_beat_request(max_beat_filled_levels_count_);
           break;
         }
         default: {
@@ -302,8 +306,8 @@ private:
     }
 
     template<Direction direction>
-    std::tuple<Price, Amount> generate_beat_price_amount(size_t max_filled_orders_count) {
-      size_t filled_orders_count = random_.rand_int<size_t>(0, max_filled_orders_count);
+    std::tuple<Price, Amount> generate_beat_price_amount(size_t max_filled_levels_count) {
+      size_t filled_levels_count = random_.rand_int<size_t>(0, max_filled_levels_count);
       auto& half_book = book_storage_.container().template half<direction>();
 
       Amount amount{0};
@@ -314,9 +318,10 @@ private:
           security_.symbol.value().c_str(),
           format_as(direction));
       auto order_iterator = level_iterator->second.begin();
-      while (filled_orders_count > 0 && level_iterator != half_book.end()) {
+      while (filled_levels_count > 0 && level_iterator != half_book.end()) {
         if (order_iterator == level_iterator->second.end()) {
           level_iterator++;
+          filled_levels_count--;
           if (level_iterator != half_book.end()) {
             order_iterator = level_iterator->second.begin();
           }
@@ -330,7 +335,6 @@ private:
         if (state_ == State::QUIET) {
           refills_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
         }
-        filled_orders_count--;
         order_iterator++;
       }
       while (level_iterator != half_book.end() && order_iterator == level_iterator->second.end()) {
@@ -341,13 +345,26 @@ private:
       }
       if (level_iterator != half_book.end() && order_iterator != level_iterator->second.end()) {
         price = order_iterator->price;
-        if (amount == Amount{0}) {
-          amount += random_.rand_decimal(security_.lot_size, order_iterator->quantity, security_.lot_size);
-        } else {
+        Amount deducted_amount = [&](Amount quantity) {
+          if (amount == Amount{0}) {
+            return random_.rand_decimal(
+                security_.lot_size, std::min(quantity, security_.max_amount), security_.lot_size);
+          }
           Amount max_amount = security_.max_amount - amount;
-          max_amount = std::min(max_amount, order_iterator->quantity - security_.lot_size);
-          amount += random_.rand_decimal(Amount{0}, max_amount, security_.lot_size);
+          max_amount = std::min(max_amount, quantity - security_.lot_size);
+          return random_.rand_decimal(Amount{0}, max_amount, security_.lot_size);
+        }(std::accumulate(order_iterator, level_iterator->second.end(), Amount{0}, [](Amount acc, const auto& order) {
+          return acc + order.quantity;
+        }));
+        Amount amount_left = deducted_amount;
+        while (order_iterator != level_iterator->second.end() && amount_left >= order_iterator->quantity) {
+          amount_left -= order_iterator->quantity;
+          if (state_ == State::QUIET) {
+            refills_.emplace_back(direction, order_iterator->price, order_iterator->quantity);
+          }
+          order_iterator++;
         }
+        amount += deducted_amount;
       }
       CHECK(price.has_value(), "Nullopt price during generation");
       CHECK(amount > Amount{0}, "Zero amount during generation");
@@ -371,11 +388,11 @@ private:
       return possible_directions[random_.rand_int<size_t>(0, possible_directions.size() - 1)];
     }
 
-    void generate_beat_request(uint32_t max_beat_filled_orders_count) {
+    void generate_beat_request(uint32_t max_beat_filled_levels_count) {
       Direction direction = generate_beat_direction();
       auto [price, amount] = direction == Direction::BUY ?
-          generate_beat_price_amount<Direction::SELL>(max_beat_filled_orders_count) :
-          generate_beat_price_amount<Direction::BUY>(max_beat_filled_orders_count);
+          generate_beat_price_amount<Direction::SELL>(max_beat_filled_levels_count) :
+          generate_beat_price_amount<Direction::BUY>(max_beat_filled_levels_count);
       generate_exact_beat_request(direction, price, amount);
     }
 
@@ -435,7 +452,7 @@ private:
     const uint32_t min_active_orders_by_security_;
     const uint32_t max_active_orders_by_security_;
     const uint32_t max_quiet_state_sent_orders_count_;
-    const uint32_t max_beat_filled_orders_count_;
+    const uint32_t max_beat_filled_levels_count_;
 
     const Amount max_book_order_amount_;
 
