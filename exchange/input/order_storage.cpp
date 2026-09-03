@@ -15,6 +15,7 @@ void OrderStorage::handle(const request::OrderAddRequest& request) {
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .security_id = request.security_id,
+          .direction = request.direction,
           .state = Order::State::SENT,
           .filled = false,
       });
@@ -27,7 +28,7 @@ void OrderStorage::handle(const request::OrderCancelRequest& request) {
       request.client_id.value(),
       request.client_order_id.value());
   ++pending_transactions_count_;
-  active_orders_.erase({order->second.client_id, order->second.client_order_id});
+  active_orders_.erase(order->second.direction, {order->second.client_id, order->second.client_order_id});
   order->second.state = Order::State::CANCEL_SENT;
 }
 
@@ -38,7 +39,7 @@ void OrderStorage::handle(const request::OrderReplaceRequest& request) {
       request.client_id.value(),
       request.client_order_id.value());
   ++pending_transactions_count_;
-  active_orders_.erase({order->second.client_id, order->second.client_order_id});
+  active_orders_.erase(order->second.direction, {order->second.client_id, order->second.client_order_id});
   order->second.state = Order::State::REPLACE_SENT;
 }
 
@@ -67,7 +68,8 @@ void OrderStorage::handle(const report::OrderBookEntry& report) {
       "Order must be accepted to become active, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
-  active_orders_.emplace({order->second.client_id, order->second.client_order_id}, order->second);
+  active_orders_.emplace(
+      order->second.direction, std::pair{order->second.client_id, order->second.client_order_id}, order->second);
   pending_transactions_count_--;
   order->second.state = Order::State::ACTIVE;
 }
@@ -95,7 +97,7 @@ void OrderStorage::handle(const report::OrderFilled& report) {
   if (order->second.state == Order::State::ACCEPTED) {
     pending_transactions_count_--;
   } else if (order->second.state == Order::State::ACTIVE) {
-    active_orders_.erase({order->second.client_id, order->second.client_order_id});
+    active_orders_.erase(order->second.direction, {order->second.client_id, order->second.client_order_id});
   }
   order->second.filled = true;
   if (!equal_to_one_of(order->second.state, Order::State::CANCEL_SENT, Order::State::REPLACE_SENT)) {
@@ -121,7 +123,8 @@ void OrderStorage::handle(const report::CancellationRejected& report) {
       report.client_order_id.value());
   pending_transactions_count_--;
   if (!order->second.filled) {
-    active_orders_.emplace({order->second.client_id, order->second.client_order_id}, order->second);
+    active_orders_.emplace(
+        order->second.direction, std::pair{order->second.client_id, order->second.client_order_id}, order->second);
     order->second.state = Order::State::ACTIVE;
   } else {
     orders_.erase(order);
@@ -140,6 +143,7 @@ void OrderStorage::handle(const report::ReplacementAccepted& report) {
           .client_id = report.client_id,
           .client_order_id = report.client_replacement_id,
           .security_id = report.security_id,
+          .direction = report.direction,
           .state = Order::State::ACCEPTED,
           .filled = false,
       });
@@ -153,7 +157,8 @@ void OrderStorage::handle(const report::ReplacementRejected& report) {
       report.client_order_id.value());
   pending_transactions_count_--;
   if (!order->second.filled) {
-    active_orders_.emplace({order->second.client_id, order->second.client_order_id}, order->second);
+    active_orders_.emplace(
+        order->second.direction, std::pair{order->second.client_id, order->second.client_order_id}, order->second);
     order->second.state = Order::State::ACTIVE;
   } else {
     orders_.erase(order);
