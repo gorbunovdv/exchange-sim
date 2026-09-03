@@ -37,6 +37,7 @@ concept HalfBook = BookRecord<OrderType> && requires(std::remove_cvref_t<HalfBoo
   { half_book.begin()->first } -> std::same_as<const Price&>;
   { half_book.begin()->second } -> BookLevel<OrderType>;
   { half_book.erase(half_book.begin()) };
+  half_book.reserve(size_t{});
 };
 
 template<typename BookContainerType>
@@ -65,6 +66,7 @@ concept BookContainer = BookLevel<typename std::remove_cvref_t<BookContainerType
       {
         book_container.extract_order(order.id())
       } -> std::same_as<std::optional<typename std::remove_cvref_t<BookContainerType>::OrderType>>;
+      book_container.reserve(size_t{});
     };
 
 }  // namespace exchange_sim

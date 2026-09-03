@@ -11,7 +11,7 @@
     {
       "symbol": "EURUSD",
       "tick_size": 1,
-      "lot_size": 100,
+      "lot_size": 1,
       "low_price": 1.0,
       "high_price": 1000.0,
       "max_amount": 1000
@@ -19,10 +19,10 @@
     {
       "symbol": "USDJPY",
       "tick_size": 0.01,
-      "lot_size": 1000,
+      "lot_size": 0.1,
       "low_price": 100,
       "high_price": 100000,
-      "max_amount": 10000
+      "max_amount": 100000
     }
   ],
   "logging": {
@@ -34,7 +34,10 @@
     "seed": 0,
     "min_active_orders_by_security": 500,
     "max_active_orders_by_security": 10000,
-    "max_pending_transactions": 300
+    "max_pending_transactions": 300,
+    "max_quiet_state_sent_orders_count": 10000,
+    "max_beat_filled_levels_count": 4,
+    "max_book_order_amount_in_lot_sizes": 15
   },
   "journaling": {
     "market_events": "./results/market_data.bin",

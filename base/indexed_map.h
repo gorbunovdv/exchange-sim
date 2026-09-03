@@ -92,6 +92,11 @@ public:
   Value& operator[](size_t index) { return key_value_pairs_[index].second; }
   const Value& operator[](size_t index) const { return key_value_pairs_[index].second; }
 
+  void reserve(size_t size) {
+    map_.reserve(size);
+    key_value_pairs_.reserve(size);
+  }
+
 private:
   void erase_at(size_t index) {
     map_.erase(key_value_pairs_[index].first);

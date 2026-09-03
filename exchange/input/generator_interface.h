@@ -90,6 +90,8 @@ public:
 
   bool asked_to_stop() const { return stop_token_.stop_requested(); }
 
+  void reserve(size_t size) { (Skills::reserve(size), ...); }
+
 private:
   template<template<typename> typename, typename, typename>
   friend class OrderGeneratorWrapper;

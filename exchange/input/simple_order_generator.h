@@ -24,6 +24,7 @@ public:
       max_active_orders_by_security_(config["max_active_orders_by_security"].as<std::uint32_t>()),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       random_(config["seed"].as<std::uint32_t>()) {
+    interface_.reserve(max_active_orders_by_security_);
     CHECK(min_active_orders_by_security_ <= max_active_orders_by_security_,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security_,
@@ -85,8 +86,9 @@ private:
     const auto& active_orders = interface_.order_storage().at(security_id).active_orders();
     auto order_to_cancel_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
 
-    interface_.send_order_cancel_request(
-        ClientID{0}, active_orders[order_to_cancel_index].client_order_id, security_id);
+    interface_.send_order_cancel_request(active_orders[order_to_cancel_index].client_id,
+        active_orders[order_to_cancel_index].client_order_id,
+        security_id);
   }
 
   void generate_replace_order_request(SecurityID security_id) {
@@ -103,7 +105,7 @@ private:
 
     auto direction = random_.rand_enum<Direction>();
 
-    interface_.send_order_replace_request(ClientID{0},
+    interface_.send_order_replace_request(active_orders[order_to_replace_index].client_id,
         active_orders[order_to_replace_index].client_order_id,
         security_id,
         direction,

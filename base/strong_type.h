@@ -3,6 +3,7 @@
 #include <concepts>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -46,6 +47,8 @@ private:
 };
 
 namespace skills {
+
+struct NumericLimits {};
 
 struct EqualTo {
   template<typename T>
@@ -140,5 +143,21 @@ template<typename Underlying, typename Tag, typename... Skills>
 struct std::hash<exchange_sim::StrongType<Underlying, Tag, Skills...>> {
   size_t operator()(const exchange_sim::StrongType<Underlying, Tag, Skills...>& value) const noexcept {
     return std::hash<Underlying>()(value.value());
+  }
+};
+
+template<typename Underlying, typename Tag, typename... Skills>
+  requires std::derived_from<exchange_sim::StrongType<Underlying, Tag, Skills...>, exchange_sim::skills::NumericLimits>
+struct std::numeric_limits<exchange_sim::StrongType<Underlying, Tag, Skills...>> {
+  static constexpr exchange_sim::StrongType<Underlying, Tag, Skills...> min() {
+    return exchange_sim::StrongType<Underlying, Tag, Skills...>{std::numeric_limits<Underlying>::min()};
+  }
+
+  static constexpr exchange_sim::StrongType<Underlying, Tag, Skills...> max() {
+    return exchange_sim::StrongType<Underlying, Tag, Skills...>{std::numeric_limits<Underlying>::max()};
+  }
+
+  static constexpr exchange_sim::StrongType<Underlying, Tag, Skills...> lowest() {
+    return exchange_sim::StrongType<Underlying, Tag, Skills...>{std::numeric_limits<Underlying>::lowest()};
   }
 };

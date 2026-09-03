@@ -1,33 +1,24 @@
+#pragma once
 #include "base/callback_receiver.h"
+#include "base/callback_sink.h"
 #include "base/forward_sink.h"
-#include "base/journal.h"
-#include "base/logging/quill_sinks.h"
-#include "base/run.h"
+#include "base/threading/runtime.h"
 
 #include "domain/generate_securities.h"
-#include "domain/security.h"
+#include "domain/security_storage.h"
 
-#include "exchange/book_containers/stl_book_container.h"
-#include "exchange/domain/engine_events.h"
-#include "exchange/input/debug_orders_skill.h"
-#include "exchange/input/generator_interface.h"
-#include "exchange/input/maintain_book_skill.h"
+#include "exchange/domain/market_events.h"
+#include "exchange/domain/reports.h"
+#include "exchange/domain/requests.h"
 #include "exchange/input/order_generator_wrapper.h"
-#include "exchange/input/simple_order_generator.h"
-#include "exchange/input/store_orders_skill.h"
-#include "exchange/matching/matching_engine.h"
-#include "exchange/output/exchange_dispatcher.h"
 
-#include <cpptrace/cpptrace.hpp>
-#include <cpptrace/from_current.hpp>
-#include <quill/Backend.h>
-
-#include <iostream>
+#include <glaze/glaze.hpp>
 
 namespace exchange_sim {
 
-namespace {
-
+template<template<typename> typename OrderGenerator,
+    template<typename> typename MatchingEngine,
+    template<typename, typename> typename ExchangeDispatcher>
 void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
   dedicated_core.pin_thread("run_single_threaded_callback_app");
@@ -66,21 +57,16 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
 
-  CallbackReceiver<request::RequestType, MatchingEngine<StlL3BookContainer, ExchangeDispatcherSinkType>>
-      matching_engine(config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
+  CallbackReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine(
+      config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
 
-  using MatchingEngineSinkType = std::remove_cvref_t<decltype(matching_engine.get_sink())>;
-
-  OrderGeneratorWrapper<SimpleOrderGenerator,
-      GeneratorInterface<MatchingEngineSinkType, generator_interface_skills::StoreOrders>,
-      MatchingEngineSinkType>
-      order_generator(runtime->stop_token(),
-          security_storage,
-          request_journal,
-          market_data_journal,
-          report_journal,
-          matching_engine.get_sink(),
-          config["order_generator"]);
+  OrderGenerator order_generator(runtime->stop_token(),
+      security_storage,
+      request_journal,
+      market_data_journal,
+      report_journal,
+      matching_engine.get_sink(),
+      config["order_generator"]);
 
   MarketDataInternalSinkType market_data_generator_sink_callback(
       [&order_generator](market_events::EventType&& snapshot) { order_generator.process(snapshot); });
@@ -93,31 +79,4 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   order_generator.run();
 }
 
-}  // namespace
-
 }  // namespace exchange_sim
-
-using namespace exchange_sim;
-
-int main(int argc, char* argv[]) {
-  int exit_code = 0;
-  CPPTRACE_TRY {
-    const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
-    run_single_threaded_callback_app(runtime, config);
-    quill::Backend::stop();
-  }
-  CPPTRACE_CATCH(...) {
-    try {
-      throw;
-    } catch (const std::exception& e) {
-      std::cerr << "Exception occurred: " << e.what() << '\n';
-      exit_code = 1;
-    } catch (...) {
-      std::cerr << "Unknown exception occurred" << '\n';
-      exit_code = 1;
-    }
-    std::cerr << "\nStacktrace:\n";
-    cpptrace::from_current_exception().print_with_snippets();
-  }
-  return exit_code;
-}
