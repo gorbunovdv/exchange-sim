@@ -8,11 +8,15 @@ There are currently two order generators implemented: `SimpleOrderGenerator` and
 all parameters at random: order type (add/replace/cancel), security, price, quantity and so on. Although it's simple, it's a good starting point 
 and it's good for basic testing of `MatchingEngine`.
 
+![Simple order generation visualization](assets/visualization_simple_slow.gif)
+
 ## ShiftOrderGenerator
 
 `ShiftOrderGenerator` is an order generator that tries to resemble real market orders. The goal of this generator would be to simulate 
 actual stages when prices do not change and shifts of prices during the trading. It's a state machine consisting of three stages:
 `QUIET`, `REPLENISH` and `SHIFT`. The initial starting state is `SHIFT` with an empty order book. Each security has its own current state and book.
+
+![Shift order generation visualization](assets/visualization_shift_slow.gif)
 
 ### SHIFT
 
@@ -44,4 +48,3 @@ Beat is generated using an existing order book. It selects direction randomly (o
 selects the number of levels to be fully filled and generates the amount so that these orders could be fully filled by beat. The level after the last is beat
 by amount that doesn't reduce the level to none.
 Although future beats are planned to be using both replace and add orders, currently only add orders are supported because of the design of OrderStorage.
-
