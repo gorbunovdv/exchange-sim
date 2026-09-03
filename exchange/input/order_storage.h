@@ -79,6 +79,12 @@ private:
                                 std::forward_like<decltype(self)>(self.orders_)[Direction::SELL][index - buy_size];
     }
 
+    void reserve(size_t size) {
+      for (auto& container : orders_) {
+        container.reserve(size);
+      }
+    }
+
   private:
     magic_enum::containers::array<Direction, ActiveOrderContainer> orders_;
   };
