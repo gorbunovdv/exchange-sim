@@ -35,6 +35,8 @@ public:
 
   const auto& container() const { return book_container_; }
 
+  void reserve(size_t size) { book_container_.reserve(size); }
+
 private:
   struct ActiveOrder {
     ExchangeOrderID order_id;
@@ -53,6 +55,8 @@ private:
 template<template<typename> typename BookContainerType>
 class MaintainBook {
 public:
+  using BookStorage = exchange_sim::generator_interface_skills::BookStorage<BookContainerType>;
+
   explicit MaintainBook(const SecurityStorage& security_storage):
       security_storage_(security_storage), book_storage_(security_storage_.size()) {}
 
@@ -73,9 +77,15 @@ public:
 
   const auto& book_storage() const { return book_storage_; }
 
+  void reserve(size_t size) {
+    for (auto& storage : book_storage_) {
+      storage.reserve(size);
+    }
+  }
+
 private:
   const SecurityStorage& security_storage_;
-  StrongTypeIndexedVector<SecurityID, BookStorage<BookContainerType>> book_storage_;
+  StrongTypeIndexedVector<SecurityID, BookStorage> book_storage_;
 };
 
 }  // namespace exchange_sim::generator_interface_skills

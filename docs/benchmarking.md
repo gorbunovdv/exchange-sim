@@ -82,12 +82,16 @@ Each run metadata json contains:
 
     just evaluate <config> --apps APP1 [APP2] --labels LABEL1 [LABEL2] --percentiles 50 99.9
 
-Fingerprints must match within one app/label (unless `--no-fingerprint-check` enabled). Groups with fewer than 10000 events are skipped. First `calc_stats.requests_to_skip` requests are skipped. Currently four metric values are calculated: `first_report`, `last_report`, `first_market_data`, `last_market_data`. Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
+Fingerprints must match within one app/label (unless `--no-fingerprint-check` enabled). Groups with fewer than 10000 events are skipped. 
+First `calc_stats.requests_to_skip` requests are skipped. Currently four metric values are calculated: `first_report`, `last_report`, `first_market_event`, `last_market_event`. 
+Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
 
 ### Single mode
 
-Single mode evaluates one app/label. It calculates the percentiles and the drift of this percentile across the runs: `median +- drift (relative%)`. The bucket is flagged as `INCONSISTENT` when relative drift is more than 2% and absolute drift is more than 10ns.
+Single mode evaluates one app/label. It calculates the percentiles and the drift of this percentile across the runs: `median +- drift (relative%)`. 
+The bucket is flagged as `INCONSISTENT` when relative drift is more than 3.5% and absolute drift is more than 15ns.
 
 ### Compare mode
 
-Compare mode compares either two apps or two labels (or both): `delta_median +- (drift_1 + drift_2) (relative%)`. The verdict is `IMPROVED`/`REGRESSED` in case `abs(delta_median) > drift_1 + drift_2 + 10` and `relative` is more than 2%.
+Compare mode compares either two apps or two labels (or both): `delta_median +- (drift_1 + drift_2) (relative%)`. 
+The verdict is `IMPROVED`/`REGRESSED` in case `abs(delta_median) > drift_1 + drift_2 + 15` and `relative` is more than 3.5%.

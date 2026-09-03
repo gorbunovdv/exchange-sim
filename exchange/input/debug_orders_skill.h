@@ -31,6 +31,8 @@ public:
   void handle_report(const report::CancellationRejected& report);
   void handle_report(const report::ReplacementAccepted& report);
   void handle_report(const report::ReplacementRejected& report);
+
+  void reserve(size_t) {}
 };
 
 }  // namespace exchange_sim::generator_interface_skills

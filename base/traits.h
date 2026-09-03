@@ -1,4 +1,5 @@
 #pragma once
+#include <concepts>
 #include <type_traits>
 
 namespace exchange_sim {
@@ -31,5 +32,8 @@ using object_method_argument_t = object_method_argument<T>::type;
 
 template<typename Callable>
 using callable_argument_t = object_method_argument_t<decltype(&std::remove_cvref_t<Callable>::operator())>;
+
+template<typename Derived, typename... Bases>
+constexpr bool derived_from_all = (std::derived_from<Derived, Bases> && ...);
 
 }  // namespace exchange_sim

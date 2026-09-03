@@ -5,6 +5,8 @@ ROOT_DIR := justfile_directory()
 PATH := ROOT_DIR + "/.venv/bin:" + env_var("PATH")
 CPU_COUNT := num_cpus()
 
+import? 'extra/Justfile'
+
 default:
     @just --list
 
@@ -73,6 +75,9 @@ lint-from-scratch preset='clang-debug':
 
 run *args:
     python3 ./scripts/run_isolated.py {{ args }}
+
+run-one *args:
+    python3 ./scripts/run_one.py {{ args }}
 
 act:
     gh act --container-architecture linux/amd64

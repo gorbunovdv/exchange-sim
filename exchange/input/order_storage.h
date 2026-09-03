@@ -40,6 +40,11 @@ public:
 
   const auto& active_orders() const { return active_orders_; }
 
+  void reserve(size_t size) {
+    orders_.reserve(size);
+    active_orders_.reserve(size);
+  }
+
 private:
   using OrderContainer = std::unordered_map<std::pair<ClientID, ClientOrderID>, Order>;
   using ActiveOrderContainer = IndexedMap<std::pair<ClientID, ClientOrderID>, Order>;
