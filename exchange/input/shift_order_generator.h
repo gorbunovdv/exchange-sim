@@ -5,6 +5,7 @@
 #include "base/traits.h"
 
 #include "exchange/input/maintain_book_skill.h"
+#include "exchange/input/pending_transactions_skill.h"
 #include "exchange/input/store_orders_skill.h"
 
 #include <boost/container/static_vector.hpp>
@@ -14,6 +15,7 @@ namespace exchange_sim {
 
 template<template<typename> typename BookContainerType, typename GeneratorInterface>
   requires(derived_from_all<GeneratorInterface,
+              generator_interface_skills::PendingTransactions,
               generator_interface_skills::StoreOrders,
               generator_interface_skills::MaintainBook<BookContainerType>>)
 class ShiftOrderGenerator : public LoggableClass, NonCopyable, NonMoveable {

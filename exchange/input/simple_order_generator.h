@@ -2,11 +2,13 @@
 
 #include "base/logging/loggable_class.h"
 #include "base/random.h"
+#include "base/traits.h"
 
 #include "domain/security.h"
 
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
+#include "exchange/input/pending_transactions_skill.h"
 #include "exchange/input/store_orders_skill.h"
 
 #include <glaze/glaze.hpp>
@@ -14,7 +16,9 @@
 namespace exchange_sim {
 
 template<typename GeneratorInterface>
-  requires(std::derived_from<GeneratorInterface, generator_interface_skills::StoreOrders>)
+  requires(derived_from_all<GeneratorInterface,
+      generator_interface_skills::PendingTransactions,
+      generator_interface_skills::StoreOrders>)
 class SimpleOrderGenerator : public LoggableClass {
 public:
   explicit SimpleOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
