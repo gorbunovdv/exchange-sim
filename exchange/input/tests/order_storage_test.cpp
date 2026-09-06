@@ -237,14 +237,7 @@ class OrderStorageTransitionTest : public ::testing::TestWithParam<TransitionTes
 TEST_P(OrderStorageTransitionTest, TransitionApplication) {
   auto expect_storage = [](const OrderStorage& storage, const ExpectedOrderStorage& expected) {
     size_t active_orders = (expected.order.has_value() ? (expected.order.value().state == Order::State::ACTIVE) : 0);
-    size_t pending_transactions = (expected.order.has_value() ? equal_to_one_of(expected.order.value().state,
-                                                                    Order::State::SENT,
-                                                                    Order::State::ACCEPTED,
-                                                                    Order::State::CANCEL_SENT,
-                                                                    Order::State::REPLACE_SENT) :
-                                                                0);
     EXPECT_EQ(active_orders, storage.active_orders().size());
-    EXPECT_EQ(pending_transactions, storage.pending_transactions());
     if (expected.order) {
       ASSERT_TRUE(storage.orders().size() == 1);
       const auto& order = storage.orders().begin()->second;

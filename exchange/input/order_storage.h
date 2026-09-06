@@ -34,8 +34,6 @@ public:
   void handle(const report::ReplacementAccepted& report);
   void handle(const report::ReplacementRejected& report);
 
-  size_t pending_transactions() const { return pending_transactions_count_; }
-
   const auto& orders() const { return orders_; }
 
   const auto& active_orders() const { return active_orders_; }
@@ -51,7 +49,6 @@ private:
 
   OrderContainer::iterator find_order(ClientID client_id, ClientOrderID client_order_id);
 
-  size_t pending_transactions_count_ = 0;
   OrderContainer orders_;
   ActiveOrderContainer active_orders_;
 };

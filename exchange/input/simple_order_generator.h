@@ -35,7 +35,7 @@ public:
   }
 
   void generate_event() {
-    if (interface_.pending_transactions() > max_pending_transactions_) {
+    if (interface_.pending_transactions() >= max_pending_transactions_) {
       return;
     }
     if (auto it = std::ranges::find_if(interface_.order_storage(),
