@@ -24,7 +24,7 @@ public:
     std::optional<std::filesystem::path> path;
     quill::LogLevel log_level;
     quill::PatternFormatterOptions format;
-    CpuID cpu_id;
+    std::optional<CpuID> cpu_id;
   };
 
   static void init(const LoggingConfig& config) { get_or_create(&config); }

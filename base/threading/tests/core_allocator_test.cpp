@@ -5,12 +5,12 @@
 using namespace exchange_sim;
 
 TEST(CoreAllocator, EmptyAllocatorTest) {
-  CoreAllocator allocator(CpuID{0}, {});
+  CoreAllocator allocator(false, CpuID{0}, {});
   EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::SHARED);
 }
 
 TEST(CoreAllocator, ReturnCoreBackToAllocator) {
-  CoreAllocator allocator(CpuID{0}, {CpuID{1}});
+  CoreAllocator allocator(false, CpuID{0}, {CpuID{1}});
   {
     auto lease = allocator.lease_core(CoreType::DEDICATED);
     EXPECT_EQ(lease.type(), CoreType::DEDICATED);

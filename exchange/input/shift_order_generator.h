@@ -404,7 +404,7 @@ private:
       enum class BeatOrderType : uint8_t { ADD, REPLACE };
 
       boost::container::static_vector<BeatOrderType, 2> order_types{BeatOrderType::ADD};
-      if (order_storage_.active_orders().size() > min_active_orders_by_security_) {
+      if (order_storage_.active_orders().orders_by_direction(direction).size() > min_active_orders_by_security_) {
         order_types.push_back(BeatOrderType::REPLACE);
       }
 
