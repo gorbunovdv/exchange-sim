@@ -136,3 +136,10 @@ remove-label old_label config='./configs/dmitrys-ubuntu.json':
 
 rename-label old_label new_label config='./configs/dmitrys-ubuntu.json':
     just _rename-label "{{ old_label }}" "{{ new_label }}" "{{ ROOT_DIR }}/$(jq -r '.benchmark_path' {{ config }})"
+
+_generate-flow config timeout app requests_path generated_replay_path:
+    just run-one "{{ config }}" --app "{{ app }}" --timeout "{{ timeout }}"
+    cp -v "{{ requests_path }}" "{{ generated_replay_path }}"
+
+generate-flow config='./configs/dmitrys-ubuntu.json' timeout='120' app='shift_el_app':
+    just _generate-flow "{{ config }}" "{{ timeout }}" "{{ app }}" "{{ ROOT_DIR }}/$(jq -r '.journaling.requests' {{ config }})" "{{ ROOT_DIR }}/$(jq -r '.order_generator.generated_replay' {{ config }})"
