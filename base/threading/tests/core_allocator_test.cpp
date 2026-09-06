@@ -7,6 +7,7 @@ using namespace exchange_sim;
 TEST(CoreAllocator, EmptyAllocatorTest) {
   CoreAllocator allocator(CpuID{0}, {});
   EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::SHARED);
+  EXPECT_EQ(allocator.lease_core(CoreType::NONE).type(), CoreType::NONE);
 }
 
 TEST(CoreAllocator, ReturnCoreBackToAllocator) {
@@ -25,10 +26,5 @@ TEST(CoreAllocator, FallbackToNone) {
   CoreAllocator allocator(std::nullopt, {}, true);
   EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::NONE);
   EXPECT_EQ(allocator.lease_core(CoreType::SHARED).type(), CoreType::NONE);
-  EXPECT_EQ(allocator.lease_core(CoreType::NONE).type(), CoreType::NONE);
-}
-
-TEST(CoreAllocator, NoneWithoutCores) {
-  CoreAllocator allocator(std::nullopt, {}, false);
   EXPECT_EQ(allocator.lease_core(CoreType::NONE).type(), CoreType::NONE);
 }
