@@ -134,3 +134,42 @@ TEST(Run, BasicTest) {
   static constexpr std::string_view constLine2Prefix = "INFO root Initialized time backend, tsc_hw: ";
   ASSERT_TRUE(lines[2].starts_with(constLine2Prefix));
 }
+
+TEST(Run, InitializeWithoutCorePinning) {
+  TemporaryDirectory directory("run");
+  TemporaryFile logs_file(directory, "logs");
+  TemporaryFile config_file(directory, "config");
+
+  auto config_file_path_string = config_file.path().string();
+  auto log_file_path_string = logs_file.path().string();
+
+  static constexpr std::string_view constJsonConfigFormat = R"custom_delimiter(
+    {{
+      "fallback_to_none": true,
+      "logging": {{
+        "type": "file",
+        "log_level": "info",
+        "path": "{}",
+        "format": "%(log_level) %(logger) %(message)"
+      }}
+    }}
+  )custom_delimiter";
+
+  std::string jsonConfig = std::vformat(constJsonConfigFormat, std::make_format_args(log_file_path_string));
+  std::ofstream(config_file.path()) << jsonConfig;
+
+  char* argv[] = {nullptr, config_file_path_string.data()};
+
+  auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + 2), true);
+  EXPECT_TRUE(config["fallback_to_none"].get_boolean());
+  EXPECT_EQ(runtime->core_allocator().lease_core(CoreType::SHARED).type(), CoreType::NONE);
+  EXPECT_EQ(runtime->core_allocator().lease_core(CoreType::DEDICATED).type(), CoreType::NONE);
+  EXPECT_EQ(runtime->core_allocator().lease_core(CoreType::NONE).type(), CoreType::NONE);
+
+  INFO("Logging without core pinning");
+  LoggingBackend::instance().get_logger()->flush_log();
+
+  std::string logs = read_file(logs_file.path());
+  EXPECT_TRUE(logs.starts_with("INFO root Initialized logging backend\n"));
+  EXPECT_TRUE(logs.ends_with("INFO root Logging without core pinning\n"));
+}

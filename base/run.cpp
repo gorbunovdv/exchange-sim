@@ -67,9 +67,8 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
           magic_enum::enum_cast<quill::LogLevel>(
               config["logging"]["log_level"].as<std::string>(), magic_enum::case_insensitive)),
       .format = quill::PatternFormatterOptions(config["logging"]["format"].as<std::string>()),
-      .cpu_id = !fallback_to_none ?
-          std::optional{runtime->core_allocator().lease_core(CoreType::SHARED).cpu_id()} :
-          std::nullopt,
+      .cpu_id = !fallback_to_none ? std::optional{runtime->core_allocator().lease_core(CoreType::SHARED).cpu_id()} :
+                                    std::nullopt,
   };
   LoggingBackend::init(logging_config);
   INFO("Initialized logging backend");

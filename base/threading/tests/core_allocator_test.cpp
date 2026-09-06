@@ -20,3 +20,15 @@ TEST(CoreAllocator, ReturnCoreBackToAllocator) {
   }
   EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::DEDICATED);
 }
+
+TEST(CoreAllocator, FallbackToNone) {
+  CoreAllocator allocator(true, std::nullopt, {});
+  EXPECT_EQ(allocator.lease_core(CoreType::DEDICATED).type(), CoreType::NONE);
+  EXPECT_EQ(allocator.lease_core(CoreType::SHARED).type(), CoreType::NONE);
+  EXPECT_EQ(allocator.lease_core(CoreType::NONE).type(), CoreType::NONE);
+}
+
+TEST(CoreAllocator, NoneWithoutCores) {
+  CoreAllocator allocator(false, std::nullopt, {});
+  EXPECT_EQ(allocator.lease_core(CoreType::NONE).type(), CoreType::NONE);
+}
