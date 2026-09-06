@@ -4,7 +4,7 @@ target_sources(abstract_order_generator PUBLIC
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
     FILES order_generator_wrapper.h order_storage.h simple_order_generator.h generator_interface.h
-        store_orders_skill.h debug_orders_skill.h maintain_book_skill.h shift_order_generator.h pending_transactions_skill.h
+        store_orders_skill.h debug_orders_skill.h maintain_book_skill.h pending_transactions_skill.h
 )
 
 add_executable(order_storage_test tests/order_storage_test.cpp)
@@ -25,4 +25,12 @@ target_sources(shift_order_generator INTERFACE
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
     FILES shift_order_generator.h
+)
+
+add_library(replay_order_generator INTERFACE)
+target_link_libraries(replay_order_generator INTERFACE abstract_order_generator)
+target_sources(replay_order_generator INTERFACE
+    FILE_SET HEADERS
+    BASE_DIRS ${PROJECT_SOURCE_DIR}
+    FILES replay_order_generator.h
 )

@@ -28,6 +28,9 @@ target_link_libraries(simple_el_app PUBLIC base run_single_threaded_event_loop_a
 add_executable(shift_el_app shift_el_app.cpp)
 target_link_libraries(shift_el_app PUBLIC base run_single_threaded_event_loop_app shift_order_generator matching exchange_dispatcher)
 
+add_executable(replay_el_app replay_el_app.cpp)
+target_link_libraries(replay_el_app PUBLIC base run_single_threaded_event_loop_app replay_order_generator matching exchange_dispatcher)
+
 add_executable(empty_app empty_app.cpp)
 target_link_libraries(empty_app PUBLIC base exchange_domain simple_order_generator matching exchange_dispatcher)
 
