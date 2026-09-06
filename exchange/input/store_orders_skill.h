@@ -17,8 +17,6 @@ public:
 
   const auto& order_storage() const { return order_storage_; }
 
-  size_t pending_transactions() const;
-
   template<typename RequestType>
   void handle_request(const RequestType& request);
 

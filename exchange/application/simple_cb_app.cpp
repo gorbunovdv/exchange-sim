@@ -6,6 +6,7 @@
 #include "exchange/application/run_single_threaded_callback_app.h"
 #include "exchange/book_containers/stl_book_container.h"
 #include "exchange/input/generator_interface.h"
+#include "exchange/input/pending_transactions_skill.h"
 #include "exchange/input/simple_order_generator.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
@@ -22,7 +23,9 @@ namespace {
 
 template<typename SinkType>
 using AppOrderGenerator = OrderGeneratorWrapper<SimpleOrderGenerator,
-    GeneratorInterface<SinkType, generator_interface_skills::StoreOrders>,
+    GeneratorInterface<SinkType,
+        generator_interface_skills::PendingTransactions,
+        generator_interface_skills::StoreOrders>,
     SinkType>;
 
 template<typename SinkType>

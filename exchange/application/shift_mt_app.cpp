@@ -8,6 +8,7 @@
 #include "exchange/input/generator_interface.h"
 #include "exchange/input/maintain_book_skill.h"
 #include "exchange/input/order_generator_wrapper.h"
+#include "exchange/input/pending_transactions_skill.h"
 #include "exchange/input/shift_order_generator.h"
 #include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
@@ -29,6 +30,7 @@ using AppShiftOrderGenerator = ShiftOrderGenerator<StlL3BookContainer, Generator
 template<typename SinkType>
 using AppOrderGenerator = OrderGeneratorWrapper<AppShiftOrderGenerator,
     GeneratorInterface<SinkType,
+        generator_interface_skills::PendingTransactions,
         generator_interface_skills::StoreOrders,
         generator_interface_skills::MaintainBook<StlL3BookContainer>>,
     SinkType>;

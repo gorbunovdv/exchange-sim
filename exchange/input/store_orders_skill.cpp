@@ -2,12 +2,6 @@
 
 namespace exchange_sim::generator_interface_skills {
 
-size_t StoreOrders::pending_transactions() const {
-  return std::ranges::fold_left(order_storage_, size_t{0}, [](auto current, const auto& order_storage) {
-    return current + order_storage.pending_transactions();
-  });
-}
-
 template<typename RequestType>
 void StoreOrders::handle_request(const RequestType& request) {
   if (security_storage_.has_security(request.security_id)) {
