@@ -29,6 +29,6 @@ TEST(CoreAllocator, FallbackToNone) {
 }
 
 TEST(CoreAllocator, NoneWithoutCores) {
-  CoreAllocator allocator(std::nullopt, {}, true);
+  CoreAllocator allocator(std::nullopt, {}, false);
   EXPECT_EQ(allocator.lease_core(CoreType::NONE).type(), CoreType::NONE);
 }
