@@ -26,7 +26,9 @@ namespace {
 
 template<typename SinkType>
 using AppOrderGenerator = OrderGeneratorWrapper<SimpleOrderGenerator,
-    GeneratorInterface<SinkType, generator_interface_skills::PendingTransactions, generator_interface_skills::StoreOrders>,
+    GeneratorInterface<SinkType,
+        generator_interface_skills::PendingTransactions,
+        generator_interface_skills::StoreOrders>,
     SinkType>;
 
 template<typename SinkType>

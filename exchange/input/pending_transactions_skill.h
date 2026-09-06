@@ -41,4 +41,4 @@ private:
   size_t pending_transactions_count_ = 0;
 };
 
-}  // namespace exchange_sim
+}  // namespace exchange_sim::generator_interface_skills
