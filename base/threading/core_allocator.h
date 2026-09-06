@@ -17,6 +17,7 @@ namespace exchange_sim {
 enum class CoreType : std::uint8_t {
   DEDICATED,
   SHARED,
+  NONE,
 };
 
 class CoreAllocator;
@@ -51,7 +52,7 @@ public:
 private:
   friend class CoreAllocator;
 
-  explicit CoreLease(CoreType core_type, CpuID cpu_id, CoreAllocator* core_manager):
+  explicit CoreLease(CoreType core_type, std::optional<CpuID> cpu_id, CoreAllocator* core_manager):
       core_type_(core_type), cpu_id_(cpu_id), allocator_(core_manager) {}
 
   CoreType core_type_;
@@ -62,14 +63,16 @@ private:
 class CoreAllocator : NonMoveable {
 public:
   struct Config {
-    CpuID shared_core;
+    bool fallback_to_none;
+    std::optional<CpuID> shared_core;
     std::vector<CpuID> dedicated_cores;
   };
 
-  explicit CoreAllocator(Config config): CoreAllocator(config.shared_core, std::move(config.dedicated_cores)) {}
+  explicit CoreAllocator(Config config):
+      CoreAllocator(config.fallback_to_none, config.shared_core, std::move(config.dedicated_cores)) {}
 
-  explicit CoreAllocator(CpuID shared_core, std::vector<CpuID> dedicated_cores):
-      shared_core_(shared_core), dedicated_cores_(std::move(dedicated_cores)) {}
+  explicit CoreAllocator(bool fallback_to_none, std::optional<CpuID> shared_core, std::vector<CpuID> dedicated_cores):
+      fallback_to_none_(fallback_to_none), shared_core_(shared_core), dedicated_cores_(std::move(dedicated_cores)) {}
 
   CoreLease lease_core(CoreType type);
 
@@ -77,7 +80,8 @@ public:
 
 private:
   mutable std::mutex mutex_;
-  CpuID shared_core_;
+  bool fallback_to_none_;
+  std::optional<CpuID> shared_core_;
   std::vector<CpuID> dedicated_cores_;
 };
 
