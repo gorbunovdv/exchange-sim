@@ -6,11 +6,9 @@
 #include "exchange/application/run_multi_threaded_app.h"
 #include "exchange/book_containers/stl_book_container.h"
 #include "exchange/input/generator_interface.h"
-#include "exchange/input/maintain_book_skill.h"
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/pending_transactions_skill.h"
-#include "exchange/input/shift_order_generator.h"
-#include "exchange/input/store_orders_skill.h"
+#include "exchange/input/replay_order_generator.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
 
@@ -24,15 +22,9 @@ namespace exchange_sim {
 
 namespace {
 
-template<typename GeneratorInterface>
-using AppShiftOrderGenerator = ShiftOrderGenerator<StlL3BookContainer, GeneratorInterface>;
-
 template<typename SinkType>
-using AppOrderGenerator = OrderGeneratorWrapper<AppShiftOrderGenerator,
-    GeneratorInterface<SinkType,
-        generator_interface_skills::PendingTransactions,
-        generator_interface_skills::StoreOrders,
-        generator_interface_skills::MaintainBook<StlL3BookContainer>>,
+using AppOrderGenerator = OrderGeneratorWrapper<ReplayOrderGenerator,
+    GeneratorInterface<SinkType, generator_interface_skills::PendingTransactions>,
     SinkType>;
 
 

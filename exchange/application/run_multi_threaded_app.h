@@ -94,7 +94,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     return market_data_generator_sink.consume(consumer) || report_generator_sink.consume(consumer);
   };
 
-  while (!stop_token.stop_requested()) {
+  while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
     if (!consume()) {
       order_generator.generate_event();
     }

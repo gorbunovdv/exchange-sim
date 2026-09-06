@@ -24,10 +24,11 @@ public:
   void process_report(const auto&) {}
 
   void generate_event() {
-    if (interface_.pending_transactions() > max_pending_transactions_) {
+    if (interface_.pending_transactions() >= max_pending_transactions_) {
       return;
     }
     if (current_request_ == replay_journal_.end()) {
+      interface_.inform_generator_stopped();
       return;
     }
     std::visit(
@@ -68,6 +69,7 @@ public:
                   request.client_replacement_id.value());
             }),
         current_request_->object);
+    current_request_++;
   }
 
 private:

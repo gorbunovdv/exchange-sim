@@ -60,7 +60,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   CallbackReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
 
-  OrderGenerator order_generator(runtime->stop_token(),
+  auto stop_token = runtime->stop_token();
+
+  OrderGenerator order_generator(stop_token,
       security_storage,
       request_journal,
       market_data_journal,
@@ -76,7 +78,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   market_data_generator_sink.set_sink(&market_data_generator_sink_callback);
   report_generator_sink.set_sink(&report_generator_sink_callback);
 
-  order_generator.run();
+  while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
+    order_generator.generate_event();
+  }
 }
 
 }  // namespace exchange_sim

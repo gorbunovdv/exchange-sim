@@ -123,7 +123,7 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
   ExchangeDispatcher event_dispatcher(
       config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
 
-  while (!stop_token.stop_requested()) {
+  while (!stop_token.stop_requested() && !order_generator_wrapper.generator_stopped()) {
     order_generator_wrapper.generate_event();
     for (const auto& request : sinks->request_sink) {
       matching_engine.process(request);

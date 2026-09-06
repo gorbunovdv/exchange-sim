@@ -90,6 +90,10 @@ public:
 
   bool asked_to_stop() const { return stop_token_.stop_requested(); }
 
+  bool generator_stopped() const { return generator_stopped_; }
+
+  void inform_generator_stopped() { generator_stopped_ = true; }
+
   void reserve(size_t size) { (Skills::reserve(size), ...); }
 
 private:
@@ -125,6 +129,8 @@ private:
   Journal<request::RequestType>& journal_;
 
   std::vector<request::RequestType> request_buffer_;
+
+  bool generator_stopped_ = false;
 };
 
 }  // namespace exchange_sim

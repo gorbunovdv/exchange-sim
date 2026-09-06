@@ -61,19 +61,14 @@ public:
     report_buffer_.emplace_back(report, timestamp);
   }
 
-  void run() {
-    while (!generator_interface_.asked_to_stop()) {
-      apply_stored_events();
-      generator_.generate_event();
-    }
-  }
-
   void generate_event() {
     if (!generator_interface_.asked_to_stop()) {
       apply_stored_events();
       generator_.generate_event();
     }
   }
+
+  bool generator_stopped() const { return generator_interface_.generator_stopped(); }
 
 private:
   void apply_stored_events() {
