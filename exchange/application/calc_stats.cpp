@@ -321,21 +321,23 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
       static_cast<double>(requests_count) * (1s / 1ns) / static_cast<double>(duration_ns.count()) :
       0;
 
-  std::vector<RejectionStat> rejections;
-  size_t rejections_count = 0;
-  for (const auto& [group, count] : rejections_by_group) {
-    const auto& [type, reason] = group;
-    rejections.push_back(RejectionStat{.type = type, .reason = reason, .count = count});
-    rejections_count += count;
-  }
+  SummaryStat summary = [&]() {
+    std::vector<RejectionStat> rejections;
+    size_t rejections_count = 0;
+    for (const auto& [group, count] : rejections_by_group) {
+      const auto& [type, reason] = group;
+      rejections.push_back(RejectionStat{.type = type, .reason = reason, .count = count});
+      rejections_count += count;
+    }
 
-  SummaryStat summary{
-      .requests_count = requests_count,
-      .duration_ns = duration_ns.count(),
-      .throughput = throughput_per_second,
-      .rejections_count = rejections_count,
-      .rejections = std::move(rejections),
-  };
+    return SummaryStat{
+        .requests_count = requests_count,
+        .duration_ns = duration_ns.count(),
+        .throughput = throughput_per_second,
+        .rejections_count = rejections_count,
+        .rejections = std::move(rejections),
+    };
+  }();
 
   auto write_json_file = [&](const std::string& path, const auto& value) {
     write_buffer.clear();
