@@ -9,7 +9,6 @@
 #include "exchange/input/order_generator_wrapper.h"
 #include "exchange/input/replay_order_generator.h"
 #include "exchange/input/shift_order_generator.h"
-#include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
 
