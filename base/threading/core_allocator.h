@@ -63,15 +63,16 @@ private:
 class CoreAllocator : NonMoveable {
 public:
   struct Config {
-    bool fallback_to_none;
+    bool fallback_to_none = false;
     std::optional<CpuID> shared_core;
     std::vector<CpuID> dedicated_cores;
   };
 
   explicit CoreAllocator(Config config):
-      CoreAllocator(config.fallback_to_none, config.shared_core, std::move(config.dedicated_cores)) {}
+      CoreAllocator(config.shared_core, std::move(config.dedicated_cores), config.fallback_to_none) {}
 
-  explicit CoreAllocator(bool fallback_to_none, std::optional<CpuID> shared_core, std::vector<CpuID> dedicated_cores):
+  explicit CoreAllocator(
+      std::optional<CpuID> shared_core, std::vector<CpuID> dedicated_cores, bool fallback_to_none = false):
       fallback_to_none_(fallback_to_none), shared_core_(shared_core), dedicated_cores_(std::move(dedicated_cores)) {}
 
   CoreLease lease_core(CoreType type);
