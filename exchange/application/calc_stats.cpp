@@ -1,5 +1,6 @@
 #include "base/journal.h"
 #include "base/run.h"
+#include "base/traits.h"
 
 #include "domain/generate_securities.h"
 #include "domain/security_storage.h"
@@ -11,6 +12,7 @@
 #include <boost/hof/match.hpp>
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -29,6 +31,8 @@ struct RequestStat {
   std::optional<std::int64_t> first_market_event_ns = std::nullopt;
   std::optional<std::int64_t> last_market_event_ns = std::nullopt;
 
+  std::optional<std::string> rejection_reason = std::nullopt;
+
   size_t reports_count = 0;
   size_t market_events_count = 0;
   size_t trades_count = 0;
@@ -42,6 +46,20 @@ struct MetricStat {
   size_t events_count;
   std::string percentile;
   std::int64_t value;
+};
+
+struct RejectionStat {
+  std::string type;
+  std::string reason;
+  size_t count;
+};
+
+struct SummaryStat {
+  size_t requests_count;
+  std::int64_t duration_ns;
+  double throughput;
+  size_t rejections_count;
+  std::vector<RejectionStat> rejections;
 };
 
 namespace {
@@ -132,6 +150,12 @@ private:
     if (!stat.last_report_ns.has_value() || time_ns > stat.last_report_ns.value()) {
       stat.last_report_ns = time_ns;
     }
+    if constexpr (is_same_as_any_of<std::remove_cvref_t<decltype(report)>,
+                      report::OrderRejected,
+                      report::CancellationRejected,
+                      report::ReplacementRejected>) {
+      stat.rejection_reason = magic_enum::enum_name(report.reason);
+    }
     stat.reports_count++;
   };
 
@@ -196,6 +220,10 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
   std::map<std::tuple<std::string, std::string, size_t>,
       std::array<std::vector<std::int64_t>, constLatencyFields.size()>>
       latencies_by_group;
+  std::map<std::pair<std::string, std::string>, size_t> rejections_by_group;
+
+  std::optional<Ticks> first_origin_time = std::nullopt;
+  std::optional<Ticks> last_origin_time = std::nullopt;
 
   std::fstream output_file(config["calc_stats"]["output_file"].as<std::string>(), std::ios::out);
   output_file << "[\n";
@@ -217,6 +245,13 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
         group_latencies[i].push_back(latencies[i].value());
       }
     }
+    if (stat.rejection_reason.has_value()) {
+      rejections_by_group[{stat.type, stat.rejection_reason.value()}]++;
+    }
+    if (!first_origin_time.has_value()) {
+      first_origin_time = Ticks(stat.origin_time);
+    }
+    last_origin_time = Ticks(stat.origin_time);
   };
 
   std::string write_buffer;
@@ -279,11 +314,39 @@ void run_calc_stats(const std::shared_ptr<Runtime>& runtime, const glz::generic&
     }
   }
 
-  write_buffer.clear();
-  CHECK(!glz::write<glz::opts{.prettify = true}>(stats, write_buffer), "Failed to print json");
-  std::fstream stats_file(config["results"]["stats"].as<std::string>(), std::ios::out);
-  stats_file << write_buffer;
-  CHECK(stats_file, "Failed to write stats, path={}", config["results"]["stats"].as<std::string>());
+  size_t requests_count = processed_count > requests_to_skip ? processed_count - requests_to_skip : 0;
+  std::chrono::nanoseconds duration_ns =
+      first_origin_time.has_value() ? last_origin_time->nanoseconds_distance(first_origin_time.value()) : 0ns;
+  double throughput_per_second = duration_ns > 0ns ?
+      static_cast<double>(requests_count) * (1s / 1ns) / static_cast<double>(duration_ns.count()) :
+      0;
+
+  std::vector<RejectionStat> rejections;
+  size_t rejections_count = 0;
+  for (const auto& [group, count] : rejections_by_group) {
+    const auto& [type, reason] = group;
+    rejections.push_back(RejectionStat{.type = type, .reason = reason, .count = count});
+    rejections_count += count;
+  }
+
+  SummaryStat summary{
+      .requests_count = requests_count,
+      .duration_ns = duration_ns.count(),
+      .throughput = throughput_per_second,
+      .rejections_count = rejections_count,
+      .rejections = std::move(rejections),
+  };
+
+  auto write_json_file = [&](const std::string& path, const auto& value) {
+    write_buffer.clear();
+    CHECK(!glz::write<glz::opts{.prettify = true}>(value, write_buffer), "Failed to print json");
+    std::fstream file(path, std::ios::out);
+    file << write_buffer;
+    CHECK(file, "Failed to write json, path={}", path);
+  };
+
+  write_json_file(config["results"]["stats"].as<std::string>(), stats);
+  write_json_file(config["results"]["summary"].as<std::string>(), summary);
 }
 
 
