@@ -138,8 +138,8 @@ private:
     });
   }
 
-  size_t fill() {
-    return queue_.produce_span([this](std::span<value_type> data) {
+  void fill() {
+    queue_.produce_span([this](std::span<value_type> data) {
       std::streamsize max_bytes_read = data.size() * sizeof(value_type);
       std::streamsize bytes_read = 0;
       while (bytes_read < max_bytes_read) {
@@ -165,7 +165,8 @@ private:
       } else {
         WARNING("Not pinning journal thread as core lease is empty");
       }
-      while (!token.stop_requested() && fill()) {
+      while (!token.stop_requested() && !stream_.eof()) {
+        fill();
         std::this_thread::sleep_for(10ms);
       }
       stopped_.store(true, std::memory_order_release);
