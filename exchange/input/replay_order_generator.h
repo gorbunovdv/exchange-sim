@@ -89,7 +89,7 @@ private:
   const uint32_t max_pending_transactions_;
 
   Journal<request::RequestType> replay_journal_;
-  decltype(replay_journal_)::iterator<> current_request_;
+  decltype(replay_journal_)::template iterator<> current_request_;
 };
 
 }  // namespace exchange_sim
