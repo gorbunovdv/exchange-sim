@@ -4,8 +4,10 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <ranges>
+#include <thread>
 #include <vector>
 
 using namespace exchange_sim;
@@ -96,6 +98,37 @@ TEST(JournalTest, BigEventsCount) {
     }));
   }
   ASSERT_FALSE(journal.consume_if_available([](const RecordJournal::value_type&) {}));
+}
+
+TEST(JournalTest, FastRead) {
+  static constexpr size_t constRecordCount = 256;
+
+  TemporaryDirectory temp_dir("fast_read_journal_test");
+  TemporaryFile temp_journal_file(temp_dir, "fast_read_journal_test");
+
+  std::vector<RecordJournal::value_type> records;
+  records.reserve(constRecordCount);
+  for (size_t i = 0; i < constRecordCount; ++i) {
+    records.emplace_back(Record{.a = static_cast<int32_t>(i), .b = static_cast<int64_t>(i * 10)}, Ticks{i});
+  }
+  write_records(temp_journal_file.path(), records);
+
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::FAST_READ, records.size() + 2);
+  const auto deadline = Ticks::rdtsc();
+  while (!journal.ready() && deadline.nanoseconds_till_now() < 5s) {
+    std::this_thread::sleep_for(100ms);
+  }
+  ASSERT_TRUE(journal.ready());
+
+  for (const auto& expected : records) {
+    size_t consumer_calls = 0;
+    ASSERT_TRUE(journal.consume_if_available([&](const RecordJournal::value_type& actual) {
+      ++consumer_calls;
+      EXPECT_EQ(actual.timestamp, expected.timestamp);
+      EXPECT_EQ(actual.object, expected.object);
+    }));
+    EXPECT_EQ(consumer_calls, 1);
+  }
 }
 
 TEST(JournalTest, EmptyJournal) {

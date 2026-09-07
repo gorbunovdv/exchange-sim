@@ -15,10 +15,6 @@ from helpers.metadata import Metadata
 from helpers.root_path import ROOT_PATH
 
 
-def clear_cache():
-    plumbum.local["sudo"]["sh"]["-c"]["sync; echo 3 > /proc/sys/vm/drop_caches"] & plumbum.FG
-
-
 def benchmark(
     *,
     preset,
@@ -52,7 +48,6 @@ def benchmark(
         list(itertools.product(range(1, reps + 1), apps)), mininterval=10, maxinterval=10, desc="Running all apps"
     ):
         print(f"Running current_rep={rep} app={app} preset={preset}")
-        clear_cache()
         benchmark_one(
             build=False,
             app=app,

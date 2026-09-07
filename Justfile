@@ -48,6 +48,11 @@ test preset='clang-debug-asan':
     just build "{{ preset }}"
     TSAN_OPTIONS="symbolize=0:halt_on_error=1" ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
+test-fast-read preset='clang-debug-asan':
+    just configure "{{ preset }}"
+    cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}" --target journal_test
+    TSAN_OPTIONS="symbolize=0:halt_on_error=1" ctest --test-dir "cmake-build-{{ preset }}" --tests-regex '^JournalTest\.FastRead' --no-tests=error --output-on-failure --verbose
+
 test-from-scratch preset='clang-debug-asan':
     just clean "{{ preset }}"
     just test "{{ preset }}"
@@ -141,5 +146,5 @@ _generate-flow config timeout app requests_path generated_replay_path:
     just run-one "{{ config }}" --app "{{ app }}" --timeout "{{ timeout }}"
     cp -v "{{ requests_path }}" "{{ generated_replay_path }}"
 
-generate-flow config='./configs/dmitrys-ubuntu.json' timeout='120' app='shift_el_app':
+generate-flow config='./configs/dmitrys-ubuntu.json' timeout='150' app='shift_el_app':
     just _generate-flow "{{ config }}" "{{ timeout }}" "{{ app }}" "{{ ROOT_DIR }}/$(jq -r '.journaling.requests' {{ config }})" "{{ ROOT_DIR }}/$(jq -r '.order_generator.generated_replay' {{ config }})"

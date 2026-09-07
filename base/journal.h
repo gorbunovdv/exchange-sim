@@ -43,10 +43,10 @@ public:
       mode_(mode),
       queue_(size),
       throughput_(name) {
-    CHECK(size > 1, "Journal size should be greater than 1");
     if (!stream_.is_open()) {
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
+    CHECK(size > 1, "Journal size should be greater than 1");
     if (mode == JournalMode::WRITE) {
       thread_ = std::jthread([this](const std::stop_token& token) { run_write_journal(token); });
     } else {
@@ -110,7 +110,9 @@ public:
       return &(*current_value_);
     }
 
-    bool operator==(const iterator& iterator) const { return iterator.journal_ == nullptr && is_eof_; }
+    bool operator==(const iterator& iterator) const {
+      return (journal_ == nullptr || iterator.journal_ == nullptr) && (is_eof_ || iterator.is_eof_);
+    }
 
     using BaseType::operator++;
 
@@ -149,11 +151,6 @@ private:
   }
 
   void fill() {
-    if (mode_ == JournalMode::FAST_READ && !queue_.empty() && queue_.size() * 2 < queue_.capacity()) {
-      WARNING("Journal queue is less than 1/2 full, current_filled_count={}, capacity={}",
-          queue_.size(),
-          queue_.capacity());
-    }
     auto fill_impl = [&]() {
       queue_.produce_span([this](std::span<value_type> data) {
         std::streamsize max_bytes_read = data.size() * sizeof(value_type);
@@ -183,9 +180,6 @@ private:
     CPPTRACE_TRY {
       if (core_lease_.has_value()) {
         core_lease_.value().pin_thread(name_);
-        if (core_lease_.value().type() == CoreType::DEDICATED) {
-          INFO("Journal thread entered fast mode: it's on dedicated core");
-        }
       } else {
         WARNING("Not pinning journal thread as core lease is empty");
       }
@@ -194,7 +188,7 @@ private:
       INFO("Journal thread has started to fill the queue, initial_filled_count={}", queue_.size());
       while (!token.stop_requested() && !stream_.eof()) {
         fill();
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(10ms);
       }
       stopped_.store(true, std::memory_order_release);
     }
@@ -224,7 +218,7 @@ private:
       INFO("Journal thread has started to process the queue");
       while (!token.stop_requested()) {
         flush();
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(10ms);
       }
       while (!queue_.empty()) {
         flush();
