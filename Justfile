@@ -64,7 +64,7 @@ pylint *args:
     git ls-files -z -- '*.py' | xargs -0 -r ruff check {{ args }}
     mypy
 
-lint preset:
+lint preset='clang-debug':
     just build "{{ preset }}"
     test -f "cmake-build-{{ preset }}/compile_commands.json"
     run-clang-tidy -p "./cmake-build-{{ preset }}/" -quiet -j "{{ CPU_COUNT }}" $(git ls-files -- '*.cpp')

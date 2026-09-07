@@ -21,7 +21,7 @@
 
 namespace exchange_sim {
 
-enum class JournalMode : std::uint8_t { READ, WRITE };
+enum class JournalMode : std::uint8_t { FAST_READ, READ, WRITE };
 
 template<typename POD>
   requires(std::is_trivially_copyable_v<POD> && !std::is_pointer_v<POD>)
@@ -43,6 +43,7 @@ public:
       mode_(mode),
       queue_(size),
       throughput_(name) {
+    CHECK(size > 1, "Journal size should be greater than 1");
     if (!stream_.is_open()) {
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
@@ -65,19 +66,19 @@ public:
 
   template<typename Consumer>
   bool consume_if_available(Consumer&& consumer) {
-    auto fully_filled = [this]() {
+    auto fully_read_file = [this]() {
       return stopped_.load(std::memory_order_acquire) && queue_.empty();
     };
 
-    CHECK(mode_ == JournalMode::READ, "Mode should be read");
+    CHECK(mode_ == JournalMode::READ || mode_ == JournalMode::FAST_READ, "Mode should be read");
     do {
-      if (queue_.consume(std::forward<Consumer>(consumer))) {
+      if (queue_.consume(consumer)) {
         return true;
       }
-      if (core_lease_.has_value() && core_lease_.value().type() == CoreType::DEDICATED) {
-        CHECK(fully_filled(), "Producer is not fast enough in Journal");
+      if (mode_ == JournalMode::FAST_READ) {
+        CHECK(fully_read_file(), "Producer is not fast enough in Journal");
       }
-    } while (!fully_filled());
+    } while (!fully_read_file());
     return false;
   }
 
@@ -85,9 +86,7 @@ public:
                boost::stl_interfaces::proxy_iterator_interface<std::input_iterator_tag, Journal::value_type>>
   class iterator : public BaseType {
   public:
-    iterator(): iterator(nullptr) {}
-
-    explicit iterator(Journal* journal): journal_(journal) {
+    explicit iterator(Journal* journal = nullptr): journal_(journal) {
       BOOST_STL_INTERFACES_STATIC_ASSERT_CONCEPT(iterator, std::input_iterator);
       advance();
     }
@@ -111,7 +110,7 @@ public:
       return &(*current_value_);
     }
 
-    bool operator==(std::default_sentinel_t) const { return is_eof_; }
+    bool operator==(const iterator& iterator) const { return iterator.journal_ == nullptr && is_eof_; }
 
     using BaseType::operator++;
 
@@ -128,11 +127,11 @@ public:
   };
 
   auto begin() {
-    CHECK(mode_ == JournalMode::READ, "Mode should be read");
+    CHECK(mode_ == JournalMode::READ || mode_ == JournalMode::FAST_READ, "Mode should be read");
     return iterator<>(this);
   }
 
-  auto end() { return std::default_sentinel; }
+  auto end() { return iterator<>(); }
 
   bool ready() const { return ready_.load(std::memory_order_acquire); }
 
@@ -150,12 +149,15 @@ private:
   }
 
   void fill() {
+    if (mode_ == JournalMode::FAST_READ && !queue_.empty() && queue_.size() * 2 < queue_.capacity()) {
+      WARNING("Journal queue is less than 1/2 full, current_filled_count={}, capacity={}", queue_.size(), queue_.capacity());
+    }
     auto fill_impl = [&]() {
       queue_.produce_span([this](std::span<value_type> data) {
         std::streamsize max_bytes_read = data.size() * sizeof(value_type);
         std::streamsize bytes_read = 0;
         while (bytes_read < max_bytes_read) {
-          stream_.read(reinterpret_cast<char*>(data.data()), max_bytes_read - bytes_read);
+          stream_.read(reinterpret_cast<char*>(data.data()) + bytes_read, max_bytes_read - bytes_read);
           std::streamsize current_bytes_read = stream_.gcount();
           CHECK(!stream_.bad(), "Encountered error while reading from journal");
           bytes_read += current_bytes_read;
@@ -169,7 +171,7 @@ private:
         return bytes_read / sizeof(value_type);
       });
     };
-    // We need to call fill_impl three times since to fill the whole capacity
+    // We need to call fill_impl three times to fill the whole capacity
     fill_impl();
     fill_impl();
     fill_impl();
@@ -187,12 +189,10 @@ private:
       }
       fill();
       ready_.store(true, std::memory_order_release);
-      INFO("Journal thread has started to fill the queue");
+      INFO("Journal thread has started to fill the queue, initial_filled_count={}", queue_.size());
       while (!token.stop_requested() && !stream_.eof()) {
         fill();
-        if (!core_lease_.has_value() || core_lease_.value().type() != CoreType::DEDICATED) {
-          std::this_thread::sleep_for(1ms);
-        }
+        std::this_thread::sleep_for(1ms);
       }
       stopped_.store(true, std::memory_order_release);
     }
@@ -222,9 +222,7 @@ private:
       INFO("Journal thread has started to process the queue");
       while (!token.stop_requested()) {
         flush();
-        if (!core_lease_.has_value() || core_lease_.value().type() != CoreType::DEDICATED) {
-          std::this_thread::sleep_for(1ms);
-        }
+        std::this_thread::sleep_for(1ms);
       }
       while (!queue_.empty()) {
         flush();

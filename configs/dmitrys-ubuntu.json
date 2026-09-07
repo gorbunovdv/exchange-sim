@@ -38,7 +38,8 @@
     "max_quiet_state_sent_orders_count": 10000,
     "max_beat_filled_levels_count": 4,
     "max_book_order_amount_in_lot_sizes": 15,
-    "generated_replay": "./tmpfs/generated_replay.bin"
+    "generated_replay": "./results/generated_replay.bin",
+    "replay_journal_queue_size": 44040192
   },
   "journaling": {
     "market_events": "./results/market_data.bin",
@@ -58,7 +59,8 @@
   },
   "calc_stats": {
     "output_file": "./results/requests_info.json",
-    "requests_to_skip": 1000
+    "requests_to_skip": 1000,
+    "queue_size": 1000000
   },
   "benchmark_path": "./results/bench/"
 }

@@ -122,6 +122,7 @@ class Metadata:
             "application": application,
             "application_sha": sha256sum(f"cmake-build-{self.preset}/exchange/application/{application}"),
             "config_sha": sha256sum(self.config_path),
+            "replay_sha": sha256sum(self.config["order_generator"]["generated_replay"]),
             "git": self.git_metadata(),
             "flags": self._flags_from_command(self.app_targets()[application]["command"]),
             "compilation": self.compilation_metadata(),

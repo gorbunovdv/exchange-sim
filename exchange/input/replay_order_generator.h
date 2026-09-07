@@ -12,6 +12,7 @@
 namespace exchange_sim {
 
 template<typename GeneratorInterface>
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class ReplayOrderGenerator {
 public:
   explicit ReplayOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
@@ -19,9 +20,9 @@ public:
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       replay_journal_("replay_journal",
           config["generated_replay"].as<std::string>(),
-          JournalMode::READ,
-          1 << 20,
-          interface_.lease_core(CoreType::DEDICATED)) {
+          JournalMode::FAST_READ,
+          config["replay_journal_queue_size"].as<size_t>(),
+          interface_.lease_core(CoreType::SHARED)) {
     while (!replay_journal_.ready()) {
       std::this_thread::sleep_for(100ms);
     }
