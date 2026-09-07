@@ -139,23 +139,27 @@ private:
   }
 
   void fill() {
-    queue_.produce_span([this](std::span<value_type> data) {
-      std::streamsize max_bytes_read = data.size() * sizeof(value_type);
-      std::streamsize bytes_read = 0;
-      while (bytes_read < max_bytes_read) {
-        stream_.read(reinterpret_cast<char*>(data.data()), max_bytes_read - bytes_read);
-        std::streamsize current_bytes_read = stream_.gcount();
-        CHECK(!stream_.bad(), "Encountered error while reading from journal");
-        bytes_read += current_bytes_read;
-        if (!stream_ || current_bytes_read == 0) {
-          break;
+    auto fill_impl = [&]() {
+      queue_.produce_span([this](std::span<value_type> data) {
+        std::streamsize max_bytes_read = data.size() * sizeof(value_type);
+        std::streamsize bytes_read = 0;
+        while (bytes_read < max_bytes_read) {
+          stream_.read(reinterpret_cast<char*>(data.data()), max_bytes_read - bytes_read);
+          std::streamsize current_bytes_read = stream_.gcount();
+          CHECK(!stream_.bad(), "Encountered error while reading from journal");
+          bytes_read += current_bytes_read;
+          if (!stream_ || current_bytes_read == 0) {
+            break;
+          }
         }
-      }
-      if (bytes_read % sizeof(value_type) != 0) {
-        ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
-      }
-      return bytes_read / sizeof(value_type);
-    });
+        if (bytes_read % sizeof(value_type) != 0) {
+          ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
+        }
+        return bytes_read / sizeof(value_type);
+      });
+    };
+    // We need to call fill_impl twice since one call fills the SPSCQueue until the end of array, not the whole capacity
+    fill_impl(); fill_impl();
   }
 
   void run_read_journal(const std::stop_token& token) {

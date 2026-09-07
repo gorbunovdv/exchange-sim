@@ -17,7 +17,7 @@ public:
   explicit ReplayOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
       interface_(interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
-      replay_journal_("replay_journal", config["generated_replay"].as<std::string>(), JournalMode::READ, 1 << 10),
+      replay_journal_("replay_journal", config["generated_replay"].as<std::string>(), JournalMode::READ, 1 << 20),
       current_request_(replay_journal_.begin()) {
     if (config.contains("max_active_orders_by_security")) {
       interface_.reserve(config["max_active_orders_by_security"].as<std::uint32_t>());
