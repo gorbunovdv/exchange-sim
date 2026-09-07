@@ -150,7 +150,9 @@ private:
 
   void fill() {
     if (mode_ == JournalMode::FAST_READ && !queue_.empty() && queue_.size() * 2 < queue_.capacity()) {
-      WARNING("Journal queue is less than 1/2 full, current_filled_count={}, capacity={}", queue_.size(), queue_.capacity());
+      WARNING("Journal queue is less than 1/2 full, current_filled_count={}, capacity={}",
+          queue_.size(),
+          queue_.capacity());
     }
     auto fill_impl = [&]() {
       queue_.produce_span([this](std::span<value_type> data) {
