@@ -65,12 +65,19 @@ public:
 
   template<typename Consumer>
   bool consume_if_available(Consumer&& consumer) {
+    auto fully_filled = [this]() {
+      return stopped_.load(std::memory_order_acquire) && queue_.empty();
+    };
+
     CHECK(mode_ == JournalMode::READ, "Mode should be read");
     do {
       if (queue_.consume(std::forward<Consumer>(consumer))) {
         return true;
       }
-    } while (!stopped_.load(std::memory_order_acquire) || !queue_.empty());
+      if (core_lease_.has_value() && core_lease_.value().type() == CoreType::DEDICATED) {
+        CHECK(fully_filled(), "Producer is not fast enough in Journal");
+      }
+    } while (!fully_filled());
     return false;
   }
 
@@ -78,6 +85,8 @@ public:
                boost::stl_interfaces::proxy_iterator_interface<std::input_iterator_tag, Journal::value_type>>
   class iterator : public BaseType {
   public:
+    iterator(): iterator(nullptr) {}
+
     explicit iterator(Journal* journal): journal_(journal) {
       BOOST_STL_INTERFACES_STATIC_ASSERT_CONCEPT(iterator, std::input_iterator);
       advance();
@@ -125,6 +134,8 @@ public:
 
   auto end() { return std::default_sentinel; }
 
+  bool ready() const { return ready_.load(std::memory_order_acquire); }
+
 private:
   void flush() {
     queue_.consume_span([this](std::span<value_type> data) {
@@ -158,20 +169,30 @@ private:
         return bytes_read / sizeof(value_type);
       });
     };
-    // We need to call fill_impl twice since one call fills the SPSCQueue until the end of array, not the whole capacity
-    fill_impl(); fill_impl();
+    // We need to call fill_impl three times since to fill the whole capacity
+    fill_impl();
+    fill_impl();
+    fill_impl();
   }
 
   void run_read_journal(const std::stop_token& token) {
     CPPTRACE_TRY {
       if (core_lease_.has_value()) {
         core_lease_.value().pin_thread(name_);
+        if (core_lease_.value().type() == CoreType::DEDICATED) {
+          INFO("Journal thread entered fast mode: it's on dedicated core");
+        }
       } else {
         WARNING("Not pinning journal thread as core lease is empty");
       }
+      fill();
+      ready_.store(true, std::memory_order_release);
+      INFO("Journal thread has started to fill the queue");
       while (!token.stop_requested() && !stream_.eof()) {
         fill();
-        std::this_thread::sleep_for(10ms);
+        if (!core_lease_.has_value() || core_lease_.value().type() != CoreType::DEDICATED) {
+          std::this_thread::sleep_for(1ms);
+        }
       }
       stopped_.store(true, std::memory_order_release);
     }
@@ -197,9 +218,13 @@ private:
       } else {
         WARNING("Not pinning journal thread as core lease is empty");
       }
+      ready_.store(true, std::memory_order_release);
+      INFO("Journal thread has started to process the queue");
       while (!token.stop_requested()) {
         flush();
-        std::this_thread::sleep_for(10ms);
+        if (!core_lease_.has_value() || core_lease_.value().type() != CoreType::DEDICATED) {
+          std::this_thread::sleep_for(1ms);
+        }
       }
       while (!queue_.empty()) {
         flush();
@@ -231,6 +256,7 @@ private:
 
   Throughput throughput_;
 
+  std::atomic<bool> ready_ = false;
   std::atomic<bool> stopped_ = false;
 
   std::jthread thread_;

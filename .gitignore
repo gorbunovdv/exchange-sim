@@ -9,3 +9,4 @@ result*
 .ruff_cache/
 **/__pycache__/
 extra/
+tmpfs/

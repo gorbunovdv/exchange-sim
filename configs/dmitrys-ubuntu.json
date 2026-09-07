@@ -38,7 +38,7 @@
     "max_quiet_state_sent_orders_count": 10000,
     "max_beat_filled_levels_count": 4,
     "max_book_order_amount_in_lot_sizes": 15,
-    "generated_replay": "./results/generated_replay.bin"
+    "generated_replay": "./tmpfs/generated_replay.bin"
   },
   "journaling": {
     "market_events": "./results/market_data.bin",

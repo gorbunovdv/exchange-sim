@@ -2,6 +2,7 @@
 
 #include "base/counter.h"
 #include "base/journal.h"
+#include "base/threading/runtime.h"
 #include "base/throughput.h"
 
 #include "domain/security_storage.h"
@@ -18,14 +19,14 @@ template<template<typename> typename OrderGenerator, typename GeneratorInterface
 class OrderGeneratorWrapper {
 public:
   template<typename... Args>
-  explicit OrderGeneratorWrapper(std::stop_token stop_token,
+  explicit OrderGeneratorWrapper(const std::shared_ptr<Runtime>& runtime,
       SecurityStorage& security_storage,
       Journal<request::RequestType>& requests_journal,
       Journal<market_events::EventType>& market_data_journal,
       Journal<report::ReportType>& report_journal,
       SinkType& sink,
       Args&&... args):
-      generator_interface_(std::move(stop_token), security_storage, requests_journal, sink),
+      generator_interface_(runtime->stop_token(), runtime->core_allocator(), security_storage, requests_journal, sink),
       generator_(generator_interface_, std::forward<Args>(args)...),
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}

@@ -62,7 +62,7 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   auto stop_token = runtime->stop_token();
 
-  OrderGenerator order_generator(stop_token,
+  OrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,

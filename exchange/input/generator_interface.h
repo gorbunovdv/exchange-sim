@@ -17,11 +17,13 @@ template<typename SinkType, typename... Skills>
 class GeneratorInterface : public Skills... {
 public:
   explicit GeneratorInterface(std::stop_token stop_token,
+      CoreAllocator& allocator,
       SecurityStorage& security_storage,
       Journal<request::RequestType>& journal,
       SinkType& sink):
       Skills(security_storage)...,
       stop_token_(std::move(stop_token)),
+      core_allocator_(allocator),
       security_storage_(security_storage),
       sink_(sink),
       journal_(journal) {}
@@ -96,6 +98,8 @@ public:
 
   void reserve(size_t size) { (Skills::reserve(size), ...); }
 
+  CoreLease lease_core(CoreType core) { return core_allocator_.lease_core(core); }
+
 private:
   template<template<typename> typename, typename, typename>
   friend class OrderGeneratorWrapper;
@@ -123,6 +127,7 @@ private:
   ClientOrderID generate_client_order_id() { return current_client_order_id_.inc(); }
 
   std::stop_token stop_token_;
+  CoreAllocator& core_allocator_;
   SecurityStorage& security_storage_;
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;

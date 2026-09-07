@@ -111,7 +111,7 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   auto sinks = std::make_unique<event_loop::Sinks>();
 
-  OrderGenerator order_generator_wrapper(stop_token,
+  OrderGenerator order_generator_wrapper(runtime,
       security_storage,
       request_journal,
       market_data_journal,

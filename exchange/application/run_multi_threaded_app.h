@@ -70,7 +70,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
       security_storage,
       exchange_dispatcher.get_sink());
 
-  OrderGenerator order_generator(runtime->stop_token(),
+  OrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,
