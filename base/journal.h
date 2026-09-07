@@ -169,7 +169,8 @@ private:
         std::this_thread::sleep_for(10ms);
       }
       stopped_.store(true, std::memory_order_release);
-    } CPPTRACE_CATCH(...) {
+    }
+    CPPTRACE_CATCH(...) {
       try {
         throw;
       } catch (const std::exception& e) {

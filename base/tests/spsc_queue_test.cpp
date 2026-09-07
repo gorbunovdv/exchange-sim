@@ -36,12 +36,14 @@ TEST(SPSCQueue, BasicQueueTest) {
     EXPECT_GE(sp.size(), 1);
     sp[0] = 1;
     return 1;
-  }), 1);
+  }),
+      1);
   EXPECT_EQ(queue.produce_span([](std::span<int> sp) {
     EXPECT_GE(sp.size(), 1);
     sp[0] = 2;
     return 1;
-  }), 1);
+  }),
+      1);
   queue.consume([](int& holder) { EXPECT_EQ(holder, 1); });
   queue.consume([](int& holder) { EXPECT_EQ(holder, 2); });
 }

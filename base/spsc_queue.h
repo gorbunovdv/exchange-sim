@@ -67,7 +67,8 @@ public:
     if (next_head == cached_tail_) {
       cached_tail_ = tail_.load(std::memory_order_acquire);
     }
-    size_t last_head = cached_tail_ <= current_head ? (cached_tail_ == 0 ? capacity_ - 1 : capacity_) : cached_tail_ - 1;
+    size_t last_head =
+        cached_tail_ <= current_head ? (cached_tail_ == 0 ? capacity_ - 1 : capacity_) : cached_tail_ - 1;
     size_t produced_count = std::forward<Producer>(producer)(std::span{queue_ + current_head, queue_ + last_head});
     if (produced_count != 0) {
       head_.store((current_head + produced_count) % capacity_, std::memory_order_release);
