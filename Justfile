@@ -48,11 +48,6 @@ test preset='clang-debug-asan':
     just build "{{ preset }}"
     TSAN_OPTIONS="symbolize=0:halt_on_error=1" ctest --parallel "{{ CPU_COUNT }}" --test-dir "cmake-build-{{ preset }}" --output-on-failure --verbose
 
-test-fast-read preset='clang-debug-asan':
-    just configure "{{ preset }}"
-    cmake --build --preset "{{ preset }}" --parallel "{{ CPU_COUNT }}" --target journal_test
-    TSAN_OPTIONS="symbolize=0:halt_on_error=1" ctest --test-dir "cmake-build-{{ preset }}" --tests-regex '^JournalTest\.FastRead' --no-tests=error --output-on-failure --verbose
-
 test-from-scratch preset='clang-debug-asan':
     just clean "{{ preset }}"
     just test "{{ preset }}"
