@@ -188,7 +188,7 @@ private:
       INFO("Journal thread has started to fill the queue, initial_filled_count={}", queue_.size());
       while (!token.stop_requested() && !stream_.eof()) {
         fill();
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::sleep_for(1ms);
       }
       stopped_.store(true, std::memory_order_release);
     }
@@ -218,7 +218,7 @@ private:
       INFO("Journal thread has started to process the queue");
       while (!token.stop_requested()) {
         flush();
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::sleep_for(1ms);
       }
       while (!queue_.empty()) {
         flush();
