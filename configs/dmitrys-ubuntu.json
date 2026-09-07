@@ -52,6 +52,7 @@
     "logs": "./results/logs.txt"
   },
   "matching_engine": {
+    "reserve_books_size": 10000
   },
   "exchange_dispatcher": {
   },

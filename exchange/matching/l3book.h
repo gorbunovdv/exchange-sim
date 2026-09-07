@@ -62,6 +62,8 @@ public:
     }
   }
 
+  void reserve(size_t size) { book_container_.reserve(size); }
+
 private:
   struct ActiveOrder {
     Ticks origin_time;

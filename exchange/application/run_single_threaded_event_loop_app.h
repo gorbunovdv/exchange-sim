@@ -94,18 +94,18 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
   Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
       JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
   Journal<report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
       JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
   Journal<request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
       JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
 
   auto stop_token = runtime->stop_token();
 

@@ -34,20 +34,22 @@ public:
   explicit Journal(const std::string& name,
       const std::filesystem::path& journal_path,
       JournalMode mode,
-      std::optional<CoreLease>&& core_lease = std::nullopt,
-      std::optional<size_t> size = std::nullopt):
+      size_t size,
+      std::optional<CoreLease>&& core_lease = std::nullopt):
       LoggableClass(name),
       name_(name),
       core_lease_(std::move(core_lease)),
       stream_(journal_path, (mode == JournalMode::WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
       mode_(mode),
-      queue_(size.has_value() ? *size : 0),
+      queue_(size),
       throughput_(name) {
     if (!stream_.is_open()) {
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
     if (mode == JournalMode::WRITE) {
-      thread_ = std::jthread([this](const std::stop_token& token) { run(token); });
+      thread_ = std::jthread([this](const std::stop_token& token) { run_write_journal(token); });
+    } else {
+      thread_ = std::jthread([this](const std::stop_token& token) { run_read_journal(token); });
     }
   }
 
@@ -64,19 +66,11 @@ public:
   template<typename Consumer>
   bool consume_if_available(Consumer&& consumer) {
     CHECK(mode_ == JournalMode::READ, "Mode should be read");
-    alignas(value_type) std::array<std::byte, sizeof(value_type)> data;
-    stream_.read(reinterpret_cast<char*>(data.data()), data.size());
-    std::streamsize bytes_read = stream_.gcount();
-    if (stream_.bad()) {
-      CRITICAL("Encountered error while reading from journal");
-    }
-    if (stream_ && bytes_read == sizeof(value_type)) {
-      std::forward<Consumer>(consumer)(*reinterpret_cast<value_type*>(data.data()));
-      return true;
-    }
-    if (bytes_read != 0) {
-      ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
-    }
+    do {
+      if (queue_.consume(std::forward<Consumer>(consumer))) {
+        return true;
+      }
+    } while (!stopped_.load(std::memory_order_acquire) || !queue_.empty());
     return false;
   }
 
@@ -114,7 +108,7 @@ public:
 
   private:
     void advance() {
-      if (!is_eof_ && journal_ && journal_->stream_) {
+      if (!is_eof_ && journal_) {
         is_eof_ = !journal_->consume_if_available([this](const value_type& value) { current_value_.emplace(value); });
       }
     }
@@ -144,7 +138,53 @@ private:
     });
   }
 
-  void run(const std::stop_token& token) {
+  size_t fill() {
+    return queue_.produce_span([this](std::span<value_type> data) {
+      std::streamsize max_bytes_read = data.size() * sizeof(value_type);
+      std::streamsize bytes_read = 0;
+      while (bytes_read < max_bytes_read) {
+        stream_.read(reinterpret_cast<char*>(data.data()), max_bytes_read - bytes_read);
+        std::streamsize current_bytes_read = stream_.gcount();
+        CHECK(!stream_.bad(), "Encountered error while reading from journal");
+        bytes_read += current_bytes_read;
+        if (!stream_ || current_bytes_read == 0) {
+          break;
+        }
+      }
+      if (bytes_read % sizeof(value_type) != 0) {
+        ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
+      }
+      return bytes_read / sizeof(value_type);
+    });
+  }
+
+  void run_read_journal(const std::stop_token& token) {
+    CPPTRACE_TRY {
+      if (core_lease_.has_value()) {
+        core_lease_.value().pin_thread(name_);
+      } else {
+        WARNING("Not pinning journal thread as core lease is empty");
+      }
+      while (!token.stop_requested() && fill()) {
+        std::this_thread::sleep_for(10ms);
+      }
+      stopped_.store(true, std::memory_order_release);
+    } CPPTRACE_CATCH(...) {
+      try {
+        throw;
+      } catch (const std::exception& e) {
+        ERROR("Exception occurred: {}", e.what());
+      } catch (...) {
+        ERROR("Unknown exception occurred");
+      }
+      ERROR("\nStacktrace:");
+      ERROR("{}", cpptrace::from_current_exception().to_string());
+      flush_log();
+      throw;
+    }
+  }
+
+  void run_write_journal(const std::stop_token& token) {
     CPPTRACE_TRY {
       if (core_lease_.has_value()) {
         core_lease_.value().pin_thread(name_);
@@ -158,6 +198,7 @@ private:
       while (!queue_.empty()) {
         flush();
       }
+      stopped_.store(true, std::memory_order_release);
     }
     CPPTRACE_CATCH(...) {
       try {
@@ -183,6 +224,8 @@ private:
   SPSCQueue<value_type> queue_;
 
   Throughput throughput_;
+
+  std::atomic<bool> stopped_ = false;
 
   std::jthread thread_;
 };

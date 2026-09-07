@@ -17,8 +17,12 @@ public:
   explicit ReplayOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
       interface_(interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
-      replay_journal_("replay_journal", config["generated_replay"].as<std::string>(), JournalMode::READ),
-      current_request_(replay_journal_.begin()) {}
+      replay_journal_("replay_journal", config["generated_replay"].as<std::string>(), JournalMode::READ, 1 << 10),
+      current_request_(replay_journal_.begin()) {
+    if (config.contains("max_active_orders_by_security")) {
+      interface_.reserve(config["max_active_orders_by_security"].as<std::uint32_t>());
+    }
+  }
 
   void process_market_event(const auto&) {}
   void process_report(const auto&) {}
@@ -42,7 +46,7 @@ public:
                   request.price,
                   request.quantity);
               CHECK(request.client_order_id == client_order_id,
-                  "Replay and generated order_ids must match, replay_client_order_id={} generated_client_order_id={}",
+                  "Replay and generated order_ids must match, current_client_order_id={} replay_client_order_id={}",
                   client_order_id.value(),
                   request.client_order_id.value());
             },
@@ -50,8 +54,8 @@ public:
               auto client_cancellation_id =
                   interface_.send_order_cancel_request(request.client_id, request.client_order_id, request.security_id);
               CHECK(request.client_cancellation_id == client_cancellation_id,
-                  "Replay and generated cancellation_ids must match, replay_client_cancellation_id={} "
-                  "generated_client_cancellation_id={}",
+                  "Replay and generated cancellation_ids must match, current_client_cancellation_id={} "
+                  "replay_client_cancellation_id={}",
                   client_cancellation_id.value(),
                   request.client_cancellation_id.value());
             },
@@ -63,8 +67,8 @@ public:
                   request.price,
                   request.quantity);
               CHECK(request.client_replacement_id == client_replacement_id,
-                  "Replay and generated replacement_ids must match, replay_client_replacement_id={} "
-                  "generated_client_replacement_id={}",
+                  "Replay and generated replacement_ids must match, current_client_replacement_id={} "
+                  "replay_client_replacement_id={}",
                   client_replacement_id.value(),
                   request.client_replacement_id.value());
             }),

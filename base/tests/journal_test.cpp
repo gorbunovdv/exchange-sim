@@ -22,7 +22,7 @@ struct Record {
 using RecordJournal = Journal<Record>;
 
 void write_records(const std::filesystem::path& path, const std::vector<RecordJournal::value_type>& records) {
-  RecordJournal journal("RecordJournal", path, JournalMode::WRITE, std::nullopt, records.size() + 1);
+  RecordJournal journal("RecordJournal", path, JournalMode::WRITE, records.size() + 1, std::nullopt);
   for (const auto& record : records) {
     journal.write(record);
   }
@@ -41,7 +41,7 @@ TEST(JournalTest, WriteReadTest) {
 
   write_records(temp_journal_file.path(), records);
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 2);
   for (const auto& record : records) {
     ASSERT_TRUE(journal.consume_if_available([&](const auto& actual) {
       EXPECT_EQ(actual.timestamp, record.timestamp);
@@ -65,7 +65,7 @@ TEST(JournalTest, IteratesOverAllRecords) {
   TemporaryFile temp_journal_file(temp_dir, "journal_iterator_test");
   write_records(temp_journal_file.path(), records);
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 2);
   for (const auto& [index, actual] : std::views::zip(std::views::iota(0), journal)) {
     EXPECT_EQ(actual.timestamp, records[index].timestamp);
     EXPECT_EQ(actual.object, records[index].object);
@@ -88,7 +88,7 @@ TEST(JournalTest, BigEventsCount) {
 
   EXPECT_EQ(std::filesystem::file_size(temp_journal_file.path()), constRecordCount * RecordJournal::value_size);
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 32);
   for (const auto& expected : records) {
     ASSERT_TRUE(journal.consume_if_available([&](const RecordJournal::value_type& actual) {
       EXPECT_EQ(actual.timestamp, expected.timestamp);
@@ -102,7 +102,7 @@ TEST(JournalTest, EmptyJournal) {
   TemporaryDirectory temp_dir("empty_journal_test");
   TemporaryFile temp_journal_file(temp_dir, "empty_journal_test");
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 5);
   EXPECT_EQ(journal.begin(), journal.end());
 
   bool consumer_called = false;
@@ -121,7 +121,7 @@ TEST(JournalTest, TornRecord) {
     ASSERT_TRUE(stream);
   }
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 5);
   bool consumer_called = false;
   EXPECT_FALSE(journal.consume_if_available([&](const auto&) { consumer_called = true; }));
   EXPECT_FALSE(consumer_called);
@@ -132,12 +132,12 @@ TEST(JournalTest, WrongMode) {
   TemporaryFile temp_journal_file(temp_dir, "journal_mode_test");
 
   {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 2);
     EXPECT_THROW(journal.write(Record{.a = 1, .b = 2}, Ticks{1}), std::runtime_error);
   }
 
   {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::WRITE, std::nullopt, 2);
+    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::WRITE, 2, std::nullopt);
     EXPECT_THROW(journal.consume_if_available([](const auto&) {}), std::runtime_error);
     EXPECT_THROW(journal.begin(), std::runtime_error);
   }
@@ -147,5 +147,5 @@ TEST(JournalTest, MissingJournal) {
   TemporaryDirectory temp_dir("missing_journal_test");
   auto missing_path = temp_dir.path() / "missing_journal";
 
-  EXPECT_THROW(RecordJournal("RecordJournal", missing_path, JournalMode::READ), std::runtime_error);
+  EXPECT_THROW(RecordJournal("RecordJournal", missing_path, JournalMode::READ, 1), std::runtime_error);
 }
