@@ -67,7 +67,8 @@ Although it's possible to wire any implementation of `OrderGenerator`, it's more
 
 GeneratorInterface is a simple interface that allows to simplify the code by providing a common interface for different OrderGenerator implementations. This common
 interface allows not to worry about ClientOrderID sent by the OrderGenerator. It also allows to connect different Skills to it. Current available skills are `DebugOrders` 
-(which prints all requests, market data and reports to stdout), `StoreOrders` (which maintains a list of currently active orders) and `MaintainBook` (which maintains a full L3 book).
+(which prints all requests, market data and reports to stdout), `StoreOrders` (which maintains a list of currently active orders), `MaintainBook` (which maintains a full L3 book) and
+`PendingTransactions` (which maintains the number of pending transactions).
 Those skills are implemented in `exchange_sim::generator_interface_skills` and could be used via templates.
 
 `OrderGeneratorWrapper` itself is a wrapper that links `GeneratorInterface` with `OrderGenerator`. It also maintains journaling of all requests, market data and reports for future

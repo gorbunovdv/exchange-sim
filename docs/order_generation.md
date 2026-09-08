@@ -1,6 +1,6 @@
 # Order generation
 
-There are currently two order generators implemented: `SimpleOrderGenerator` and `ShiftOrderGenerator`. 
+There are currently three order generators implemented: `SimpleOrderGenerator`, `ShiftOrderGenerator`, `ReplayOrderGenerator`. 
 
 ## SimpleOrderGenerator
 
@@ -48,3 +48,16 @@ Beat is generated using an existing order book. It selects direction randomly (o
 selects the number of levels to be fully filled and generates the amount so that these orders could be fully filled by beat. The level after the last is beat
 by amount that doesn't reduce the level to none.
 Although future beats are planned to be using both replace and add orders, currently only add orders are supported because of the design of OrderStorage.
+
+
+## ReplayOrderGenerator
+
+`ReplayOrderGenerator` simply reads requests from a file and feeds them to the MatchingEngine. It allows measuring the performance of the MatchingEngine 
+without additional overhead of generating the requests. For instance, it currently doubles the throughput of the whole app.
+
+It's important to note that although `ReplayOrderGenerator` specifically passes exactly the same requests, it does not 
+maintain the same time difference between requests - it simply pushes them as fast as possible with restriction on `max_pending_transactions`.
+
+It's convenient to generate an initial replay file with `just generate-flow <config> <timeout> <app>`. Any app with
+either `SimpleOrderGenerator` or `ShiftOrderGenerator` could be used. It simply runs the provided app for the specified timeout and copies
+generated `requests.bin` to a separate location for future replay.

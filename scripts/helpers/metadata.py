@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import typing
+from pathlib import Path
 
 import plumbum
 from check_isolation import IsolationMetadata
@@ -11,6 +12,8 @@ from helpers.config import load_config
 
 
 def sha256sum(path):
+    if not Path(path).exists():
+        return "file not exists"
     hash = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(2**10), b""):

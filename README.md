@@ -21,7 +21,8 @@ Compiler versions used for development are GCC 15.2.0 and Clang 21.1.8.
     just build
     just test
 
-    just benchmark ./configs/dmitrys-ubuntu.json --apps simple_el_app shift_cb_app
+    just generate-flow ./configs/dmitrys-ubuntu.json
+    just benchmark ./configs/dmitrys-ubuntu.json --apps simple_el_app replay_cb_app
 
 ## Architecture at a glance
 
@@ -61,12 +62,12 @@ A more thorough architecture is located in [architecture.md](docs/architecture.m
 
 ## Order generation
 
-There are currently two order generators implemented: `SimpleOrderGenerator` and `ShiftOrderGenerator`. 
+There are currently three order generators implemented: `SimpleOrderGenerator`, `ShiftOrderGenerator` and `ReplayOrderGenerator`. 
 Take a look at the [order_generation.md](docs/order_generation.md) for details.
 
 ## Designs
 
-There are six apps that implement different order generations, design and transport between components.
+There are 8 apps that implement different order generations, design and transport between components.
 
 | Application     | Transport                              | OrderGenerator | Design                                                              |
 |-----------------|----------------------------------------|----------------|---------------------------------------------------------------------|
@@ -75,11 +76,13 @@ There are six apps that implement different order generations, design and transp
 | `simple_mt_app` | Single-producer-single-consumer queues | Simple         | Each component on a separate thread that is pinned to separate core |
 | `shift_cb_app`  | Direct callback, no queueing           | Shift          | Single-threaded                                                     |
 | `shift_el_app`  | Queues                                 | Shift          | Single event-loop on one thread                                     |
-| `shift_mt_app`  | Single-producer-single-consumer queues | Shift          | Each component on a separate thread that is pinned to separate core | 
+| `replay_cb_app` | Direct callback, no queueing           | Replay         | Single-threaded                                                     |
+| `replay_el_app` | Queues                                 | Replay         | Single event-loop on one thread                                     |
+| `replay_mt_app` | Single-producer-single-consumer queues | Replay         | Each component on a separate thread that is pinned to separate core |
 
 Empty app is `empty_app`. It's a separate app that does nothing.
 
-Currently `shift_mt_app` is not supported because of the current implementation of the shift design.
+Currently `ShiftOrderGenerator` is not supported with multi-threaded stages because of the current implementation of the shift design.
 
 ## What we're measuring
 
@@ -88,9 +91,13 @@ once it receives the market data/reports back. All requests/reports/market data 
 along with timestamps, calc_stats then matches events by origin_time and calculates the round-trips. Currently,
 first_report/first_market_event and last_report/last_market_event round trips are calculated.
 
+Current latency includes the time events have spent waiting in the queues. Multithreaded app cannot be compared with single-threaded app directly,
+since no event spends any significant time waiting in the queues in single-threaded app. If there's need to compare latency of multithreaded app with single-threaded app,
+`max_pending_transactions` must be set to 1 so that there would be events of a single request in the queues.
+
 - `check_isolation` verifies the actual hardware and operating system state prior to benchmarking.
-- Metadata that contains current setup, git states, application sha is written, runs are archived under labels (`branch-git_revision[:6](-dirty)` by default) with full fingerprint.
-- The dirty page cache is drained prior to each run, every run executes in separate systemd-run scope pinned to isolated cores.
+- Metadata that contains the current setup, git states, application sha is written, runs are archived under labels (`branch-git_revision[:6](-dirty)` by default) with full fingerprint.
+- The dirty page cache is drained prior to each run, every run executes in a separate systemd-run scope pinned to isolated cores.
 
 Take a look at [benchmarking.md](docs/benchmarking.md) for more info.
 
@@ -124,10 +131,13 @@ The benchmark must be run on a machine with isolated cores and performance setti
 ## Restrictions
 
 - Currently both order generators use only one ClientID{0}.
-- Currently `shift_mt_app` is not supported because of the current implementation of the shift design.
+- Currently `ShiftOrderGenerator` is not supported with multi-threaded stages because of the current implementation of the shift design.
+- Please note that the hard drive setup may affect the measurements. The replay app reads million requests per second and writes several millions events per second. 
+As default setup, the tmpfs for generated replay file and a fast nvme ssd drive for binary logs have been used.
 - Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. 
 It will not be tested in CI and it should be used for development purposes only.
 
 ## Future plans
 
+- Get rid of StlContainers and allocations on hot path
 - Security sharding in multi_threaded_app

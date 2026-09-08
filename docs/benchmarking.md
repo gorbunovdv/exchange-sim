@@ -26,15 +26,16 @@ It applies:
 
 ## HW & OS settings rationale
 
-The main benchmarking machine has Intel Core Ultra 9 285K, 64GB RAM and Ubuntu 26.04 under hood.
+The main benchmarking machine has Intel Core Ultra 9 285K, 64GB RAM, Samsung SSD 9100 PRO 2TB and Ubuntu 26.04 under the hood.
 
 Here are the main non-obvious points behind the settings (or lack of them):
 
 - Intel Core Ultra 9 285K lacks the SMT support, so there's no need to turn it off.
-- The app has been tested with turbo enabled/disabled. Turned on turbo makes frequency a lot higher (up to 5.7 GHz vs 3.7 GHz 
-of basic frequency). The current result with turbo stays within CONSISTENT threshold, so there's little need to turn it off.
+- The app has been tested with turbo enabled/disabled. Turned on turbo makes the frequency a lot higher (up to 5.7 GHz vs 3.7 GHz 
+of basic frequency). The current result with turbo stays within the CONSISTENT threshold, so there's little need to turn it off.
 - The app has been tested with/without core sleep prevention (`processor.max_cstate=1 intel_idle.max_cstate=0`). The core is 
 able to achieve a better frequency during the app benchmark with other cores allowed to sleep, so it's been decided to leave core sleep prevention off.
+- The generated replay file must be placed on `tmpfs`, since current nvme is not fast enough.
 
 ## Pre-run checks
 
@@ -62,6 +63,8 @@ Each of the settings above is validated and written as metadata:
 - `--use-perf` and `--perf-parameters` could be used to run `perf stat` on each run and copy results
 - `--no-aslr` could be used to disable ASLR
 
+Please note that the replay file must be generated before running any app with `ReplayOrderGenerator`.
+
 ## Fingerprinting
 
 Each run metadata json contains:
@@ -76,15 +79,20 @@ Each run metadata json contains:
 - preset
 - cmake cache variables (sanitizers, build type, compilers)
 - full config copy
+- replay file sha256
 - observed isolation metadata
 
 ## just evaluate
 
-    just evaluate <config> --apps APP1 [APP2] --labels LABEL1 [LABEL2] --percentiles 50 99.9
+    just evaluate <config> --apps APP1 [APP2] --label LABEL1 [LABEL2] --percentiles 50 99.9
 
 Fingerprints must match within one app/label (unless `--no-fingerprint-check` enabled). Groups with fewer than 10000 events are skipped. 
 First `calc_stats.requests_to_skip` requests are skipped. Currently four metric values are calculated: `first_report`, `last_report`, `first_market_event`, `last_market_event`. 
 Available percentiles are `[0, 50, 75, 99, 99.9, 100]`.
+
+There's also mode to compare two apps/labels.
+
+    just evaluate <config> --app-label-pairs APP1:LABEL1 APP2:LABEL2 --percentile 50 99
 
 ### Single mode
 
