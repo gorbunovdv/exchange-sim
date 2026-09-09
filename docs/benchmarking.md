@@ -57,8 +57,9 @@ Each of the settings above is validated and written as metadata:
   - page cache is dropped (`sync; echo 3 > drop_caches`)
   - the app is run under `hft.slice` scope with `-p AllowedCPUs=<cpus>`, each run lasts `--timeout` seconds (a minute by default). `MIMALLOC_RESERVE_HUGE_OS_PAGES` is passed from config.
   - `calc_stats.cpp` joins all journals by `origin_time` and prints json with latencies
-  - `calc_stats.py` aggregates all these latencies into statistics by percentiles
-  - artifacts (perf, metadata, logs, stats) are copied to `<benchmark_path>/<app>/<label>/run_<rep>/`
+  - `calc_stats.cpp` aggregates all these latencies into `stats.json` by percentiles and writes `summary.json`
+  with throughput and rejections count
+  - all artifacts (perf, metadata, logs, stats, summary) are copied to `<benchmark_path>/<app>/<label>/run_<rep>/`
 - `--use-perf` and `--perf-parameters` could be used to run `perf stat` on each run and copy results
 - `--no-aslr` could be used to disable ASLR
 
@@ -95,3 +96,12 @@ The bucket is flagged as `INCONSISTENT` when relative drift is more than 3.5% an
 
 Compare mode compares either two apps or two labels (or both): `delta_median +- (drift_1 + drift_2) (relative%)`. 
 The verdict is `IMPROVED`/`REGRESSED` in case `abs(delta_median) > drift_1 + drift_2 + 15` and `relative` is more than 3.5%.
+
+### Summary
+
+Both modes print the `summary` table after the latency tables, it is built from `summary.json` of each run:
+
+- `throughput` is requests per second, calculated as the number of non-skipped requests divided by the time between the first and the last of them.
+- `rejections` is the total count of rejected non-skipped requests, grouped by `rejections <type> <reason>`
+
+Single mode prints `median +- drift (relative%)` across the runs, compare mode prints `delta_median +- (drift_1 + drift_2) (relative%)`.

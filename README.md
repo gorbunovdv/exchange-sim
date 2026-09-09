@@ -101,6 +101,7 @@ single app or compare two apps:
 
 - Single app evaluation measures the drift of single app across runs by percentile. It emits either `-` or `INCONSISTENT` based on drift.
 - Two-way app evaluation measures the difference between latency percentile of two apps. It emits either `-`, `REGRESSED` or `IMPROVED` based on data.
+- Both modes print a summary with requests per second and rejections count by request type and rejection reason.
 
 Either different apps can be evaluated or one app across different labels.
 
