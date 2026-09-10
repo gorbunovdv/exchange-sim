@@ -36,4 +36,7 @@ using callable_argument_t = object_method_argument_t<decltype(&std::remove_cvref
 template<typename Derived, typename... Bases>
 constexpr bool derived_from_all = (std::derived_from<Derived, Bases> && ...);
 
+template<typename T, typename... Args>
+constexpr bool is_same_as_any_of = (std::is_same_v<T, Args> || ...);
+
 }  // namespace exchange_sim

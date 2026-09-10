@@ -26,7 +26,7 @@ const LoggingBackend::LoggingConfig LoggingBackend::constDefaultConfig = {
     .path = std::nullopt,
     .log_level = quill::LogLevel::Info,
     .format = quill::PatternFormatterOptions(),
-    .cpu_id = CpuID{0},
+    .cpu_id = std::nullopt,
 };
 
 LoggingBackend::LoggingBackend(LoggingConfig config, std::shared_ptr<quill::Sink> sink):
@@ -42,7 +42,10 @@ quill::Logger* get_logger() {
 
 LoggingBackend& LoggingBackend::get_or_create(const LoggingConfig* config) {
   static std::unique_ptr<LoggingBackend> logging_backend = [](const LoggingConfig* config) {
-    quill::Backend::start(quill::BackendOptions{.cpu_affinity = static_cast<uint16_t>(config->cpu_id.value())});
+    auto options = config->cpu_id.has_value() ?
+        quill::BackendOptions{.cpu_affinity = static_cast<uint16_t>(config->cpu_id.value().value())} :
+        quill::BackendOptions{};
+    quill::Backend::start(options);
     auto sink = [](const LoggingConfig* config) -> std::shared_ptr<quill::Sink> {
       if (config->type == LoggingConfig::Type::FILE) {
         if (!config->path.has_value()) {

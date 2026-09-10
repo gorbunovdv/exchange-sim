@@ -44,12 +44,17 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
         requested_huge_pages,
         expected_huge_pages);
   }
+  bool fallback_to_none = config.contains("fallback_to_none") && config["fallback_to_none"].get_boolean();
   Runtime::Config rt_config{
       .core_allocator_config = {
-          .shared_core = CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()},
-          .dedicated_cores = std::vector{std::from_range,
-              config["cpu_cores"]["dedicated_cores"].get_array() |
-                  std::views::transform([](auto&& v) { return CpuID{v.template as<uint32_t>()}; })},
+          .fallback_to_none = fallback_to_none,
+          .shared_core = !fallback_to_none ? std::optional{CpuID{config["cpu_cores"]["shared_core"].as<uint32_t>()}} :
+                                             std::nullopt,
+          .dedicated_cores = !fallback_to_none ?
+              std::vector{std::from_range,
+                  config["cpu_cores"]["dedicated_cores"].get_array() |
+                      std::views::transform([](auto&& v) { return CpuID{v.template as<uint32_t>()}; })} :
+              std::vector<CpuID>{},
       }};
   auto runtime = std::make_shared<Runtime>(rt_config);
   LoggingBackend::LoggingConfig logging_config{
@@ -62,7 +67,8 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
           magic_enum::enum_cast<quill::LogLevel>(
               config["logging"]["log_level"].as<std::string>(), magic_enum::case_insensitive)),
       .format = quill::PatternFormatterOptions(config["logging"]["format"].as<std::string>()),
-      .cpu_id = runtime->core_allocator().lease_core(CoreType::SHARED).cpu_id(),
+      .cpu_id = !fallback_to_none ? std::optional{runtime->core_allocator().lease_core(CoreType::SHARED).cpu_id()} :
+                                    std::nullopt,
   };
   LoggingBackend::init(logging_config);
   INFO("Initialized logging backend");

@@ -48,6 +48,7 @@
   },
   "results": {
     "stats": "./results/stats.json",
+    "summary": "./results/summary.json",
     "metadata": "./results/metadata.json",
     "perf": "./results/perf.txt",
     "logs": "./results/logs.txt"

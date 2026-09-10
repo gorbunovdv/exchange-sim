@@ -4,7 +4,7 @@ import argparse
 
 from tabulate import tabulate
 
-from helpers.single_benchmark_results import SingleBenchmarkResults
+from helpers.single_benchmark_results import SingleBenchmarkResults, relative_difference
 
 latency_fields = [
     "first_report",
@@ -26,7 +26,7 @@ def is_significant_single(pct, rel_threshold, abs_threshold):
 def is_significant_pair(pct1, pct2, rel_threshold, abs_threshold):
     _, median1, abs_diff1, _ = pct1
     _, median2, abs_diff2, _ = pct2
-    if abs(median2 - median1) / median1 * 100 > rel_threshold:
+    if relative_difference(median2 - median1, median1) > rel_threshold:
         if median2 - median1 > abs_diff1 + abs_diff2 + abs_threshold:
             return "REGRESSED"
         if median1 - median2 > abs_diff1 + abs_diff2 + abs_threshold:
@@ -73,6 +73,15 @@ class SingleRunEvaluation:
         print(f"======={metric}========")
         print(tabulate(metrics_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
 
+    def print_summary_table(self, sbm):
+        summary_table = []
+        for metric in sorted(sbm.keys()):
+            median, abs_diff, rel_diff = sbm[metric]
+            summary_table.append([metric, f"{median:.02f} +- {abs_diff:.02f} ({rel_diff:.02f}%)"])
+        headers = ["metric", "median +- max drift (rel drift %)"]
+        print("=======summary========")
+        print(tabulate(summary_table, headers=headers, tablefmt="github"))
+
 
 class MultiRunEvaluation:
     def __init__(self, percentiles, rel_threshold, abs_threshold, min_event_count_threshold, max_trades_count):
@@ -108,7 +117,7 @@ class MultiRunEvaluation:
                 _, median1, abs_diff1, _ = item1
                 _, median2, abs_diff2, _ = item2
                 median_difference = median2 - median1
-                rel_difference = abs(median_difference) / median1 * 100
+                rel_difference = relative_difference(median_difference, median1)
                 row.extend(
                     [
                         f"{median1}",
@@ -123,6 +132,25 @@ class MultiRunEvaluation:
             headers.extend(("median1", "median2", f"pct {percentile} median diff +- diff (rel_diff%)", "actual type"))
         print(f"======={metric}=======")
         print(tabulate(metrics_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
+
+    def print_summary_table_comparison(self, sbm1, sbm2):
+        summary_table = []
+        for metric in sorted(sbm1.keys() | sbm2.keys()):
+            median1, abs_diff1, _ = sbm1.get(metric, (0, 0, 0.0))
+            median2, abs_diff2, _ = sbm2.get(metric, (0, 0, 0.0))
+            median_difference = median2 - median1
+            rel_difference = relative_difference(median_difference, median1)
+            summary_table.append(
+                (
+                    metric,
+                    median1,
+                    median2,
+                    f"{median_difference:.02f} +- {abs_diff1 + abs_diff2:.02f} ({rel_difference:.02f}%)",
+                )
+            )
+        headers = ["metric", "median1", "median2", "median diff +- diff (rel_diff%)"]
+        print("=======summary=======")
+        print(tabulate(summary_table, headers=headers, tablefmt="github", intfmt=",", floatfmt=",.2f"))
 
 
 def evaluate_runs(
@@ -145,6 +173,7 @@ def evaluate_runs(
         es = SingleRunEvaluation(percentiles, rel_threshold, abs_threshold, min_event_count_threshold, max_trades_count)
         for metric in latency_fields:
             es.print_metric_table(metric, sb.results_by_group_by_percentile(metric))
+        es.print_summary_table(sb.summary_by_metric())
     else:
         sb1 = SingleBenchmarkResults(config_path, preset, app1, label1, no_fingerprint_check)
         sb2 = SingleBenchmarkResults(config_path, preset, app2, label2, no_fingerprint_check)
@@ -153,6 +182,7 @@ def evaluate_runs(
             em.print_metric_table_comparison(
                 metric, sb1.results_by_group_by_percentile(metric), sb2.results_by_group_by_percentile(metric)
             )
+        em.print_summary_table_comparison(sb1.summary_by_metric(), sb2.summary_by_metric())
 
 
 def main():

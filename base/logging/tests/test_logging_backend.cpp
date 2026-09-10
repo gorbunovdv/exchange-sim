@@ -5,10 +5,22 @@
 #include <gtest/gtest.h>
 
 #include <numeric>
+#include <optional>
 
 using namespace exchange_sim;
 
-TEST(LoggingBackendTests, BasicLoggingBackendTest) {
+struct LoggingBackendCorePinningTestInput {
+  std::optional<CpuID> cpu_id;
+  std::string name;
+};
+
+std::ostream& operator<<(std::ostream& stream, const LoggingBackendCorePinningTestInput& input) {
+  return stream << input.name;
+}
+
+class LoggingBackendCorePinningTest : public testing::TestWithParam<LoggingBackendCorePinningTestInput> {};
+
+TEST_P(LoggingBackendCorePinningTest, BasicLoggingBackendTest) {
   TemporaryDirectory directory("logs");
   TemporaryFile file(directory, "logs");
 
@@ -17,7 +29,7 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
       .path = file.path(),
       .log_level = quill::LogLevel::Info,
       .format = quill::PatternFormatterOptions("{{%(logger)}} %(message)"),
-      .cpu_id = CpuID{0},
+      .cpu_id = GetParam().cpu_id,
   });
 
   std::array lines = {"ababc", "fdhsdfhs", "dsjfsdjhfj", "dkfkjsdf"};
@@ -33,6 +45,11 @@ TEST(LoggingBackendTests, BasicLoggingBackendTest) {
 
   EXPECT_EQ(logs, expected_logs);
 }
+
+INSTANTIATE_TEST_SUITE_P(LoggingBackendTests,
+    LoggingBackendCorePinningTest,
+    testing::Values(LoggingBackendCorePinningTestInput{std::optional<CpuID>{CpuID{0}}, "Cpu0"},
+        LoggingBackendCorePinningTestInput{std::nullopt, "NoCpu"}));
 
 TEST(LoggingBackendTests, CriticalTest) {
   auto log_critical = []() {

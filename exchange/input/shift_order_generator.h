@@ -406,15 +406,9 @@ private:
       enum class BeatOrderType : uint8_t { ADD, REPLACE };
 
       boost::container::static_vector<BeatOrderType, 2> order_types{BeatOrderType::ADD};
-      /* todo(gorbunovdv): Rewrite the whole replace generation logic in both Generators
-       * Currently OrderStorage does not separate orders by Direction
-       * In order to maintain the book, we must select the order to replace with the same direction as the beat
-       * direction, otherwise the quantity will disappear from the other side of the book
-       */
-
-      // if (interface_.order_storage()[security_id_].active_orders().size() > min_active_orders_by_security_) {
-      //   order_types.push_back(BeatOrderType::REPLACE);
-      // }
+      if (order_storage_.active_orders().orders_by_direction(direction).size() > min_active_orders_by_security_) {
+        order_types.push_back(BeatOrderType::REPLACE);
+      }
 
       BeatOrderType type = order_types[random_.rand_int<size_t>(0, order_types.size() - 1)];
       switch (type) {
@@ -427,11 +421,11 @@ private:
           CHECK(!order_storage_.active_orders().empty(),
               "Active orders must not be empty for replacement query, security_id={}",
               security_id_.value());
-          const auto& active_orders = order_storage_.active_orders();
-          auto order_to_replace_index = random_.rand_int<size_t>(0, active_orders.size() - 1);
+          const auto& active_orders_with_direction = order_storage_.active_orders().orders_by_direction(direction);
+          auto order_to_replace_index = random_.rand_int<size_t>(0, active_orders_with_direction.size() - 1);
 
-          interface_.send_order_replace_request(active_orders[order_to_replace_index].client_id,
-              active_orders[order_to_replace_index].client_order_id,
+          interface_.send_order_replace_request(active_orders_with_direction[order_to_replace_index].client_id,
+              active_orders_with_direction[order_to_replace_index].client_order_id,
               security_id_,
               direction,
               price,
