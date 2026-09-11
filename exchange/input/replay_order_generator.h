@@ -18,7 +18,7 @@ public:
       interface_(interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       replay_journal_("replay_journal",
-          File(config["generated_replay"].as<std::string>(), File::Mode::READ, true),
+          config["generated_replay"].as<std::string>(),
           decltype(replay_journal_)::Mode::READ,
           config["replay_journal_queue_size"].as<size_t>(),
           interface_.lease_core(CoreType::SHARED)) {

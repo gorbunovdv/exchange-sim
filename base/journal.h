@@ -11,6 +11,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include <array>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <type_traits>
@@ -77,8 +78,12 @@ public:
 
   enum class Mode : std::uint8_t { READ, WRITE };
 
-  explicit Journal(const std::string& name, FileType&& file, Mode mode):
-      LoggableClass(name), name_(name), stream_(std::move(file)), mode_(mode), throughput_(name) {
+  explicit Journal(const std::string& name, const std::filesystem::path& journal_path, Mode mode):
+      LoggableClass(name),
+      name_(name),
+      stream_(journal_path, mode == Mode::WRITE ? FileType::Mode::WRITE : FileType::Mode::READ, true),
+      mode_(mode),
+      throughput_(name) {
     CHECK(mode_ == Mode::READ || mode_ == Mode::WRITE, "Invalid journal mode: {}", magic_enum::enum_name(mode_));
   }
 

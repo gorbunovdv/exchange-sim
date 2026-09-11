@@ -29,17 +29,17 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   static constexpr size_t constJournalSize = 1 << 20;
 
   ThreadedJournal<File, market_events::EventType> market_data_journal("Journal<market_events::EventType>",
-      File(config["journaling"]["market_events"].as<std::string>(), File::Mode::WRITE, true),
+      config["journaling"]["market_events"].as<std::string>(),
       decltype(market_data_journal)::Mode::WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
   ThreadedJournal<File, report::ReportType> report_journal("Journal<report::ReportType>",
-      File(config["journaling"]["reports"].as<std::string>(), File::Mode::WRITE, true),
+      config["journaling"]["reports"].as<std::string>(),
       decltype(report_journal)::Mode::WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
   ThreadedJournal<File, request::RequestType> request_journal("Journal<request::RequestType>",
-      File(config["journaling"]["requests"].as<std::string>(), File::Mode::WRITE, true),
+      config["journaling"]["requests"].as<std::string>(),
       decltype(request_journal)::Mode::WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));

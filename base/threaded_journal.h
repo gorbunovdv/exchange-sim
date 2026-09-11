@@ -16,6 +16,7 @@ template<typename FileType, typename POD>
   requires(std::is_trivially_copyable_v<POD> && !std::is_pointer_v<POD>)
 class ThreadedJournal : NonMoveable, public LoggableClass {
 public:
+  using UnderlyingJournal = Journal<FileType, POD>;
   using value_type = typename Journal<FileType, POD>::value_type;
   using iterator = JournalIterator<ThreadedJournal>;
 
@@ -24,16 +25,15 @@ public:
   enum class Mode : std::uint8_t { READ, WRITE };
 
   explicit ThreadedJournal(const std::string& name,
-      FileType&& file,
+      const std::filesystem::path& journal_path,
       Mode mode,
       size_t size,
       std::optional<CoreLease>&& core_lease = std::nullopt):
       LoggableClass(name),
       name_(name),
       core_lease_(std::move(core_lease)),
-      journal_(name,
-          std::move(file),
-          mode == Mode::WRITE ? decltype(journal_)::Mode::WRITE : decltype(journal_)::Mode::READ),
+      journal_(
+          name, journal_path, mode == Mode::WRITE ? UnderlyingJournal::Mode::WRITE : UnderlyingJournal::Mode::READ),
       mode_(mode),
       queue_(size) {
     CHECK(size > 1, "Journal size should be greater than 1");
@@ -165,7 +165,7 @@ private:
   std::string name_;
   std::optional<CoreLease> core_lease_;
 
-  Journal<FileType, POD> journal_;
+  UnderlyingJournal journal_;
   Mode mode_;
 
   SPSCQueue<value_type> queue_;
