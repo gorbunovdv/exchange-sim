@@ -1,13 +1,12 @@
 #pragma once
 
-#include "base/journal.h"
+#include "base/file.h"
+#include "base/threaded_journal.h"
 
 #include "exchange/domain/requests.h"
 
 #include <boost/hof/match.hpp>
 #include <glaze/glaze.hpp>
-
-#include <concepts>
 
 namespace exchange_sim {
 
@@ -19,8 +18,8 @@ public:
       interface_(interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
       replay_journal_("replay_journal",
-          config["generated_replay"].as<std::string>(),
-          JournalMode::FAST_READ,
+          File(config["generated_replay"].as<std::string>(), File::Mode::READ, true),
+          decltype(replay_journal_)::Mode::READ,
           config["replay_journal_queue_size"].as<size_t>(),
           interface_.lease_core(CoreType::SHARED)) {
     while (!replay_journal_.ready()) {
@@ -89,8 +88,8 @@ private:
 
   const uint32_t max_pending_transactions_;
 
-  Journal<request::RequestType> replay_journal_;
-  decltype(replay_journal_)::template iterator<> current_request_;
+  ThreadedJournal<File, request::RequestType> replay_journal_;
+  decltype(replay_journal_)::iterator current_request_;
 };
 
 }  // namespace exchange_sim

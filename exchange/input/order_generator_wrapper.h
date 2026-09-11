@@ -1,7 +1,8 @@
 #pragma once
 
 #include "base/counter.h"
-#include "base/journal.h"
+#include "base/file.h"
+#include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
 #include "base/throughput.h"
 
@@ -21,9 +22,9 @@ public:
   template<typename... Args>
   explicit OrderGeneratorWrapper(const std::shared_ptr<Runtime>& runtime,
       SecurityStorage& security_storage,
-      Journal<request::RequestType>& requests_journal,
-      Journal<market_events::EventType>& market_data_journal,
-      Journal<report::ReportType>& report_journal,
+      ThreadedJournal<File, request::RequestType>& requests_journal,
+      ThreadedJournal<File, market_events::EventType>& market_data_journal,
+      ThreadedJournal<File, report::ReportType>& report_journal,
       SinkType& sink,
       Args&&... args):
       generator_interface_(runtime->stop_token(), runtime->core_allocator(), security_storage, requests_journal, sink),
@@ -91,8 +92,8 @@ private:
   GeneratorInterface generator_interface_;
   OrderGenerator<GeneratorInterface> generator_;
 
-  Journal<market_events::EventType>& market_data_journal_;
-  Journal<report::ReportType>& report_journal_;
+  ThreadedJournal<File, market_events::EventType>& market_data_journal_;
+  ThreadedJournal<File, report::ReportType>& report_journal_;
 
   std::vector<Timestamped<market_events::EventType>> event_buffer_;
   std::vector<Timestamped<report::ReportType>> report_buffer_;

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "base/counter.h"
-#include "base/journal.h"
+#include "base/file.h"
+#include "base/threaded_journal.h"
 
 #include "domain/security_storage.h"
 
@@ -19,7 +20,7 @@ public:
   explicit GeneratorInterface(std::stop_token stop_token,
       CoreAllocator& allocator,
       SecurityStorage& security_storage,
-      Journal<request::RequestType>& journal,
+      ThreadedJournal<File, request::RequestType>& journal,
       SinkType& sink):
       Skills(security_storage)...,
       stop_token_(std::move(stop_token)),
@@ -131,7 +132,7 @@ private:
   SecurityStorage& security_storage_;
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;
-  Journal<request::RequestType>& journal_;
+  ThreadedJournal<File, request::RequestType>& journal_;
 
   std::vector<request::RequestType> request_buffer_;
 

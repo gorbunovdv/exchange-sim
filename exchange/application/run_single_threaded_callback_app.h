@@ -2,6 +2,7 @@
 #include "base/callback_receiver.h"
 #include "base/callback_sink.h"
 #include "base/forward_sink.h"
+#include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
 
 #include "domain/generate_securities.h"
@@ -27,19 +28,19 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   static constexpr size_t constJournalSize = 1 << 20;
 
-  Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
-      config["journaling"]["market_events"].as<std::string>(),
-      JournalMode::FAST_WRITE,
+  ThreadedJournal<File, market_events::EventType> market_data_journal("Journal<market_events::EventType>",
+      File(config["journaling"]["market_events"].as<std::string>(), File::Mode::WRITE, true),
+      decltype(market_data_journal)::Mode::WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
-  Journal<report::ReportType> report_journal("Journal<report::ReportType>",
-      config["journaling"]["reports"].as<std::string>(),
-      JournalMode::FAST_WRITE,
+  ThreadedJournal<File, report::ReportType> report_journal("Journal<report::ReportType>",
+      File(config["journaling"]["reports"].as<std::string>(), File::Mode::WRITE, true),
+      decltype(report_journal)::Mode::WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
-  Journal<request::RequestType> request_journal("Journal<request::RequestType>",
-      config["journaling"]["requests"].as<std::string>(),
-      JournalMode::FAST_WRITE,
+  ThreadedJournal<File, request::RequestType> request_journal("Journal<request::RequestType>",
+      File(config["journaling"]["requests"].as<std::string>(), File::Mode::WRITE, true),
+      decltype(request_journal)::Mode::WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
 
