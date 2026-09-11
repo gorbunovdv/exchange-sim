@@ -13,17 +13,17 @@ File::File(const std::filesystem::path& path, Mode mode, bool binary):
   CHECK(file_.is_open(), "Could not open filename={} mode={}", path.string(), magic_enum::enum_name(mode));
 }
 
-size_t File::read(char* buffer, size_t size) {
-  file_.read(buffer, size);
+size_t File::read(std::span<char> buffer) {
+  file_.read(buffer.data(), static_cast<std::streamsize>(buffer.size_bytes()));
   size_t bytes_read = file_.gcount();
   CHECK(!file_.bad(), "Encountered error while reading from file");
   return bytes_read;
 }
 
-size_t File::write(const char* buffer, size_t size) {
-  file_.write(buffer, size);
+size_t File::write(std::span<const char> buffer) {
+  file_.write(buffer.data(), static_cast<std::streamsize>(buffer.size_bytes()));
   CHECK(file_, "Encountered error while writing to file");
-  return size;
+  return buffer.size_bytes();
 }
 
 }  // namespace exchange_sim

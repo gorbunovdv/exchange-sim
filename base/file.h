@@ -11,13 +11,13 @@ namespace exchange_sim {
 
 class File {
 public:
-  enum class Mode { READ, WRITE };
+  enum class Mode : uint8_t { READ, WRITE };
 
   explicit File(const std::filesystem::path& path, Mode mode, bool binary = false);
 
-  size_t read(char* buffer, size_t size);
+  size_t read(std::span<char> buffer);
 
-  size_t write(const char* buffer, size_t size);
+  size_t write(std::span<const char> buffer);
 
   bool eof() const { return file_.eof(); }
 

@@ -94,7 +94,7 @@ public:
   void write(std::span<const value_type> data) {
     CHECK(mode_ == Mode::WRITE, "Mode should be write");
     if (!data.empty()) {
-      stream_.write(reinterpret_cast<const char*>(data.data()), data.size_bytes());
+      stream_.write({reinterpret_cast<const char*>(data.data()), data.size_bytes()});
       throughput_.tick(data.size());
     }
   }
@@ -103,8 +103,8 @@ public:
     CHECK(mode_ == Mode::READ, "Mode should be read");
     std::streamsize max_bytes_read = data.size_bytes(), bytes_read = 0;
     while (bytes_read < max_bytes_read) {
-      std::streamsize current_bytes_read =
-          stream_.read(reinterpret_cast<char*>(data.data()) + bytes_read, max_bytes_read - bytes_read);
+      std::streamsize current_bytes_read = stream_.read(
+          {reinterpret_cast<char*>(data.data()) + bytes_read, static_cast<size_t>(max_bytes_read - bytes_read)});
       bytes_read += current_bytes_read;
       if (current_bytes_read == 0) {
         break;
