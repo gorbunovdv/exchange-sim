@@ -101,12 +101,10 @@ public:
 
   size_t read(std::span<value_type> data) {
     CHECK(mode_ == Mode::READ, "Mode should be read");
-    std::streamsize max_bytes_read = data.size_bytes();
-    std::streamsize bytes_read = 0;
+    std::streamsize max_bytes_read = data.size_bytes(), bytes_read = 0;
     while (bytes_read < max_bytes_read) {
       std::streamsize current_bytes_read =
           stream_.read(reinterpret_cast<char*>(data.data()) + bytes_read, max_bytes_read - bytes_read);
-      ;
       bytes_read += current_bytes_read;
       if (current_bytes_read == 0) {
         break;
