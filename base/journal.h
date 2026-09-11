@@ -21,7 +21,7 @@
 
 namespace exchange_sim {
 
-enum class JournalMode : std::uint8_t { FAST_READ, READ, WRITE };
+enum class JournalMode : std::uint8_t { FAST_READ, READ, FAST_WRITE };
 
 template<typename POD>
   requires(std::is_trivially_copyable_v<POD> && !std::is_pointer_v<POD>)
@@ -39,7 +39,7 @@ public:
       LoggableClass(name),
       name_(name),
       core_lease_(std::move(core_lease)),
-      stream_(journal_path, (mode == JournalMode::WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
+      stream_(journal_path, (mode == JournalMode::FAST_WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
       mode_(mode),
       queue_(size),
       throughput_(name) {
@@ -47,39 +47,34 @@ public:
       CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
     }
     CHECK(size > 1, "Journal size should be greater than 1");
-    if (mode == JournalMode::WRITE) {
+    if (mode_ == JournalMode::FAST_WRITE) {
       thread_ = std::jthread([this](const std::stop_token& token) { run_write_journal(token); });
-    } else {
+    } else if (mode_ == JournalMode::FAST_READ) {
       thread_ = std::jthread([this](const std::stop_token& token) { run_read_journal(token); });
+    } else {
+      ready_ = true;
     }
   }
 
   void write(const POD& value, Ticks timestamp) {
-    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
+    CHECK(mode_ == JournalMode::FAST_WRITE, "Mode should be write");
     queue_.emplace(value, timestamp);
   }
 
   void write(const value_type& structure) {
-    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
+    CHECK(mode_ == JournalMode::FAST_WRITE, "Mode should be write");
     queue_.emplace(structure);
   }
 
   template<typename Consumer>
-  bool consume_if_available(Consumer&& consumer) {
-    auto fully_read_file = [this]() {
-      return stopped_.load(std::memory_order_acquire) && queue_.empty();
-    };
-
-    CHECK(mode_ == JournalMode::READ || mode_ == JournalMode::FAST_READ, "Mode should be read");
-    do {
-      if (queue_.consume(consumer)) {
-        return true;
-      }
-      if (mode_ == JournalMode::FAST_READ) {
-        CHECK(fully_read_file(), "Producer is not fast enough in Journal");
-      }
-    } while (!fully_read_file());
-    return false;
+  bool consume(Consumer&& consumer) {
+    if (mode_ == JournalMode::FAST_READ) {
+      return fast_consume(std::forward<Consumer>(consumer));
+    }
+    if (mode_ == JournalMode::READ) {
+      return slow_consume(std::forward<Consumer>(consumer));
+    }
+    CRITICAL("Invalid journal mode: {}", magic_enum::enum_name(mode_));
   }
 
   template<typename BaseType =
@@ -119,7 +114,7 @@ public:
   private:
     void advance() {
       if (!is_eof_ && journal_) {
-        is_eof_ = !journal_->consume_if_available([this](const value_type& value) { current_value_.emplace(value); });
+        is_eof_ = !journal_->consume([this](const value_type& value) { current_value_.emplace(value); });
       }
     }
 
@@ -148,6 +143,40 @@ private:
       }
       return false;
     });
+  }
+
+  bool slow_consume(auto&& consumer) {
+    alignas(value_type) std::array<std::byte, sizeof(value_type)> data;
+    stream_.read(reinterpret_cast<char*>(data.data()), data.size());
+    std::streamsize bytes_read = stream_.gcount();
+    if (stream_.bad()) {
+      CRITICAL("Encountered error while reading from journal");
+    }
+    if (stream_ && bytes_read == sizeof(value_type)) {
+      std::forward<decltype(consumer)>(consumer)(*reinterpret_cast<value_type*>(data.data()));
+      return true;
+    }
+    if (bytes_read != 0) {
+      ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
+    }
+    return false;
+  }
+
+  bool fast_consume(auto&& consumer) {
+    auto fully_read_file = [this]() {
+      return stopped_.load(std::memory_order_acquire) && queue_.empty();
+    };
+
+    do {
+      if (queue_.consume(consumer)) {
+        return true;
+      }
+      if (mode_ == JournalMode::FAST_READ) {
+        CHECK(fully_read_file(), "Producer is not fast enough in Journal");
+      }
+    } while (!fully_read_file());
+
+    return false;
   }
 
   void fill() {

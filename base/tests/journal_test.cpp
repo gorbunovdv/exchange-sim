@@ -24,7 +24,7 @@ struct Record {
 using RecordJournal = Journal<Record>;
 
 void write_records(const std::filesystem::path& path, const std::vector<RecordJournal::value_type>& records) {
-  RecordJournal journal("RecordJournal", path, JournalMode::WRITE, records.size() + 1, std::nullopt);
+  RecordJournal journal("RecordJournal", path, JournalMode::FAST_WRITE, records.size() + 1, std::nullopt);
   for (const auto& record : records) {
     journal.write(record);
   }
@@ -45,14 +45,14 @@ TEST(JournalTest, WriteReadTest) {
 
   RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 2);
   for (const auto& record : records) {
-    ASSERT_TRUE(journal.consume_if_available([&](const auto& actual) {
+    ASSERT_TRUE(journal.consume([&](const auto& actual) {
       EXPECT_EQ(actual.timestamp, record.timestamp);
       EXPECT_EQ(actual.object, record.object);
     }));
   }
 
   bool has_more_events = false;
-  EXPECT_FALSE(journal.consume_if_available([&](const auto&) { has_more_events = true; }));
+  EXPECT_FALSE(journal.consume([&](const auto&) { has_more_events = true; }));
   EXPECT_FALSE(has_more_events);
 }
 
@@ -92,12 +92,12 @@ TEST(JournalTest, BigEventsCount) {
 
   RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 32);
   for (const auto& expected : records) {
-    ASSERT_TRUE(journal.consume_if_available([&](const RecordJournal::value_type& actual) {
+    ASSERT_TRUE(journal.consume([&](const RecordJournal::value_type& actual) {
       EXPECT_EQ(actual.timestamp, expected.timestamp);
       EXPECT_EQ(actual.object, expected.object);
     }));
   }
-  ASSERT_FALSE(journal.consume_if_available([](const RecordJournal::value_type&) {}));
+  ASSERT_FALSE(journal.consume([](const RecordJournal::value_type&) {}));
 }
 
 TEST(JournalTest, FastRead) {
@@ -122,7 +122,7 @@ TEST(JournalTest, FastRead) {
 
   for (const auto& expected : records) {
     size_t consumer_calls = 0;
-    ASSERT_TRUE(journal.consume_if_available([&](const RecordJournal::value_type& actual) {
+    ASSERT_TRUE(journal.consume([&](const RecordJournal::value_type& actual) {
       ++consumer_calls;
       EXPECT_EQ(actual.timestamp, expected.timestamp);
       EXPECT_EQ(actual.object, expected.object);
@@ -139,7 +139,7 @@ TEST(JournalTest, EmptyJournal) {
   EXPECT_EQ(journal.begin(), journal.end());
 
   bool consumer_called = false;
-  EXPECT_FALSE(journal.consume_if_available([&](const auto&) { consumer_called = true; }));
+  EXPECT_FALSE(journal.consume([&](const auto&) { consumer_called = true; }));
   EXPECT_FALSE(consumer_called);
 }
 
@@ -156,7 +156,7 @@ TEST(JournalTest, TornRecord) {
 
   RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ, 5);
   bool consumer_called = false;
-  EXPECT_FALSE(journal.consume_if_available([&](const auto&) { consumer_called = true; }));
+  EXPECT_FALSE(journal.consume([&](const auto&) { consumer_called = true; }));
   EXPECT_FALSE(consumer_called);
 }
 
@@ -170,8 +170,8 @@ TEST(JournalTest, WrongMode) {
   }
 
   {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::WRITE, 2, std::nullopt);
-    EXPECT_THROW(journal.consume_if_available([](const auto&) {}), std::runtime_error);
+    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::FAST_WRITE, 2, std::nullopt);
+    EXPECT_THROW(journal.consume([](const auto&) {}), std::runtime_error);
     EXPECT_THROW(journal.begin(), std::runtime_error);
   }
 }

@@ -29,17 +29,17 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
-      JournalMode::WRITE,
+      JournalMode::FAST_WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
   Journal<report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
-      JournalMode::WRITE,
+      JournalMode::FAST_WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
   Journal<request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
-      JournalMode::WRITE,
+      JournalMode::FAST_WRITE,
       constJournalSize,
       runtime->core_allocator().lease_core(CoreType::SHARED));
 
