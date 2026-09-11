@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/file.h"
+#include "base/inmemory_file.h"
 #include "base/threaded_journal.h"
 
 #include "exchange/domain/requests.h"
@@ -17,11 +18,8 @@ public:
   explicit ReplayOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
       interface_(interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
-      replay_journal_("replay_journal",
-          config["generated_replay"].as<std::string>(),
-          decltype(replay_journal_)::Mode::READ,
-          config["replay_journal_queue_size"].as<size_t>(),
-          interface_.lease_core(CoreType::SHARED)) {
+      replay_journal_(
+          "replay_journal", config["generated_replay"].as<std::string>(), decltype(replay_journal_)::Mode::READ) {
     while (!replay_journal_.ready()) {
       std::this_thread::sleep_for(100ms);
     }
@@ -88,7 +86,7 @@ private:
 
   const uint32_t max_pending_transactions_;
 
-  ThreadedJournal<File, request::RequestType> replay_journal_;
+  Journal<InMemoryFile, request::RequestType> replay_journal_;
   decltype(replay_journal_)::iterator current_request_;
 };
 
