@@ -2,10 +2,9 @@
 
 #include "logging/logging_backend.h"
 
-#include <magic_enum/magic_enum.hpp>
-
 #include <filesystem>
 #include <fstream>
+#include <span>
 
 namespace exchange_sim {
 
