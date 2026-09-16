@@ -16,7 +16,9 @@ namespace exchange_sim {
 template<template<typename> class BookContainer, engine_events::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
-  explicit MatchingEngine(const glz::generic& config, const SecurityStorage& security_storage, SinkType& sink):
+  using OutputSinkType = SinkType;
+
+  explicit MatchingEngine(const glz::generic& config, const SecurityStorage& security_storage, OutputSinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     static_assert(request::Processor<MatchingEngine>);
 
@@ -85,7 +87,7 @@ private:
   }
 
   const SecurityStorage& security_storage_;
-  SinkType& sink_;
+  OutputSinkType& sink_;
   StrongTypeIndexedVector<SecurityID, L3Book<BookContainer>> books_;
 
   Counter<ExchangeOrderID> order_id_counter_;

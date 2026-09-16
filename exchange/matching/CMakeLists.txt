@@ -5,7 +5,7 @@ target_link_libraries(matching PUBLIC base exchange_domain book_containers)
 target_sources(matching PUBLIC
     FILE_SET HEADERS
     BASE_DIRS ${PROJECT_SOURCE_DIR}
-    FILES l3book.h matching_engine.h risk_checker.h
+    FILES l3book.h matching_engine.h risk_checker.h matching_engine_concept.h
 )
 
 add_executable(risk_checker_test tests/risk_checker_test.cpp)

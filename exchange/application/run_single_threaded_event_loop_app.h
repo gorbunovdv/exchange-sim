@@ -10,6 +10,9 @@
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
+#include "exchange/input/order_generator_concept.h"
+#include "exchange/matching/matching_engine_concept.h"
+#include "exchange/output/dispatcher_concept.h"
 
 #include <boost/container/static_vector.hpp>
 #include <glaze/glaze.hpp>
@@ -112,16 +115,30 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   auto sinks = std::make_unique<event_loop::Sinks>();
 
-  OrderGenerator order_generator_wrapper(runtime,
+  using AppOrderGenerator = OrderGenerator<decltype(sinks->request_sink)>;
+
+  static_assert(concepts::OrderGenerator<AppOrderGenerator>);
+
+  AppOrderGenerator order_generator_wrapper(runtime,
       security_storage,
       request_journal,
       market_data_journal,
       report_journal,
       sinks->request_sink,
       config["order_generator"]);
-  MatchingEngine<event_loop::Sinks::EngineEventSinkType> matching_engine(
-      config["matching_engine"], security_storage, sinks->engine_event_sink);
-  ExchangeDispatcher event_dispatcher(
+
+  using AppMatchingEngine = MatchingEngine<event_loop::Sinks::EngineEventSinkType>;
+
+  static_assert(concepts::MatchingEngine<AppMatchingEngine>);
+
+  AppMatchingEngine matching_engine(config["matching_engine"], security_storage, sinks->engine_event_sink);
+
+  using AppExchangeDispatcher =
+      ExchangeDispatcher<decltype(sinks->market_data_generator_sink), decltype(sinks->report_generator_sink)>;
+
+  static_assert(concepts::ExchangeDispatcher<AppExchangeDispatcher>);
+
+  AppExchangeDispatcher event_dispatcher(
       config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
 
   while (!stop_token.stop_requested() && !order_generator_wrapper.generator_stopped()) {

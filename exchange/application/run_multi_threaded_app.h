@@ -10,6 +10,9 @@
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
+#include "exchange/input/order_generator_concept.h"
+#include "exchange/matching/matching_engine_concept.h"
+#include "exchange/output/dispatcher_concept.h"
 
 #include <glaze/glaze.hpp>
 
@@ -54,8 +57,11 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
   MarketDataSinkType market_data_generator_sink(constQueueSize);
   ReportSinkType report_generator_sink(constQueueSize);
 
-  ThreadReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>> exchange_dispatcher(
-      "ExchangeDispatcher",
+  using AppDispatcher = ExchangeDispatcher<MarketDataSinkType, ReportSinkType>;
+
+  static_assert(concepts::ExchangeDispatcher<AppDispatcher>);
+
+  ThreadReceiver<engine_events::EventType, AppDispatcher> exchange_dispatcher("ExchangeDispatcher",
       constQueueSize,
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
       config["exchange_dispatcher"],
@@ -64,20 +70,28 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
 
-  ThreadReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine("MatchingEngine",
+  using AppMatchingEngine = MatchingEngine<ExchangeDispatcherSinkType>;
+
+  static_assert(concepts::MatchingEngine<AppMatchingEngine>);
+
+  ThreadReceiver<request::RequestType, AppMatchingEngine> matching_engine("MatchingEngine",
       constQueueSize,
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
       config["matching_engine"],
       security_storage,
       exchange_dispatcher.get_sink());
 
-  OrderGenerator order_generator(runtime,
+  using AppOrderGenerator = OrderGenerator<decltype(matching_engine.get_sink())>;
+
+  AppOrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,
       report_journal,
       matching_engine.get_sink(),
       config["order_generator"]);
+
+  static_assert(concepts::OrderGenerator<AppOrderGenerator>);
 
   while (!exchange_dispatcher.ready_to_receive()) {
     std::this_thread::sleep_for(100ms);
