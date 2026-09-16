@@ -18,7 +18,11 @@ public:
   using OrderType = ActiveOrder;
   using iterator = std::list<OrderType>::iterator;
 
+#if defined(_LIBCPP_VERSION)
+  static_assert(sizeof(std::__list_node<OrderType, void*>) <= constCacheLineSize);
+#else
   static_assert(sizeof(std::_List_node<OrderType>) <= constCacheLineSize);
+#endif
 
   bool empty() const { return level_.empty(); }
 
