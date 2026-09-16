@@ -3,188 +3,146 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
 #include "base/noncopyable.h"
-#include "base/spsc_queue.h"
-#include "base/threading/core_allocator.h"
 #include "base/throughput.h"
 #include "base/time/rdtsc.h"
 #include "base/time/timestamped.h"
 
 #include <boost/stl_interfaces/iterator_interface.hpp>
-#include <cpptrace/from_current.hpp>
-#include <cpptrace/from_current_macros.hpp>
 #include <magic_enum/magic_enum.hpp>
 
+#include <array>
 #include <filesystem>
-#include <fstream>
+#include <optional>
 #include <span>
 #include <type_traits>
+#include <utility>
 
 namespace exchange_sim {
 
-enum class JournalMode : std::uint8_t { READ, WRITE };
+template<typename JournalType,
+    typename BaseType =
+        boost::stl_interfaces::proxy_iterator_interface<std::input_iterator_tag, typename JournalType::value_type>>
+class JournalIterator : public BaseType {
+public:
+  explicit JournalIterator(JournalType* journal = nullptr): journal_(journal) {
+    BOOST_STL_INTERFACES_STATIC_ASSERT_CONCEPT(JournalIterator, std::input_iterator);
+    advance();
+  }
 
-template<typename POD>
+  JournalIterator& operator++() {
+    advance();
+    return *this;
+  }
+
+  typename JournalType::value_type operator*() const {
+    using ::exchange_sim::get_logger;
+
+    CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
+    return *current_value_;
+  }
+
+  const typename JournalType::value_type* operator->() const {
+    using ::exchange_sim::get_logger;
+
+    CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
+    return &(*current_value_);
+  }
+
+  bool operator==(const JournalIterator& iterator) const {
+    return (journal_ == nullptr || iterator.journal_ == nullptr) && (is_eof_ || iterator.is_eof_);
+  }
+
+  using BaseType::operator++;
+
+private:
+  void advance() {
+    if (!is_eof_ && journal_) {
+      is_eof_ =
+          !journal_->consume([this](const typename JournalType::value_type& value) { current_value_.emplace(value); });
+    }
+  }
+
+  JournalType* journal_;
+  std::optional<typename JournalType::value_type> current_value_;
+  bool is_eof_ = false;
+};
+
+template<typename FileType, typename POD>
   requires(std::is_trivially_copyable_v<POD> && !std::is_pointer_v<POD>)
 class Journal : NonMoveable, public LoggableClass {
 public:
   using value_type = Timestamped<POD>;
+  using iterator = JournalIterator<Journal>;
 
   static constexpr size_t value_size = sizeof(value_type);
 
-  explicit Journal(const std::string& name,
-      const std::filesystem::path& journal_path,
-      JournalMode mode,
-      std::optional<CoreLease>&& core_lease = std::nullopt,
-      std::optional<size_t> size = std::nullopt):
+  enum class Mode : std::uint8_t { READ, WRITE };
+
+  explicit Journal(const std::string& name, const std::filesystem::path& journal_path, Mode mode):
       LoggableClass(name),
       name_(name),
-      core_lease_(std::move(core_lease)),
-      stream_(journal_path, (mode == JournalMode::WRITE ? std::ios::out : std::ios::in) | std::ios::binary),
+      stream_(journal_path, mode == Mode::WRITE ? FileType::Mode::WRITE : FileType::Mode::READ, true),
       mode_(mode),
-      queue_(size.has_value() ? *size : 0),
       throughput_(name) {
-    if (!stream_.is_open()) {
-      CRITICAL("Could not open filename={} mode={}", journal_path.string(), magic_enum::enum_name(mode));
-    }
-    if (mode == JournalMode::WRITE) {
-      thread_ = std::jthread([this](const std::stop_token& token) { run(token); });
+    CHECK(mode_ == Mode::READ || mode_ == Mode::WRITE, "Invalid journal mode: {}", magic_enum::enum_name(mode_));
+  }
+
+  void write(const POD& value, Ticks timestamp) { write(value_type{value, timestamp}); }
+
+  void write(const value_type& structure) { write(std::span(&structure, 1)); }
+
+  void write(std::span<const value_type> data) {
+    CHECK(mode_ == Mode::WRITE, "Mode should be write");
+    if (!data.empty()) {
+      stream_.write({reinterpret_cast<const char*>(data.data()), data.size_bytes()});
+      throughput_.tick(data.size());
     }
   }
 
-  void write(const POD& value, Ticks timestamp) {
-    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
-    queue_.emplace(value, timestamp);
-  }
-
-  void write(const value_type& structure) {
-    CHECK(mode_ == JournalMode::WRITE, "Mode should be write");
-    queue_.emplace(structure);
+  size_t read(std::span<value_type> data) {
+    CHECK(mode_ == Mode::READ, "Mode should be read");
+    std::streamsize max_bytes_read = data.size_bytes(), bytes_read = 0;
+    while (bytes_read < max_bytes_read) {
+      std::streamsize current_bytes_read = stream_.read(
+          {reinterpret_cast<char*>(data.data()) + bytes_read, static_cast<size_t>(max_bytes_read - bytes_read)});
+      bytes_read += current_bytes_read;
+      if (current_bytes_read == 0) {
+        break;
+      }
+    }
+    if (bytes_read % sizeof(value_type) != 0) {
+      ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
+    }
+    return bytes_read / sizeof(value_type);
   }
 
   template<typename Consumer>
-  bool consume_if_available(Consumer&& consumer) {
-    CHECK(mode_ == JournalMode::READ, "Mode should be read");
+  bool consume(Consumer&& consumer) {
     alignas(value_type) std::array<std::byte, sizeof(value_type)> data;
-    stream_.read(reinterpret_cast<char*>(data.data()), data.size());
-    std::streamsize bytes_read = stream_.gcount();
-    if (stream_.bad()) {
-      CRITICAL("Encountered error while reading from journal");
-    }
-    if (stream_ && bytes_read == sizeof(value_type)) {
-      std::forward<Consumer>(consumer)(*reinterpret_cast<value_type*>(data.data()));
+    auto* value = reinterpret_cast<value_type*>(data.data());
+    if (read(std::span(value, 1)) != 0) {
+      std::forward<Consumer>(consumer)(*value);
       return true;
-    }
-    if (bytes_read != 0) {
-      ERROR("Got torn record in journal: read_bytes={} record_size={}", bytes_read, sizeof(value_type));
     }
     return false;
   }
 
-  template<typename BaseType =
-               boost::stl_interfaces::proxy_iterator_interface<std::input_iterator_tag, Journal::value_type>>
-  class iterator : public BaseType {
-  public:
-    explicit iterator(Journal* journal): journal_(journal) {
-      BOOST_STL_INTERFACES_STATIC_ASSERT_CONCEPT(iterator, std::input_iterator);
-      advance();
-    }
-
-    iterator& operator++() {
-      advance();
-      return *this;
-    }
-
-    Journal::value_type operator*() const {
-      using ::exchange_sim::get_logger;
-
-      CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
-      return *current_value_;
-    }
-
-    const Journal::value_type* operator->() const {
-      using ::exchange_sim::get_logger;
-
-      CHECK(current_value_.has_value(), "Iterator is not dereferenceable");
-      return &(*current_value_);
-    }
-
-    bool operator==(std::default_sentinel_t) const { return is_eof_; }
-
-    using BaseType::operator++;
-
-  private:
-    void advance() {
-      if (!is_eof_ && journal_ && journal_->stream_) {
-        is_eof_ = !journal_->consume_if_available([this](const value_type& value) { current_value_.emplace(value); });
-      }
-    }
-
-    Journal* journal_;
-    std::optional<value_type> current_value_;
-    bool is_eof_ = false;
-  };
-
   auto begin() {
-    CHECK(mode_ == JournalMode::READ, "Mode should be read");
-    return iterator<>(this);
+    CHECK(mode_ == Mode::READ, "Mode should be read");
+    return iterator(this);
   }
 
-  auto end() { return std::default_sentinel; }
+  auto end() { return iterator(); }
+
+  bool ready() const { return true; }
+
+  bool eof() const { return stream_.eof(); }
 
 private:
-  void flush() {
-    queue_.consume_span([this](std::span<value_type> data) {
-      if (!data.empty()) {
-        stream_.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(value_type));
-        CHECK(stream_, "Failed to write to journal, name={}", name_);
-        throughput_.tick(data.size());
-        return true;
-      }
-      return false;
-    });
-  }
-
-  void run(const std::stop_token& token) {
-    CPPTRACE_TRY {
-      if (core_lease_.has_value()) {
-        core_lease_.value().pin_thread(name_);
-      } else {
-        WARNING("Not pinning journal thread as core lease is empty");
-      }
-      while (!token.stop_requested()) {
-        flush();
-        std::this_thread::sleep_for(10ms);
-      }
-      while (!queue_.empty()) {
-        flush();
-      }
-    }
-    CPPTRACE_CATCH(...) {
-      try {
-        throw;
-      } catch (const std::exception& e) {
-        ERROR("Exception occurred: {}", e.what());
-      } catch (...) {
-        ERROR("Unknown exception occurred");
-      }
-      ERROR("\nStacktrace:");
-      ERROR("{}", cpptrace::from_current_exception().to_string());
-      flush_log();
-      throw;
-    }
-  }
-
   std::string name_;
-  std::optional<CoreLease> core_lease_;
-
-  std::fstream stream_;
-  JournalMode mode_;
-
-  SPSCQueue<value_type> queue_;
-
+  FileType stream_;
+  Mode mode_;
   Throughput throughput_;
-
-  std::jthread thread_;
 };
 
 }  // namespace exchange_sim

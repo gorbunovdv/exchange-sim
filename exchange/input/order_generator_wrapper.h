@@ -1,7 +1,9 @@
 #pragma once
 
 #include "base/counter.h"
-#include "base/journal.h"
+#include "base/file.h"
+#include "base/threaded_journal.h"
+#include "base/threading/runtime.h"
 #include "base/throughput.h"
 
 #include "domain/security_storage.h"
@@ -18,14 +20,14 @@ template<template<typename> typename OrderGenerator, typename GeneratorInterface
 class OrderGeneratorWrapper {
 public:
   template<typename... Args>
-  explicit OrderGeneratorWrapper(std::stop_token stop_token,
+  explicit OrderGeneratorWrapper(const std::shared_ptr<Runtime>& runtime,
       SecurityStorage& security_storage,
-      Journal<request::RequestType>& requests_journal,
-      Journal<market_events::EventType>& market_data_journal,
-      Journal<report::ReportType>& report_journal,
+      ThreadedJournal<File, request::RequestType>& requests_journal,
+      ThreadedJournal<File, market_events::EventType>& market_data_journal,
+      ThreadedJournal<File, report::ReportType>& report_journal,
       SinkType& sink,
       Args&&... args):
-      generator_interface_(std::move(stop_token), security_storage, requests_journal, sink),
+      generator_interface_(runtime->stop_token(), runtime->core_allocator(), security_storage, requests_journal, sink),
       generator_(generator_interface_, std::forward<Args>(args)...),
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}
@@ -61,19 +63,14 @@ public:
     report_buffer_.emplace_back(report, timestamp);
   }
 
-  void run() {
-    while (!generator_interface_.asked_to_stop()) {
-      apply_stored_events();
-      generator_.generate_event();
-    }
-  }
-
   void generate_event() {
     if (!generator_interface_.asked_to_stop()) {
       apply_stored_events();
       generator_.generate_event();
     }
   }
+
+  bool generator_stopped() const { return generator_interface_.generator_stopped(); }
 
 private:
   void apply_stored_events() {
@@ -95,8 +92,8 @@ private:
   GeneratorInterface generator_interface_;
   OrderGenerator<GeneratorInterface> generator_;
 
-  Journal<market_events::EventType>& market_data_journal_;
-  Journal<report::ReportType>& report_journal_;
+  ThreadedJournal<File, market_events::EventType>& market_data_journal_;
+  ThreadedJournal<File, report::ReportType>& report_journal_;
 
   std::vector<Timestamped<market_events::EventType>> event_buffer_;
   std::vector<Timestamped<report::ReportType>> report_buffer_;

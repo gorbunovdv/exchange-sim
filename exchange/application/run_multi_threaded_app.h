@@ -1,6 +1,7 @@
 #pragma once
-#include "base/journal.h"
+#include "base/file.h"
 #include "base/thread_receiver.h"
+#include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
 
 #include "domain/generate_securities.h"
@@ -27,21 +28,21 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   static constexpr size_t constJournalSize = 1 << 20;
 
-  Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
+  ThreadedJournal<File, market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
-  Journal<report::ReportType> report_journal("Journal<report::ReportType>",
+      decltype(market_data_journal)::Mode::WRITE,
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
+  ThreadedJournal<File, report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
-  Journal<request::RequestType> request_journal("Journal<request::RequestType>",
+      decltype(report_journal)::Mode::WRITE,
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
+  ThreadedJournal<File, request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
+      decltype(request_journal)::Mode::WRITE,
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
 
   static constexpr size_t constQueueSize = 1 << 14;
 
@@ -70,7 +71,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
       security_storage,
       exchange_dispatcher.get_sink());
 
-  OrderGenerator order_generator(runtime->stop_token(),
+  OrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,
@@ -94,7 +95,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     return market_data_generator_sink.consume(consumer) || report_generator_sink.consume(consumer);
   };
 
-  while (!stop_token.stop_requested()) {
+  while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
     if (!consume()) {
       order_generator.generate_event();
     }

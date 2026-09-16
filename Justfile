@@ -64,7 +64,7 @@ pylint *args:
     git ls-files -z -- '*.py' | xargs -0 -r ruff check {{ args }}
     mypy
 
-lint preset:
+lint preset='clang-debug':
     just build "{{ preset }}"
     test -f "cmake-build-{{ preset }}/compile_commands.json"
     run-clang-tidy -p "./cmake-build-{{ preset }}/" -quiet -j "{{ CPU_COUNT }}" $(git ls-files -- '*.cpp')
@@ -136,3 +136,12 @@ remove-label old_label config='./configs/dmitrys-ubuntu.json':
 
 rename-label old_label new_label config='./configs/dmitrys-ubuntu.json':
     just _rename-label "{{ old_label }}" "{{ new_label }}" "{{ ROOT_DIR }}/$(jq -r '.benchmark_path' {{ config }})"
+
+_generate-flow config timeout app requests_path generated_replay_path:
+    mkdir -p "$(dirname '{{ requests_path }}')"
+    mkdir -p "$(dirname '{{ generated_replay_path }}')"
+    just run-one "{{ config }}" --app "{{ app }}" --timeout "{{ timeout }}"
+    cp -v "{{ requests_path }}" "{{ generated_replay_path }}"
+
+generate-flow config='./configs/dmitrys-ubuntu.json' timeout='150' app='shift_el_app':
+    just _generate-flow "{{ config }}" "{{ timeout }}" "{{ app }}" "{{ ROOT_DIR }}/$(jq -r '.journaling.requests' {{ config }})" "{{ ROOT_DIR }}/$(jq -r '.order_generator.generated_replay' {{ config }})"

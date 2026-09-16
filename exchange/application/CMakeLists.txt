@@ -14,6 +14,9 @@ target_link_libraries(simple_cb_app PUBLIC base run_single_threaded_callback_app
 add_executable(shift_cb_app shift_cb_app.cpp)
 target_link_libraries(shift_cb_app PUBLIC base run_single_threaded_callback_app shift_order_generator matching exchange_dispatcher)
 
+add_executable(replay_cb_app replay_cb_app.cpp)
+target_link_libraries(replay_cb_app PUBLIC base run_single_threaded_callback_app replay_order_generator matching exchange_dispatcher)
+
 add_library(run_single_threaded_event_loop_app INTERFACE)
 target_link_libraries(run_single_threaded_event_loop_app INTERFACE base domain exchange_domain)
 target_sources(run_single_threaded_event_loop_app PUBLIC
@@ -27,6 +30,9 @@ target_link_libraries(simple_el_app PUBLIC base run_single_threaded_event_loop_a
 
 add_executable(shift_el_app shift_el_app.cpp)
 target_link_libraries(shift_el_app PUBLIC base run_single_threaded_event_loop_app shift_order_generator matching exchange_dispatcher)
+
+add_executable(replay_el_app replay_el_app.cpp)
+target_link_libraries(replay_el_app PUBLIC base run_single_threaded_event_loop_app replay_order_generator matching exchange_dispatcher)
 
 add_executable(empty_app empty_app.cpp)
 target_link_libraries(empty_app PUBLIC base exchange_domain simple_order_generator matching exchange_dispatcher)
@@ -42,8 +48,8 @@ target_sources(run_multi_threaded_app PUBLIC
 add_executable(simple_mt_app simple_mt_app.cpp)
 target_link_libraries(simple_mt_app PUBLIC base run_multi_threaded_app simple_order_generator matching exchange_dispatcher)
 
-add_executable(shift_mt_app shift_mt_app.cpp)
-target_link_libraries(shift_mt_app PUBLIC base run_multi_threaded_app shift_order_generator matching exchange_dispatcher)
+add_executable(replay_mt_app replay_mt_app.cpp)
+target_link_libraries(replay_mt_app PUBLIC base run_multi_threaded_app replay_order_generator matching exchange_dispatcher)
 
 add_executable(calc_stats calc_stats.cpp)
 target_link_libraries(calc_stats PUBLIC base exchange_domain)

@@ -3,38 +3,30 @@
 
 #include "domain/generate_securities.h"
 
-#include "exchange/application/run_multi_threaded_app.h"
+#include "exchange/application/run_single_threaded_event_loop_app.h"
 #include "exchange/book_containers/stl_book_container.h"
 #include "exchange/input/generator_interface.h"
-#include "exchange/input/maintain_book_skill.h"
 #include "exchange/input/order_generator_wrapper.h"
-#include "exchange/input/pending_transactions_skill.h"
+#include "exchange/input/replay_order_generator.h"
 #include "exchange/input/shift_order_generator.h"
-#include "exchange/input/store_orders_skill.h"
 #include "exchange/matching/matching_engine.h"
 #include "exchange/output/exchange_dispatcher.h"
 
-#include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
 #include <quill/Backend.h>
 
 #include <iostream>
 
+using namespace exchange_sim;
+
 namespace exchange_sim {
 
 namespace {
 
-template<typename GeneratorInterface>
-using AppShiftOrderGenerator = ShiftOrderGenerator<StlL3BookContainer, GeneratorInterface>;
-
 template<typename SinkType>
-using AppOrderGenerator = OrderGeneratorWrapper<AppShiftOrderGenerator,
-    GeneratorInterface<SinkType,
-        generator_interface_skills::PendingTransactions,
-        generator_interface_skills::StoreOrders,
-        generator_interface_skills::MaintainBook<StlL3BookContainer>>,
+using AppOrderGenerator = OrderGeneratorWrapper<ReplayOrderGenerator,
+    GeneratorInterface<SinkType, generator_interface_skills::PendingTransactions>,
     SinkType>;
-
 
 template<typename SinkType>
 using AppMatchingEngine = MatchingEngine<StlL3BookContainer, SinkType>;
@@ -46,13 +38,11 @@ using AppExchangeDispatcher = ExchangeDispatcher<MDSinkType, ORSinkType>;
 
 }  // namespace exchange_sim
 
-using namespace exchange_sim;
-
 int main(int argc, char* argv[]) {
   int exit_code = 0;
   CPPTRACE_TRY {
     const auto [runtime, config] = read_config_and_initialize_logging(std::span(argv, argv + argc), false);
-    exchange_sim::run_multi_threaded_app<AppOrderGenerator, AppMatchingEngine, AppExchangeDispatcher>(runtime, config);
+    run_single_threaded_event_loop_app<AppOrderGenerator, AppMatchingEngine, AppExchangeDispatcher>(runtime, config);
     quill::Backend::stop();
   }
   CPPTRACE_CATCH(...) {

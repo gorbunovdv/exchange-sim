@@ -35,10 +35,9 @@ Those are three designs that implement the same stage graph:
 
 ### Client side
 
-`OrderGenerator` decides what order it should send to the exchange. It sends a random stream of Add/Replace/Cancel with 
-random security, price and amount chosen at random as well. `OrderGeneratorWrapper` provides `OrderGenerator` with `GeneratorInterface`
-to provide convenient interface to send orders to the exchange, maintain correct order state using `OrderStorage` and maintain counters for
-pending transactions/active orders.
+`OrderGenerator` decides what order it should send to the exchange. It sends a stream of Add/Replace/Cancel. `OrderGeneratorWrapper` provides 
+`OrderGenerator` with `GeneratorInterface` to provide a convenient interface to send orders to the exchange. Several skills can be connected to
+`GeneratorInterface` to maintain the correct order state using `OrderStorage`, for example, or to maintain counters for pending transactions/active orders.
 
 ### Matching
 
@@ -65,9 +64,10 @@ any MatchingEngine and any EventDispatcher with it.
 
 Although it's possible to wire any implementation of `OrderGenerator`, it's more convenient to use implemented `OrderGeneratorWrapper` along with `GeneratorInterface`.
 
-GeneratorInterface is a simple interface that allows to simplify the code by providing a common interface for different OrderGenerator implementations. This common
-interface allows not to worry about ClientOrderID sent by the OrderGenerator. It also allows to connect different Skills to it. Current available skills are `DebugOrders` 
-(which prints all requests, market data and reports to stdout), `StoreOrders` (which maintains a list of currently active orders) and `MaintainBook` (which maintains a full L3 book).
+GeneratorInterface is a simple interface that allows simplifying the code by providing a common interface for different OrderGenerator implementations. This common
+interface allows not worrying about ClientOrderID sent by the OrderGenerator. It also allows connecting different Skills to it. Current available skills are `DebugOrders` 
+(which prints all requests, market data and reports at DEBUG level), `StoreOrders` (which maintains a list of currently active orders), `MaintainBook` (which maintains a full L3 book) and
+`PendingTransactions` (which maintains the number of pending transactions).
 Those skills are implemented in `exchange_sim::generator_interface_skills` and could be used via templates.
 
 `OrderGeneratorWrapper` itself is a wrapper that links `GeneratorInterface` with `OrderGenerator`. It also maintains journaling of all requests, market data and reports for future
@@ -76,5 +76,5 @@ evaluation and benchmarking.
 ### MatchingEngine
 
 `MatchingEngine` along with `L3Book` are actually responsible for matching orders and maintaining the order book. They are templated, so any
-underlying containers could be used with them. Currently, the only implemented container is `StlBookContainer` which uses `std::map<Price, std::list<Order>>` as underlying data
+underlying containers could be used with them. Currently, the only implemented container is `StlL3BookContainer` which uses `std::map<Price, std::list<Order>>` as underlying data
 structure.

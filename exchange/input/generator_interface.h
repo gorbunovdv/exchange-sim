@@ -1,7 +1,8 @@
 #pragma once
 
 #include "base/counter.h"
-#include "base/journal.h"
+#include "base/file.h"
+#include "base/threaded_journal.h"
 
 #include "domain/security_storage.h"
 
@@ -17,11 +18,13 @@ template<typename SinkType, typename... Skills>
 class GeneratorInterface : public Skills... {
 public:
   explicit GeneratorInterface(std::stop_token stop_token,
+      CoreAllocator& allocator,
       SecurityStorage& security_storage,
-      Journal<request::RequestType>& journal,
+      ThreadedJournal<File, request::RequestType>& journal,
       SinkType& sink):
       Skills(security_storage)...,
       stop_token_(std::move(stop_token)),
+      core_allocator_(allocator),
       security_storage_(security_storage),
       sink_(sink),
       journal_(journal) {}
@@ -90,7 +93,13 @@ public:
 
   bool asked_to_stop() const { return stop_token_.stop_requested(); }
 
+  bool generator_stopped() const { return generator_stopped_; }
+
+  void inform_generator_stopped() { generator_stopped_ = true; }
+
   void reserve(size_t size) { (Skills::reserve(size), ...); }
+
+  CoreLease lease_core(CoreType core) { return core_allocator_.lease_core(core); }
 
 private:
   template<template<typename> typename, typename, typename>
@@ -119,12 +128,15 @@ private:
   ClientOrderID generate_client_order_id() { return current_client_order_id_.inc(); }
 
   std::stop_token stop_token_;
+  CoreAllocator& core_allocator_;
   SecurityStorage& security_storage_;
   Counter<ClientOrderID> current_client_order_id_;
   SinkType& sink_;
-  Journal<request::RequestType>& journal_;
+  ThreadedJournal<File, request::RequestType>& journal_;
 
   std::vector<request::RequestType> request_buffer_;
+
+  bool generator_stopped_ = false;
 };
 
 }  // namespace exchange_sim

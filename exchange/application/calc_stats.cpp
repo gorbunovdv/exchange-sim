@@ -1,3 +1,4 @@
+#include "base/file.h"
 #include "base/journal.h"
 #include "base/run.h"
 #include "base/traits.h"
@@ -70,9 +71,10 @@ public:
       const std::filesystem::path& market_events_path,
       const std::filesystem::path& reports_path,
       const std::filesystem::path& requests_path):
-      market_data_journal_("Journal<market_events::EventType>", market_events_path, JournalMode::READ),
-      report_journal_("Journal<report::ReportType>", reports_path, JournalMode::READ),
-      request_journal_("Journal<request::RequestType>", requests_path, JournalMode::READ),
+      market_data_journal_(
+          "Journal<market_events::EventType>", market_events_path, decltype(market_data_journal_)::Mode::READ),
+      report_journal_("Journal<report::ReportType>", reports_path, decltype(report_journal_)::Mode::READ),
+      request_journal_("Journal<request::RequestType>", requests_path, decltype(request_journal_)::Mode::READ),
       security_storage_(security_storage),
       market_data_iterator_(market_data_journal_.begin()),
       report_iterator_(report_journal_.begin()),
@@ -173,9 +175,9 @@ private:
     stat.market_events_count++;
   };
 
-  Journal<market_events::EventType> market_data_journal_;
-  Journal<report::ReportType> report_journal_;
-  Journal<request::RequestType> request_journal_;
+  Journal<File, market_events::EventType> market_data_journal_;
+  Journal<File, report::ReportType> report_journal_;
+  Journal<File, request::RequestType> request_journal_;
   const SecurityStorage& security_storage_;
 
   std::map<Ticks, RequestStat> request_by_origin_time_;
@@ -183,9 +185,9 @@ private:
   std::deque<decltype(report_journal_)::value_type> current_reports_;
   std::deque<decltype(market_data_journal_)::value_type> current_market_events;
 
-  decltype(market_data_journal_)::iterator<> market_data_iterator_;
-  decltype(report_journal_)::iterator<> report_iterator_;
-  decltype(request_journal_)::iterator<> request_iterator_;
+  decltype(market_data_journal_)::iterator market_data_iterator_;
+  decltype(report_journal_)::iterator report_iterator_;
+  decltype(request_journal_)::iterator request_iterator_;
 };
 
 constexpr std::array constLatencyFields = {

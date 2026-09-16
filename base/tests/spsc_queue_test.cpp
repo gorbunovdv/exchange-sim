@@ -32,6 +32,20 @@ TEST(SPSCQueue, BasicQueueTest) {
   queue.produce([](int& holder) { holder = 4; });
   queue.produce([](int& holder) { holder = 5; });
   EXPECT_EQ(queue.consume_span([](std::span<int> sp) { return sp.size(); }), 2);
+  EXPECT_EQ(queue.produce_span([](std::span<int> sp) {
+    EXPECT_GE(sp.size(), 1);
+    sp[0] = 1;
+    return 1;
+  }),
+      1);
+  EXPECT_EQ(queue.produce_span([](std::span<int> sp) {
+    EXPECT_GE(sp.size(), 1);
+    sp[0] = 2;
+    return 1;
+  }),
+      1);
+  queue.consume([](int& holder) { EXPECT_EQ(holder, 1); });
+  queue.consume([](int& holder) { EXPECT_EQ(holder, 2); });
 }
 
 TEST(SPSCQueue, EmplaceTest) {

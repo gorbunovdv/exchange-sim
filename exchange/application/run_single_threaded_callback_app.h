@@ -2,6 +2,7 @@
 #include "base/callback_receiver.h"
 #include "base/callback_sink.h"
 #include "base/forward_sink.h"
+#include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
 
 #include "domain/generate_securities.h"
@@ -27,21 +28,21 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
 
   static constexpr size_t constJournalSize = 1 << 20;
 
-  Journal<market_events::EventType> market_data_journal("Journal<market_events::EventType>",
+  ThreadedJournal<File, market_events::EventType> market_data_journal("Journal<market_events::EventType>",
       config["journaling"]["market_events"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
-  Journal<report::ReportType> report_journal("Journal<report::ReportType>",
+      decltype(market_data_journal)::Mode::WRITE,
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
+  ThreadedJournal<File, report::ReportType> report_journal("Journal<report::ReportType>",
       config["journaling"]["reports"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
-  Journal<request::RequestType> request_journal("Journal<request::RequestType>",
+      decltype(report_journal)::Mode::WRITE,
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
+  ThreadedJournal<File, request::RequestType> request_journal("Journal<request::RequestType>",
       config["journaling"]["requests"].as<std::string>(),
-      JournalMode::WRITE,
-      runtime->core_allocator().lease_core(CoreType::SHARED),
-      constJournalSize);
+      decltype(request_journal)::Mode::WRITE,
+      constJournalSize,
+      runtime->core_allocator().lease_core(CoreType::SHARED));
 
   using MarketDataInternalSinkType =
       CallbackSink<market_events::EventType, std::function<void(market_events::EventType&&)>>;
@@ -60,7 +61,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   CallbackReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
 
-  OrderGenerator order_generator(runtime->stop_token(),
+  auto stop_token = runtime->stop_token();
+
+  OrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,
@@ -76,7 +79,9 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   market_data_generator_sink.set_sink(&market_data_generator_sink_callback);
   report_generator_sink.set_sink(&report_generator_sink_callback);
 
-  order_generator.run();
+  while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
+    order_generator.generate_event();
+  }
 }
 
 }  // namespace exchange_sim

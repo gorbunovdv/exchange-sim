@@ -33,6 +33,20 @@ public:
   }
 
   template<typename Consumer>
+  bool consume(Consumer&& consumer) {
+    size_t current_tail = tail_.load(std::memory_order_relaxed);
+    if (cached_head_ == current_tail) {
+      cached_head_ = head_.load(std::memory_order_acquire);
+      if (cached_head_ == current_tail) {
+        return false;
+      }
+    }
+    std::forward<Consumer>(consumer)(queue_[current_tail]);
+    tail_.store((current_tail + 1) % capacity_, std::memory_order_release);
+    return true;
+  }
+
+  template<typename Consumer>
   auto consume_span(Consumer&& consumer) {
     size_t current_tail = tail_.load(std::memory_order_relaxed);
     if (current_tail == cached_head_) {
@@ -46,18 +60,20 @@ public:
     return result;
   }
 
-  template<typename Consumer>
-  bool consume(Consumer&& consumer) {
-    size_t current_tail = tail_.load(std::memory_order_relaxed);
-    if (cached_head_ == current_tail) {
-      cached_head_ = head_.load(std::memory_order_acquire);
-      if (cached_head_ == current_tail) {
-        return false;
-      }
+  template<typename Producer>
+  auto produce_span(Producer&& producer) {
+    size_t current_head = head_.load(std::memory_order_relaxed);
+    size_t next_head = (current_head + 1) % capacity_;
+    if (next_head == cached_tail_) {
+      cached_tail_ = tail_.load(std::memory_order_acquire);
     }
-    std::forward<Consumer>(consumer)(queue_[current_tail]);
-    tail_.store((current_tail + 1) % capacity_, std::memory_order_release);
-    return true;
+    size_t last_head =
+        cached_tail_ <= current_head ? (cached_tail_ == 0 ? capacity_ - 1 : capacity_) : cached_tail_ - 1;
+    size_t produced_count = std::forward<Producer>(producer)(std::span{queue_ + current_head, queue_ + last_head});
+    if (produced_count != 0) {
+      head_.store((current_head + produced_count) % capacity_, std::memory_order_release);
+    }
+    return produced_count;
   }
 
   bool try_push(ObjectType&& object) { return try_emplace(std::move(object)); }

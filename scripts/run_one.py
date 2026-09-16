@@ -28,6 +28,10 @@ DEFAULT_PERF = [
 ]
 
 
+def clear_cache():
+    plumbum.local["sudo"]["sh"]["-c"]["sync; echo 3 > /proc/sys/vm/drop_caches"] & plumbum.FG
+
+
 def run_one(
     *,
     preset,
@@ -71,6 +75,7 @@ def run_one(
         cmd = plumbum.local["setarch"]["--addr-no-randomize"][cmd]
     cmd = plumbum.local["timeout"]["-s"]["INT"]["-k"][hard_timeout][timeout][cmd]
     cmd = plumbum.local["python3"][ROOT_PATH / "scripts/run_isolated.py"][cmd]
+    clear_cache()
     print("Running app: ", cmd)
     cmd.run(
         stdout=flog,

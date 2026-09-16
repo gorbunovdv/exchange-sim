@@ -16,13 +16,20 @@ namespace exchange_sim {
 template<template<typename> class BookContainer, engine_events::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
-  explicit MatchingEngine(const glz::generic&, const SecurityStorage& security_storage, SinkType& sink):
+  explicit MatchingEngine(const glz::generic& config, const SecurityStorage& security_storage, SinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     static_assert(request::Processor<MatchingEngine>);
 
     books_.reserve(security_storage_.size());
     for (auto& security : security_storage_.securities()) {
       books_.emplace_back(security, order_id_counter_, trade_id_counter_);
+    }
+
+    if (config.contains("reserve_books_size")) {
+      uint32_t reserve_books_size = config["reserve_books_size"].as<std::uint32_t>();
+      for (auto& book : books_) {
+        book.reserve(reserve_books_size);
+      }
     }
   }
 

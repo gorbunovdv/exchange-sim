@@ -1,11 +1,15 @@
+#include "base/file.h"
 #include "base/journal.h"
 #include "base/temporary.h"
+#include "base/threaded_journal.h"
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <ranges>
+#include <thread>
 #include <vector>
 
 using namespace exchange_sim;
@@ -19,10 +23,11 @@ struct Record {
   bool operator==(const Record&) const = default;
 };
 
-using RecordJournal = Journal<Record>;
+using RecordJournal = Journal<File, Record>;
+using ThreadedRecordJournal = ThreadedJournal<File, Record>;
 
 void write_records(const std::filesystem::path& path, const std::vector<RecordJournal::value_type>& records) {
-  RecordJournal journal("RecordJournal", path, JournalMode::WRITE, std::nullopt, records.size() + 1);
+  RecordJournal journal("RecordJournal", path, RecordJournal::Mode::WRITE);
   for (const auto& record : records) {
     journal.write(record);
   }
@@ -41,16 +46,16 @@ TEST(JournalTest, WriteReadTest) {
 
   write_records(temp_journal_file.path(), records);
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::READ);
   for (const auto& record : records) {
-    ASSERT_TRUE(journal.consume_if_available([&](const auto& actual) {
+    ASSERT_TRUE(journal.consume([&](const auto& actual) {
       EXPECT_EQ(actual.timestamp, record.timestamp);
       EXPECT_EQ(actual.object, record.object);
     }));
   }
 
   bool has_more_events = false;
-  EXPECT_FALSE(journal.consume_if_available([&](const auto&) { has_more_events = true; }));
+  EXPECT_FALSE(journal.consume([&](const auto&) { has_more_events = true; }));
   EXPECT_FALSE(has_more_events);
 }
 
@@ -65,7 +70,7 @@ TEST(JournalTest, IteratesOverAllRecords) {
   TemporaryFile temp_journal_file(temp_dir, "journal_iterator_test");
   write_records(temp_journal_file.path(), records);
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::READ);
   for (const auto& [index, actual] : std::views::zip(std::views::iota(0), journal)) {
     EXPECT_EQ(actual.timestamp, records[index].timestamp);
     EXPECT_EQ(actual.object, records[index].object);
@@ -84,29 +89,70 @@ TEST(JournalTest, BigEventsCount) {
     records.emplace_back(Record{.a = static_cast<int32_t>(i), .b = static_cast<int64_t>(i * 10)}, Ticks{i});
   }
 
-  write_records(temp_journal_file.path(), records);
+  {
+    ThreadedRecordJournal journal("RecordJournal",
+        temp_journal_file.path(),
+        ThreadedRecordJournal::Mode::WRITE,
+        records.size() + 1,
+        std::nullopt);
+    for (const auto& record : records) {
+      journal.write(record);
+    }
+  }
 
   EXPECT_EQ(std::filesystem::file_size(temp_journal_file.path()), constRecordCount * RecordJournal::value_size);
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::READ);
   for (const auto& expected : records) {
-    ASSERT_TRUE(journal.consume_if_available([&](const RecordJournal::value_type& actual) {
+    ASSERT_TRUE(journal.consume([&](const RecordJournal::value_type& actual) {
       EXPECT_EQ(actual.timestamp, expected.timestamp);
       EXPECT_EQ(actual.object, expected.object);
     }));
   }
-  ASSERT_FALSE(journal.consume_if_available([](const RecordJournal::value_type&) {}));
+  ASSERT_FALSE(journal.consume([](const RecordJournal::value_type&) {}));
+}
+
+TEST(JournalTest, FastRead) {
+  static constexpr size_t constRecordCount = 256;
+
+  TemporaryDirectory temp_dir("fast_read_journal_test");
+  TemporaryFile temp_journal_file(temp_dir, "fast_read_journal_test");
+
+  std::vector<RecordJournal::value_type> records;
+  records.reserve(constRecordCount);
+  for (size_t i = 0; i < constRecordCount; ++i) {
+    records.emplace_back(Record{.a = static_cast<int32_t>(i), .b = static_cast<int64_t>(i * 10)}, Ticks{i});
+  }
+  write_records(temp_journal_file.path(), records);
+
+  ThreadedRecordJournal journal(
+      "RecordJournal", temp_journal_file.path(), ThreadedRecordJournal::Mode::READ, records.size() + 2);
+  const auto deadline = Ticks::rdtsc();
+  while (!journal.ready() && deadline.nanoseconds_till_now() < 5s) {
+    std::this_thread::sleep_for(100ms);
+  }
+  ASSERT_TRUE(journal.ready());
+
+  for (const auto& expected : records) {
+    size_t consumer_calls = 0;
+    ASSERT_TRUE(journal.consume([&](const RecordJournal::value_type& actual) {
+      ++consumer_calls;
+      EXPECT_EQ(actual.timestamp, expected.timestamp);
+      EXPECT_EQ(actual.object, expected.object);
+    }));
+    EXPECT_EQ(consumer_calls, 1);
+  }
 }
 
 TEST(JournalTest, EmptyJournal) {
   TemporaryDirectory temp_dir("empty_journal_test");
   TemporaryFile temp_journal_file(temp_dir, "empty_journal_test");
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::READ);
   EXPECT_EQ(journal.begin(), journal.end());
 
   bool consumer_called = false;
-  EXPECT_FALSE(journal.consume_if_available([&](const auto&) { consumer_called = true; }));
+  EXPECT_FALSE(journal.consume([&](const auto&) { consumer_called = true; }));
   EXPECT_FALSE(consumer_called);
 }
 
@@ -121,9 +167,9 @@ TEST(JournalTest, TornRecord) {
     ASSERT_TRUE(stream);
   }
 
-  RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+  RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::READ);
   bool consumer_called = false;
-  EXPECT_FALSE(journal.consume_if_available([&](const auto&) { consumer_called = true; }));
+  EXPECT_FALSE(journal.consume([&](const auto&) { consumer_called = true; }));
   EXPECT_FALSE(consumer_called);
 }
 
@@ -132,13 +178,13 @@ TEST(JournalTest, WrongMode) {
   TemporaryFile temp_journal_file(temp_dir, "journal_mode_test");
 
   {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::READ);
+    RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::READ);
     EXPECT_THROW(journal.write(Record{.a = 1, .b = 2}, Ticks{1}), std::runtime_error);
   }
 
   {
-    RecordJournal journal("RecordJournal", temp_journal_file.path(), JournalMode::WRITE, std::nullopt, 2);
-    EXPECT_THROW(journal.consume_if_available([](const auto&) {}), std::runtime_error);
+    RecordJournal journal("RecordJournal", temp_journal_file.path(), RecordJournal::Mode::WRITE);
+    EXPECT_THROW(journal.consume([](const auto&) {}), std::runtime_error);
     EXPECT_THROW(journal.begin(), std::runtime_error);
   }
 }
@@ -147,5 +193,5 @@ TEST(JournalTest, MissingJournal) {
   TemporaryDirectory temp_dir("missing_journal_test");
   auto missing_path = temp_dir.path() / "missing_journal";
 
-  EXPECT_THROW(RecordJournal("RecordJournal", missing_path, JournalMode::READ), std::runtime_error);
+  EXPECT_THROW(RecordJournal("RecordJournal", missing_path, RecordJournal::Mode::READ), std::runtime_error);
 }
