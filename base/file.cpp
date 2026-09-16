@@ -1,5 +1,7 @@
 #include "file.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 namespace exchange_sim {
 
 File::File(const std::filesystem::path& path, Mode mode, bool binary):
