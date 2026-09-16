@@ -10,7 +10,7 @@
 
 using namespace exchange_sim;
 
-using Order = OrderStorage::Order;
+using Order = OrderStorage::ActiveOrder;
 
 void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest request, Order::State state) {
   storage.handle(request);
@@ -23,10 +23,10 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
-      .time_in_force = request.time_in_force,
-      .direction = request.direction,
       .price = request.price,
       .quantity = request.quantity,
+      .direction = request.direction,
+      .time_in_force = request.time_in_force,
   });
   if (state == Order::State::ACCEPTED) {
     return;
@@ -40,9 +40,9 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
         .client_id = request.client_id,
         .client_order_id = request.client_order_id,
         .security_id = request.security_id,
-        .direction = request.direction,
         .price = request.price,
         .quantity = request.quantity,
+        .direction = request.direction,
     });
     if (state == Order::State::ACTIVE) {
       return;
@@ -62,9 +62,9 @@ void bring_order_to_state(OrderStorage& storage, request::OrderAddRequest reques
           .client_order_id = request.client_order_id,
           .client_replacement_id = ClientOrderID{request.client_order_id.value() + 1},
           .security_id = request.security_id,
-          .direction = request.direction,
           .price = request.price,
           .quantity = request.quantity,
+          .direction = request.direction,
       });
     } else {
       CRITICAL("Order state is not handled: {}", format_as(state));
@@ -79,9 +79,9 @@ static constexpr request::OrderAddRequest constOrderAddRequest = {
     .security_id = SecurityID{0},
     .time_in_force = OrderTimeInForce::LIMIT,
     .order_type = OrderType::LIMIT,
-    .direction = Direction::BUY,
     .price = Price{0},
     .quantity = Amount{1},
+    .direction = Direction::BUY,
 };
 
 template<typename T>
@@ -95,10 +95,10 @@ report::OrderAccepted convert_to<report::OrderAccepted>(const request::OrderAddR
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
-      .time_in_force = request.time_in_force,
-      .direction = request.direction,
       .price = request.price,
       .quantity = request.quantity,
+      .direction = request.direction,
+      .time_in_force = request.time_in_force,
   };
 }
 
@@ -110,9 +110,9 @@ report::OrderBookEntry convert_to<report::OrderBookEntry>(const request::OrderAd
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
-      .direction = request.direction,
       .price = request.price,
       .quantity = request.quantity,
+      .direction = request.direction,
   };
 }
 
@@ -124,8 +124,8 @@ report::OrderFilled convert_to<report::OrderFilled>(const request::OrderAddReque
       .client_id = request.client_id,
       .client_order_id = request.client_order_id,
       .security_id = request.security_id,
-      .direction = request.direction,
       .price = request.price,
+      .direction = request.direction,
       .type = engine_events::FilledType::AGGRESSIVE_FILL,
   };
 }
@@ -175,9 +175,9 @@ report::ReplacementAccepted convert_to<report::ReplacementAccepted>(const reques
       .client_order_id = request.client_order_id,
       .client_replacement_id = ClientOrderID{request.client_order_id.value() + 1},
       .security_id = request.security_id,
-      .direction = request.direction,
       .price = request.price,
       .quantity = request.quantity,
+      .direction = request.direction,
   };
 }
 

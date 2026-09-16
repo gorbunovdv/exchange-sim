@@ -10,48 +10,48 @@ void OrderStorage::handle(const request::OrderAddRequest& request) {
       request.client_id.value(),
       request.client_order_id.value());
   orders_.emplace(std::pair{request.client_id, request.client_order_id},
-      Order{
+      ActiveOrder{
           .client_id = request.client_id,
           .client_order_id = request.client_order_id,
           .security_id = request.security_id,
           .direction = request.direction,
-          .state = Order::State::SENT,
+          .state = ActiveOrder::State::SENT,
           .filled = false,
       });
 }
 
 void OrderStorage::handle(const request::OrderCancelRequest& request) {
   auto order = find_order(request.client_id, request.client_order_id);
-  CHECK(order->second.state == Order::State::ACTIVE,
+  CHECK(order->second.state == ActiveOrder::State::ACTIVE,
       "Order must be active to be cancelled, client_id={} client_order_id={}",
       request.client_id.value(),
       request.client_order_id.value());
   active_orders_.erase(order->second.direction, {order->second.client_id, order->second.client_order_id});
-  order->second.state = Order::State::CANCEL_SENT;
+  order->second.state = ActiveOrder::State::CANCEL_SENT;
 }
 
 void OrderStorage::handle(const request::OrderReplaceRequest& request) {
   auto order = find_order(request.client_id, request.client_order_id);
-  CHECK(order->second.state == Order::State::ACTIVE,
+  CHECK(order->second.state == ActiveOrder::State::ACTIVE,
       "Order must be active to be replaced, client_id={} client_order_id={}",
       request.client_id.value(),
       request.client_order_id.value());
   active_orders_.erase(order->second.direction, {order->second.client_id, order->second.client_order_id});
-  order->second.state = Order::State::REPLACE_SENT;
+  order->second.state = ActiveOrder::State::REPLACE_SENT;
 }
 
 void OrderStorage::handle(const report::OrderAccepted& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::SENT,
+  CHECK(order->second.state == ActiveOrder::State::SENT,
       "Order must be sent to be accepted, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
-  order->second.state = Order::State::ACCEPTED;
+  order->second.state = ActiveOrder::State::ACCEPTED;
 }
 
 void OrderStorage::handle(const report::OrderRejected& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::SENT,
+  CHECK(order->second.state == ActiveOrder::State::SENT,
       "Order must be sent to be rejected, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
@@ -60,18 +60,18 @@ void OrderStorage::handle(const report::OrderRejected& report) {
 
 void OrderStorage::handle(const report::OrderBookEntry& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::ACCEPTED,
+  CHECK(order->second.state == ActiveOrder::State::ACCEPTED,
       "Order must be accepted to become active, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
   active_orders_.emplace(
       order->second.direction, std::pair{order->second.client_id, order->second.client_order_id}, order->second);
-  order->second.state = Order::State::ACTIVE;
+  order->second.state = ActiveOrder::State::ACTIVE;
 }
 
 void OrderStorage::handle(const report::OrderExpired& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::ACCEPTED,
+  CHECK(order->second.state == ActiveOrder::State::ACCEPTED,
       "Order must be accepted to expire, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
@@ -81,25 +81,25 @@ void OrderStorage::handle(const report::OrderExpired& report) {
 void OrderStorage::handle(const report::OrderFilled& report) {
   auto order = find_order(report.client_id, report.client_order_id);
   CHECK(equal_to_one_of(order->second.state,
-            Order::State::ACCEPTED,
-            Order::State::ACTIVE,
-            Order::State::CANCEL_SENT,
-            Order::State::REPLACE_SENT),
+            ActiveOrder::State::ACCEPTED,
+            ActiveOrder::State::ACTIVE,
+            ActiveOrder::State::CANCEL_SENT,
+            ActiveOrder::State::REPLACE_SENT),
       "Order must be accepted, active, cancel_sent or replace_sent to be filled, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
-  if (order->second.state == Order::State::ACTIVE) {
+  if (order->second.state == ActiveOrder::State::ACTIVE) {
     active_orders_.erase(order->second.direction, {order->second.client_id, order->second.client_order_id});
   }
   order->second.filled = true;
-  if (!equal_to_one_of(order->second.state, Order::State::CANCEL_SENT, Order::State::REPLACE_SENT)) {
+  if (!equal_to_one_of(order->second.state, ActiveOrder::State::CANCEL_SENT, ActiveOrder::State::REPLACE_SENT)) {
     orders_.erase(order);
   }
 }
 
 void OrderStorage::handle(const report::OrderCancelled& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::CANCEL_SENT,
+  CHECK(order->second.state == ActiveOrder::State::CANCEL_SENT,
       "Cancel must be sent for order to be cancelled, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
@@ -108,14 +108,14 @@ void OrderStorage::handle(const report::OrderCancelled& report) {
 
 void OrderStorage::handle(const report::CancellationRejected& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::CANCEL_SENT,
+  CHECK(order->second.state == ActiveOrder::State::CANCEL_SENT,
       "Cancel must be sent for cancellation to be rejected, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
   if (!order->second.filled) {
     active_orders_.emplace(
         order->second.direction, std::pair{order->second.client_id, order->second.client_order_id}, order->second);
-    order->second.state = Order::State::ACTIVE;
+    order->second.state = ActiveOrder::State::ACTIVE;
   } else {
     orders_.erase(order);
   }
@@ -123,32 +123,32 @@ void OrderStorage::handle(const report::CancellationRejected& report) {
 
 void OrderStorage::handle(const report::ReplacementAccepted& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::REPLACE_SENT,
+  CHECK(order->second.state == ActiveOrder::State::REPLACE_SENT,
       "Replace must be sent for replace to be accepted, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
   orders_.erase(order);
   orders_.emplace(std::pair{report.client_id, report.client_replacement_id},
-      Order{
+      ActiveOrder{
           .client_id = report.client_id,
           .client_order_id = report.client_replacement_id,
           .security_id = report.security_id,
           .direction = report.direction,
-          .state = Order::State::ACCEPTED,
+          .state = ActiveOrder::State::ACCEPTED,
           .filled = false,
       });
 }
 
 void OrderStorage::handle(const report::ReplacementRejected& report) {
   auto order = find_order(report.client_id, report.client_order_id);
-  CHECK(order->second.state == Order::State::REPLACE_SENT,
+  CHECK(order->second.state == ActiveOrder::State::REPLACE_SENT,
       "Replace must be sent for replace to be rejected, client_id={} client_order_id={}",
       report.client_id.value(),
       report.client_order_id.value());
   if (!order->second.filled) {
     active_orders_.emplace(
         order->second.direction, std::pair{order->second.client_id, order->second.client_order_id}, order->second);
-    order->second.state = Order::State::ACTIVE;
+    order->second.state = ActiveOrder::State::ACTIVE;
   } else {
     orders_.erase(order);
   }

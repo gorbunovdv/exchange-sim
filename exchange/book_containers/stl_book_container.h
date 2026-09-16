@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base/threading/cache_line.h"
+
 #include "domain/types.h"
 
 #include "exchange/book_containers/book_container_concept.h"
@@ -15,6 +17,8 @@ class StlL3BookLevel {
 public:
   using OrderType = ActiveOrder;
   using iterator = std::list<OrderType>::iterator;
+
+  static_assert(sizeof(std::_List_node<OrderType>) <= constCacheLineSize);
 
   bool empty() const { return level_.empty(); }
 

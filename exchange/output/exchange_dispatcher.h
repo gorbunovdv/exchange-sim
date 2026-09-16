@@ -27,35 +27,35 @@ private:
     market_data_sink_.push(market_events::Trade{
         .origin_time = event.origin_time,
         .security_id = event.security_id,
-        .price = event.price,
-        .quantity = event.quantity,
         .trade_id = event.trade_id,
         .aggressor_order_id = event.aggressor_order_id,
         .recipient_order_id = event.recipient_order_id,
+        .price = event.price,
+        .quantity = event.quantity,
     });
     report_generator_sink_.push(report::Trade{
         .origin_time = event.origin_time,
         .security_id = event.security_id,
-        .aggressor_direction = event.aggressor_direction,
-        .price = event.price,
-        .quantity = event.quantity,
         .client_id = event.aggressor_client_id,
         .client_order_id = event.aggressor_client_order_id,
         .trade_id = event.trade_id,
         .aggressor_order_id = event.aggressor_order_id,
         .recipient_order_id = event.recipient_order_id,
+        .price = event.price,
+        .quantity = event.quantity,
+        .aggressor_direction = event.aggressor_direction,
     });
     report_generator_sink_.push(report::Trade{
         .origin_time = event.origin_time,
         .security_id = event.security_id,
-        .aggressor_direction = event.aggressor_direction,
-        .price = event.price,
-        .quantity = event.quantity,
         .client_id = event.recipient_client_id,
         .client_order_id = event.recipient_client_order_id,
         .trade_id = event.trade_id,
         .aggressor_order_id = event.aggressor_order_id,
         .recipient_order_id = event.recipient_order_id,
+        .price = event.price,
+        .quantity = event.quantity,
+        .aggressor_direction = event.aggressor_direction,
     });
   }
 
@@ -64,9 +64,9 @@ private:
         .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
-        .direction = event.direction,
         .price = event.price,
         .quantity = event.quantity,
+        .direction = event.direction,
     });
     report_generator_sink_.push(event);
   }
@@ -87,9 +87,9 @@ private:
         .origin_time = event.origin_time,
         .order_id = event.order_id,
         .security_id = event.security_id,
-        .direction = event.direction,
         .price = event.price,
         .new_quantity = event.remaining_quantity,
+        .direction = event.direction,
     });
   }
 

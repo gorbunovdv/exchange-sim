@@ -16,14 +16,14 @@ using OrderAccepted = engine_events::OrderAccepted;
 struct Trade {
   Ticks origin_time;
   SecurityID security_id;
-  Direction aggressor_direction;
-  Price price;
-  Amount quantity;
   ClientID client_id;
   ClientOrderID client_order_id;
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ExchangeOrderID recipient_order_id;
+  Price price;
+  Amount quantity;
+  Direction aggressor_direction;
 
   bool operator==(const Trade& other) const = default;
 };

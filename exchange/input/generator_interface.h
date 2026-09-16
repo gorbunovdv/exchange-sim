@@ -44,9 +44,9 @@ public:
         .security_id = security_id,
         .time_in_force = time_in_force,
         .order_type = order_type,
-        .direction = direction,
         .price = price,
         .quantity = quantity,
+        .direction = direction,
     };
     sink_.push(request);
     request_buffer_.push_back(request);
@@ -80,9 +80,9 @@ public:
         .client_order_id = client_order_id,
         .client_replacement_id = client_replacement_id,
         .security_id = security_id,
-        .direction = direction,
         .price = price,
         .quantity = quantity,
+        .direction = direction,
     };
     sink_.push(request);
     request_buffer_.push_back(request);
