@@ -91,13 +91,13 @@ once it receives the market data/reports back. All requests/reports/market data 
 along with timestamps, calc_stats then matches events by origin_time and calculates the round-trips. Currently,
 first_report/first_market_event and last_report/last_market_event round trips are calculated.
 
-Current latency includes the time events have spent waiting in the queues. Multithreaded app cannot be compared with single-threaded app directly,
-since no event spends any significant time waiting in the queues in single-threaded app. If there's need to compare latency of multithreaded app with single-threaded app,
+Current latency includes the time events have spent waiting in the transport. Multithreaded app cannot be compared with single-threaded app directly,
+since no event spends any significant time waiting in the transport in a single-threaded app. If there's a need to compare latency of a multithreaded app with a single-threaded app,
 `max_pending_transactions` must be set to 1 so that there would be events of a single request in the queues.
 
 - `check_isolation` verifies the actual hardware and operating system state prior to benchmarking.
 - Metadata that contains the current setup, git states, application sha is written, runs are archived under labels (`branch-git_revision[:6](-dirty)` by default) with full fingerprint.
-- The dirty page cache is drained prior to each run, every run executes in a separate systemd-run scope pinned to isolated cores.
+- The dirty page cache is drained prior to each run. Every run executes in a separate systemd-run scope pinned to isolated cores.
 
 Take a look at [benchmarking.md](docs/benchmarking.md) for more info.
 
@@ -131,10 +131,9 @@ The benchmark must be run on a machine with isolated cores and performance setti
 
 ## Restrictions
 
-- Currently both order generators use only one ClientID{0}.
+- Currently `ShiftOrderGenerator` and `SimpleOrderGenerator` use only one ClientID{0}.
 - Currently `ShiftOrderGenerator` is not supported with multi-threaded stages because of the current implementation of the shift design.
-- Please note that the hard drive setup may affect the measurements. The replay app reads million requests per second and writes several millions events per second. 
-As default setup, the tmpfs for generated replay file and a fast nvme ssd drive for binary logs have been used.
+- Please note that the hard drive setup may affect the measurements. The replay app writes several million events per second.
 - Although mac-clang profile and mac-clang-debug-asan preset exist, it is not guaranteed code works or even is compilable on macOS. 
 It will not be tested in CI and it should be used for development purposes only.
 
