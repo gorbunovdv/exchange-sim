@@ -30,7 +30,10 @@ public:
       generator_interface_(runtime->stop_token(), runtime->core_allocator(), security_storage, requests_journal, sink),
       generator_(generator_interface_, std::forward<Args>(args)...),
       market_data_journal_(market_data_journal),
-      report_journal_(report_journal) {}
+      report_journal_(report_journal) {
+    event_buffer_.reserve(constEventBufferSize);
+    report_buffer_.reserve(constEventBufferSize);
+  }
 
   ~OrderGeneratorWrapper() {
     CPPTRACE_TRY {
@@ -55,11 +58,19 @@ public:
 
   void process(const market_events::EventType& market_event) {
     auto timestamp = Ticks::rdtscp();
+    CHECK(event_buffer_.size() < event_buffer_.capacity(),
+        "Event buffer is full, size={} capacity={}",
+        event_buffer_.size(),
+        event_buffer_.capacity());
     event_buffer_.emplace_back(market_event, timestamp);
   }
 
   void process(const report::ReportType& report) {
     auto timestamp = Ticks::rdtscp();
+    CHECK(report_buffer_.size() < report_buffer_.capacity(),
+        "Report buffer is full, size={} capacity={}",
+        report_buffer_.size(),
+        report_buffer_.capacity());
     report_buffer_.emplace_back(report, timestamp);
   }
 
@@ -94,6 +105,8 @@ private:
 
   ThreadedJournal<File, market_events::EventType>& market_data_journal_;
   ThreadedJournal<File, report::ReportType>& report_journal_;
+
+  static constexpr size_t constEventBufferSize = 1024;
 
   std::vector<Timestamped<market_events::EventType>> event_buffer_;
   std::vector<Timestamped<report::ReportType>> report_buffer_;

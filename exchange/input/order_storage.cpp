@@ -9,6 +9,7 @@ void OrderStorage::handle(const request::OrderAddRequest& request) {
       "Order already exists, client_id={} client_order_id={}",
       request.client_id.value(),
       request.client_order_id.value());
+  CHECK(orders_.size() < capacity_, "Order container is full, size={} capacity={}", orders_.size(), capacity_);
   orders_.emplace(std::pair{request.client_id, request.client_order_id},
       ActiveOrder{
           .client_id = request.client_id,
