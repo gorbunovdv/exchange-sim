@@ -1,11 +1,12 @@
 #pragma once
 
+#include "base/allocators/custom_allocator.h"
+#include "base/allocators/place_arena.h"
 #include "base/threading/cache_line.h"
 
 #include "domain/types.h"
 
 #include "exchange/book_containers/book_container_concept.h"
-#include "exchange/domain/types.h"
 
 #include <list>
 #include <map>
@@ -16,13 +17,20 @@ template<typename ActiveOrder>
 class StlL3BookLevel {
 public:
   using OrderType = ActiveOrder;
-  using iterator = std::list<OrderType>::iterator;
-
+  using NodeType =
 #if defined(_LIBCPP_VERSION)
-  static_assert(sizeof(std::__list_node<OrderType, void*>) <= constCacheLineSize);
+      std::__list_node<OrderType, void*>;
 #else
-  static_assert(sizeof(std::_List_node<OrderType>) <= constCacheLineSize);
+      std::_List_node<OrderType>;
 #endif
+  static constexpr size_t NodeSize = sizeof(NodeType);
+
+  static_assert(NodeSize <= constCacheLineSize);
+  
+  using iterator = std::list<OrderType>::iterator;
+  using Arena = PlaceArena<NodeSize, constCacheLineSize>;
+
+  explicit StlL3BookLevel(Arena& arena): level_(CustomAllocator<ActiveOrder, Arena>(&arena)) {}
 
   bool empty() const { return level_.empty(); }
 
@@ -41,15 +49,31 @@ public:
   auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).end(); }
 
 private:
-  std::list<OrderType> level_;
+  std::list<OrderType, CustomAllocator<ActiveOrder, Arena>> level_;
 };
 
 template<typename ActiveOrder, Direction direction>
 class StlL3HalfBook {
 public:
+  using LevelType = StlL3BookLevel<ActiveOrder>;
+  using LevelArena = LevelType::Arena;
+
+  using MapNodeType =
+#if defined(_LIBCPP_VERSION)
+      std::__tree_node<std::__value_type<Price, LevelType>, void*>;
+#else
+      std::_Rb_tree_node<std::pair<const Price, LevelType>>;
+#endif
+  using MapArena = PlaceArena<sizeof(MapNodeType), constCacheLineSize>;
+
+  explicit StlL3HalfBook(MapArena& map_arena, LevelArena& level_arena):
+      level_arena_(level_arena), half_book_(CustomAllocator<std::pair<const Price, LevelType>, MapArena>(&map_arena)) {}
+
   using Map = std::map<Price,
-      StlL3BookLevel<ActiveOrder>,
-      std::conditional_t<direction == Direction::BUY, std::greater<Price>, std::less<Price>>>;
+      LevelType,
+      std::conditional_t<direction == Direction::BUY, std::greater<Price>, std::less<Price>>,
+      CustomAllocator<std::pair<const Price, LevelType>, MapArena>>;
+
   using iterator = Map::iterator;
   using const_iterator = Map::const_iterator;
 
@@ -60,7 +84,8 @@ public:
   auto end(this auto&& self) { return self.half_book_.end(); }
   auto find(this auto&& self, Price price) { return self.half_book_.find(price); }
 
-  auto& operator[](Price price) { return half_book_[price]; }
+  auto& operator[](Price price) { return half_book_.try_emplace(price, level_arena_).first->second; }
+
   iterator erase(const_iterator it) { return half_book_.erase(it); }
 
   Price best_price() const { return half_book_.empty() ? min_price() : half_book_.begin()->first; }
@@ -72,6 +97,7 @@ private:
     return direction == Direction::BUY ? std::numeric_limits<Price>::lowest() : std::numeric_limits<Price>::max();
   }
 
+  LevelArena& level_arena_;
   Map half_book_;
 };
 
@@ -81,6 +107,8 @@ public:
   using OrderType = ActiveOrder;
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
   using UniqueID = decltype(std::declval<ActiveOrder>().id());
+
+  explicit StlL3BookContainer(): buy_(map_arena_, level_arena_), sell_(map_arena_, level_arena_) {}
 
   bool contains(UniqueID id) const { return active_orders_.contains(id); }
 
@@ -141,8 +169,8 @@ public:
 
   void reserve(size_t size) {
     active_orders_.reserve(size);
-    buy_.reserve(size / 2);
-    sell_.reserve(size / 2);
+    map_arena_.reserve(size);
+    level_arena_.reserve(size);
   }
 
 private:
@@ -155,6 +183,19 @@ private:
     }
   }
 
+  template<Direction direction>
+  using HalfBookType = StlL3HalfBook<ActiveOrder, direction>;
+
+  using LevelArena = typename HalfBookType<Direction::BUY>::LevelArena;
+  using MapArena = typename HalfBookType<Direction::BUY>::MapArena;
+
+  static_assert(std::is_same_v<LevelArena, typename HalfBookType<Direction::BUY>::LevelArena>);
+  static_assert(std::is_same_v<LevelArena, typename HalfBookType<Direction::SELL>::LevelArena>);
+  static_assert(std::is_same_v<MapArena, typename HalfBookType<Direction::BUY>::MapArena>);
+  static_assert(std::is_same_v<MapArena, typename HalfBookType<Direction::SELL>::MapArena>);
+
+  MapArena map_arena_;
+  LevelArena level_arena_;
   StlL3HalfBook<ActiveOrder, Direction::BUY> buy_;
   StlL3HalfBook<ActiveOrder, Direction::SELL> sell_;
   std::unordered_map<UniqueID, typename BookLevelType::iterator> active_orders_;

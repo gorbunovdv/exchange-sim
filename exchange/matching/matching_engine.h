@@ -16,20 +16,25 @@ namespace exchange_sim {
 template<template<typename> class BookContainer, engine_events::Sink SinkType>
 class MatchingEngine : public LoggableClass {
 public:
+  struct Config {
+    size_t reserve_books_size;
+  };
+
   explicit MatchingEngine(const glz::generic& config, const SecurityStorage& security_storage, SinkType& sink):
+      MatchingEngine(
+          Config{.reserve_books_size = config["reserve_books_size"].as<std::size_t>()}, security_storage, sink) {}
+
+  explicit MatchingEngine(const Config& config, const SecurityStorage& security_storage, SinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     static_assert(request::Processor<MatchingEngine>);
 
     books_.reserve(security_storage_.size());
     for (auto& security : security_storage_.securities()) {
-      books_.emplace_back(security, order_id_counter_, trade_id_counter_);
+      books_.emplace_back(std::make_unique<L3Book<BookContainer>>(security, order_id_counter_, trade_id_counter_));
     }
 
-    if (config.contains("reserve_books_size")) {
-      uint32_t reserve_books_size = config["reserve_books_size"].as<std::uint32_t>();
-      for (auto& book : books_) {
-        book.reserve(reserve_books_size);
-      }
+    for (auto& book : books_) {
+      book->reserve(config.reserve_books_size);
     }
   }
 
@@ -51,7 +56,7 @@ private:
       });
       return;
     }
-    books_[request.security_id].add(request, sink_);
+    books_[request.security_id]->add(request, sink_);
   }
 
   void process_object(const request::OrderReplaceRequest& request) {
@@ -66,7 +71,7 @@ private:
       });
       return;
     }
-    books_[request.security_id].replace(request, sink_);
+    books_[request.security_id]->replace(request, sink_);
   }
 
   void process_object(const request::OrderCancelRequest& request) {
@@ -81,12 +86,12 @@ private:
       });
       return;
     }
-    books_[request.security_id].cancel(request, sink_);
+    books_[request.security_id]->cancel(request, sink_);
   }
 
   const SecurityStorage& security_storage_;
   SinkType& sink_;
-  StrongTypeIndexedVector<SecurityID, L3Book<BookContainer>> books_;
+  StrongTypeIndexedVector<SecurityID, std::unique_ptr<L3Book<BookContainer>>> books_;
 
   Counter<ExchangeOrderID> order_id_counter_;
   Counter<ExchangeTradeID> trade_id_counter_;
