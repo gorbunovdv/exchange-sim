@@ -16,7 +16,12 @@ public:
   void deallocate(T* p, size_t n) { arena_->deallocate(p, n * sizeof(T)); }
 
   template<typename Other>
-  explicit CustomAllocator(const CustomAllocator<Other, Arena>& other) noexcept: arena_(other.arena_) {}
+  CustomAllocator(const CustomAllocator<Other, Arena>& other) noexcept: arena_(other.arena_) {}
+
+  template<typename Other>
+  struct rebind {
+    using other = CustomAllocator<Other, Arena>;
+  };
 
 private:
   template<typename OtherT, typename OtherArena>
