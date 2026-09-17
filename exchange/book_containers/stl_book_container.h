@@ -216,7 +216,8 @@ private:
 
   using UnorderedMapNodeType = StlUnorderedMapNodeType<UniqueID, typename BookLevelType::iterator>;
   static constexpr size_t UnorderedMapNodeSize = sizeof(UnorderedMapNodeType);
-  using UnorderedMapArena = PlaceArena<UnorderedMapNodeSize, constCacheLineSize>;
+
+  using UnorderedMapArena = PlaceArena<UnorderedMapNodeSize, 32>;
 
   template<typename T, typename DefaultAllocator>
   class StlUnorderedMapAllocator {
