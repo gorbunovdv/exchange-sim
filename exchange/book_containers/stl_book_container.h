@@ -240,7 +240,7 @@ private:
 
     void deallocate(T* p, size_t n) {
       if constexpr (std::is_pointer_v<T>) {
-        ::operator delete(p, n * sizeof(T));
+        ::operator delete(static_cast<void*>(p), n * sizeof(T));
       } else {
         default_allocator_.deallocate(p, n);
       }
