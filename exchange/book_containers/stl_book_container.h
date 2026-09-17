@@ -26,7 +26,7 @@ public:
   static constexpr size_t NodeSize = sizeof(NodeType);
 
   static_assert(NodeSize <= constCacheLineSize);
-  
+
   using iterator = std::list<OrderType>::iterator;
   using Arena = PlaceArena<NodeSize, constCacheLineSize>;
 
