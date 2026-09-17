@@ -27,8 +27,9 @@ public:
 
   static_assert(NodeSize <= constCacheLineSize);
 
-  using iterator = std::list<OrderType>::iterator;
   using Arena = PlaceArena<NodeSize, constCacheLineSize>;
+  using ListType = std::list<OrderType, CustomAllocator<ActiveOrder, Arena>>;
+  using iterator = ListType::iterator;
 
   explicit StlL3BookLevel(Arena& arena): level_(CustomAllocator<ActiveOrder, Arena>(&arena)) {}
 
@@ -49,7 +50,7 @@ public:
   auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).end(); }
 
 private:
-  std::list<OrderType, CustomAllocator<ActiveOrder, Arena>> level_;
+  ListType level_;
 };
 
 template<typename ActiveOrder, Direction direction>
