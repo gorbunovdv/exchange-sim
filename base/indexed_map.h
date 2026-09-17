@@ -2,8 +2,6 @@
 
 #include "base/logging/logging_backend.h"
 
-#include <boost/stl_interfaces/iterator_interface.hpp>
-
 #include <ankerl/unordered_dense.h>
 #include <vector>
 

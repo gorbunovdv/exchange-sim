@@ -6,7 +6,6 @@
 #include "exchange/domain/requests.h"
 #include "exchange/domain/types.h"
 
-#include <boost/unordered/unordered_flat_map.hpp>
 #include <magic_enum/magic_enum_containers.hpp>
 
 namespace exchange_sim {

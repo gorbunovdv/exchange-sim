@@ -129,6 +129,7 @@ void OrderStorage::handle(const report::ReplacementAccepted& report) {
       report.client_id.value(),
       report.client_order_id.value());
   orders_.erase(order);
+  CHECK(orders_.size() < capacity_, "Order container is full, size={} capacity={}", orders_.size(), capacity_);
   orders_.emplace(std::pair{report.client_id, report.client_replacement_id},
       ActiveOrder{
           .client_id = report.client_id,
