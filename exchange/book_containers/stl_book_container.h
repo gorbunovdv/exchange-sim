@@ -79,7 +79,8 @@ public:
   using LevelArena = LevelType::Arena;
 
   using MapNodeType = StlMapNodeType<Price, LevelType>;
-  using MapArena = PlaceArena<sizeof(MapNodeType), constCacheLineSize>;
+  static constexpr size_t MapNodeSize = sizeof(MapNodeType);
+  using MapArena = PlaceArena<MapNodeSize, constCacheLineSize>;
 
   explicit StlL3HalfBook(MapArena& map_arena, LevelArena& level_arena):
       level_arena_(level_arena), half_book_(CustomAllocator<std::pair<const Price, LevelType>, MapArena>(&map_arena)) {}
