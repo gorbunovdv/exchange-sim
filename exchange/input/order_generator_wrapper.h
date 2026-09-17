@@ -106,7 +106,7 @@ private:
   ThreadedJournal<File, market_events::EventType>& market_data_journal_;
   ThreadedJournal<File, report::ReportType>& report_journal_;
 
-  static constexpr size_t constEventBufferSize = 1024;
+  static constexpr size_t constEventBufferSize = 10240;
 
   std::vector<Timestamped<market_events::EventType>> event_buffer_;
   std::vector<Timestamped<report::ReportType>> report_buffer_;
