@@ -6,16 +6,23 @@ namespace exchange_sim {
 
 InMemoryFile::InMemoryFile(const std::filesystem::path& path, Mode mode, bool binary):
     file_(path, mode == Mode::READ ? File::Mode::READ : File::Mode::WRITE, binary),
-    buffer_(std::filesystem::file_size(path)) {
+    size_(std::filesystem::file_size(path)) {
   CHECK(mode == Mode::READ, "Invalid file mode, mode={}", magic_enum::enum_name(mode));
-  INFO("Initializing inmemory file, path={} size={}", path.string(), buffer_.size());
-  CHECK(file_.read(std::span(buffer_)) == buffer_.size(), "Could not read file");
-  INFO("Finished initializing inmemory file, path={} size={}", path.string(), buffer_.size());
+  INFO("Initializing inmemory file, path={} size={}", path.string(), size_);
+  buffer_ = static_cast<char*>(mmap(nullptr,
+      round_up(size_),
+      PROT_READ | PROT_WRITE,
+      MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB,
+      -1,
+      0));
+
+  CHECK(file_.read(std::span(buffer_, buffer_ + size_)) == size_, "Could not read file");
+  INFO("Finished initializing inmemory file, path={} size={}", path.string(), size_);
 }
 
 size_t InMemoryFile::read(std::span<char> buffer) {
-  size_t bytes_read = std::min(buffer.size_bytes(), buffer_.size() - position_);
-  memcpy(buffer.data(), buffer_.data() + position_, bytes_read * sizeof(char));
+  size_t bytes_read = std::min(buffer.size_bytes(), size_ - position_);
+  memcpy(buffer.data(), buffer_ + position_, bytes_read * sizeof(char));
   position_ += bytes_read;
   return bytes_read;
 }
