@@ -12,7 +12,12 @@ class AllocatorTracking {
 public:
   void enable_tracking() { enabled_tracking_ = true; }
 
-  void disable_tracking() { enabled_tracking_ = false; }
+  void disable_tracking() {
+    enabled_tracking_ = false;
+    if (allocated_memory_size_ > 0) {
+      INFO("AllocatorTracking: total allocated memory size: {}", allocated_memory_size_);
+    }
+  }
 
   static AllocatorTracking& instance() {
     static AllocatorTracking instance;
@@ -25,13 +30,6 @@ public:
       if (print_allocations_) {
         INFO("AllocatorTracking: allocated memory size: {}", allocated_memory_size_);
       }
-    }
-  }
-
-  ~AllocatorTracking() {
-    enabled_tracking_ = false;
-    if (allocated_memory_size_ > 0) {
-      INFO("AllocatorTracking: total allocated memory size: {}", allocated_memory_size_);
     }
   }
 
