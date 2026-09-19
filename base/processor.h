@@ -1,9 +1,8 @@
 #pragma once
-#include <utility>
 
 namespace exchange_sim {
 
 template<typename Processor, typename Object>
-concept ProcessorOf = requires(Processor& processor, Object object) { processor.process(std::move(object)); };
+concept ProcessorOf = requires(Processor& processor, const Object& object) { processor.process(object); };
 
 }  // namespace exchange_sim

@@ -11,7 +11,11 @@ namespace exchange_sim {
 template<market_events::Sink MDSinkType, report::Sink ORSinkType>
 class ExchangeDispatcher {
 public:
-  explicit ExchangeDispatcher(const glz::generic&, MDSinkType& market_data_sink, ORSinkType& report_generator_sink):
+  using OutputMDSinkType = MDSinkType;
+  using OutputORSinkType = ORSinkType;
+
+  explicit ExchangeDispatcher(
+      const glz::generic&, OutputMDSinkType& market_data_sink, OutputORSinkType& report_generator_sink):
       market_data_sink_(market_data_sink), report_generator_sink_(report_generator_sink) {
     static_assert(engine_events::Processor<ExchangeDispatcher>);
   }
@@ -119,8 +123,8 @@ private:
 
   void process_event(const engine_events::ReplacementRejected& event) { report_generator_sink_.push(event); }
 
-  MDSinkType& market_data_sink_;
-  ORSinkType& report_generator_sink_;
+  OutputMDSinkType& market_data_sink_;
+  OutputORSinkType& report_generator_sink_;
 };
 
 }  // namespace exchange_sim

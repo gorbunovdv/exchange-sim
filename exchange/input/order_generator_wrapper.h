@@ -1,10 +1,8 @@
 #pragma once
 
-#include "base/counter.h"
 #include "base/file.h"
 #include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
-#include "base/throughput.h"
 
 #include "domain/security_storage.h"
 
@@ -12,23 +10,24 @@
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
 
-#include <utility>
+#include <glaze/glaze.hpp>
 
 namespace exchange_sim {
 
-template<template<typename> typename OrderGenerator, typename GeneratorInterface, typename SinkType>
+template<template<typename> typename OrderGenerator, typename GeneratorInterface, request::Sink SinkType>
 class OrderGeneratorWrapper {
 public:
-  template<typename... Args>
+  using OutputSinkType = SinkType;
+
   explicit OrderGeneratorWrapper(const std::shared_ptr<Runtime>& runtime,
       SecurityStorage& security_storage,
       ThreadedJournal<File, request::RequestType>& requests_journal,
       ThreadedJournal<File, market_events::EventType>& market_data_journal,
       ThreadedJournal<File, report::ReportType>& report_journal,
-      SinkType& sink,
-      Args&&... args):
+      OutputSinkType& sink,
+      const glz::generic& config):
       generator_interface_(runtime->stop_token(), runtime->core_allocator(), security_storage, requests_journal, sink),
-      generator_(generator_interface_, std::forward<Args>(args)...),
+      generator_(generator_interface_, config),
       market_data_journal_(market_data_journal),
       report_journal_(report_journal) {}
 
