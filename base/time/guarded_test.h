@@ -9,7 +9,8 @@ namespace exchange_sim {
 template<typename Callback>
 class GuardedTest {
 public:
-  explicit GuardedTest(std::chrono::nanoseconds max_latency, auto&& callback = [](){}):
+  explicit GuardedTest(
+      std::chrono::nanoseconds max_latency, auto&& callback = []() {}):
       max_latency_(max_latency), callback_(std::forward<decltype(callback)>(callback)), start_(Ticks::rdtsc()) {}
 
   ~GuardedTest() {
