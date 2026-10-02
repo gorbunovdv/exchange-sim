@@ -12,7 +12,10 @@
 #include "exchange/domain/market_events.h"
 #include "exchange/domain/reports.h"
 #include "exchange/domain/requests.h"
+#include "exchange/input/order_generator_concept.h"
 #include "exchange/input/order_generator_wrapper.h"
+#include "exchange/matching/matching_engine_concept.h"
+#include "exchange/output/dispatcher_concept.h"
 
 #include <glaze/glaze.hpp>
 
@@ -54,17 +57,29 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   MarketDataSinkType market_data_generator_sink;
   ReportSinkType report_generator_sink;
 
-  CallbackReceiver<engine_events::EventType, ExchangeDispatcher<MarketDataSinkType, ReportSinkType>>
-      exchange_dispatcher(config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
+  using AppExchangeDispatcher = ExchangeDispatcher<MarketDataSinkType, ReportSinkType>;
+
+  static_assert(concepts::ExchangeDispatcher<AppExchangeDispatcher>);
+
+  CallbackReceiver<engine_events::EventType, AppExchangeDispatcher> exchange_dispatcher(
+      config["exchange_dispatcher"], market_data_generator_sink, report_generator_sink);
 
   using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
 
-  CallbackReceiver<request::RequestType, MatchingEngine<ExchangeDispatcherSinkType>> matching_engine(
+  using AppMatchingEngine = MatchingEngine<ExchangeDispatcherSinkType>;
+
+  static_assert(concepts::MatchingEngine<AppMatchingEngine>);
+
+  CallbackReceiver<request::RequestType, AppMatchingEngine> matching_engine(
       config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
 
   auto stop_token = runtime->stop_token();
 
-  OrderGenerator order_generator(runtime,
+  using AppOrderGenerator = OrderGenerator<decltype(matching_engine.get_sink())>;
+
+  static_assert(concepts::OrderGenerator<AppOrderGenerator>);
+
+  AppOrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,

@@ -5,6 +5,7 @@ target_sources(abstract_order_generator PUBLIC
     BASE_DIRS ${PROJECT_SOURCE_DIR}
     FILES order_generator_wrapper.h order_storage.h simple_order_generator.h generator_interface.h
         store_orders_skill.h debug_orders_skill.h maintain_book_skill.h pending_transactions_skill.h
+        order_generator_concept.h
 )
 
 add_executable(order_storage_test tests/order_storage_test.cpp)

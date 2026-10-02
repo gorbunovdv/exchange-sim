@@ -104,7 +104,7 @@ public:
   CoreLease lease_core(CoreType core) { return core_allocator_.lease_core(core); }
 
 private:
-  template<template<typename> typename, typename, typename>
+  template<template<typename> typename, typename, request::Sink>
   friend class OrderGeneratorWrapper;
 
   void handle_report(const report::ReportType& report) {
