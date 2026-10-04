@@ -19,7 +19,7 @@ public:
   }
 
   static AllocatorTracking& instance() {
-    static AllocatorTracking instance;
+    thread_local AllocatorTracking instance;
     return instance;
   }
 
