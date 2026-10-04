@@ -162,7 +162,7 @@ def check_isolation(*, path):
         raise Exception("No isolated CPUs configured in config file")
     huge_pages = None
     if data.get("memory", {}).get("reserve_huge_os_pages", False):
-        huge_pages = data["memory"]["huge_os_pages_count"]
+        huge_pages = data["memory"]["huge_os_pages_count"] + data["memory"]["huge_os_pages_file_count"]
 
     shared, dedicated = current["shared_core"], current["dedicated_cores"]
     isolated = [shared, *dedicated]
