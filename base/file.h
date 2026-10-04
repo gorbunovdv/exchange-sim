@@ -8,7 +8,7 @@
 
 namespace exchange_sim {
 
-class File {
+class File : NonCopyable {
 public:
   enum class Mode : uint8_t { READ, WRITE };
 
