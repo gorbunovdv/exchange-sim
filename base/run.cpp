@@ -16,7 +16,8 @@ namespace exchange_sim {
 std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(
     std::span<char*> args, bool secondary_app) {
   block_shutdown_signals();
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__) && \
+    !__has_feature(thread_sanitizer) && !defined(__SANITIZE_THREAD__)
   if (int ec = mlockall(MCL_CURRENT | MCL_FUTURE); ec != 0) {
     throw std::runtime_error(std::format("mlockall failed: {}", strerror(errno)));
   }
