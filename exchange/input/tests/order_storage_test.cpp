@@ -248,6 +248,7 @@ TEST_P(OrderStorageTransitionTest, TransitionApplication) {
   const auto& input = GetParam();
 
   OrderStorage storage;
+  storage.reserve(128);
 
   bring_order_to_state(storage, constOrderAddRequest, input.initial_state);
 
@@ -260,6 +261,7 @@ class OrderStorageTransitionFailureTest : public ::testing::TestWithParam<Transi
 TEST_P(OrderStorageTransitionFailureTest, TransitionFailure) {
   const auto& input = GetParam();
   OrderStorage storage;
+  storage.reserve(128);
 
   bring_order_to_state(storage, constOrderAddRequest, input.initial_state);
 
@@ -573,3 +575,9 @@ INSTANTIATE_TEST_SUITE_P(OrderStorageTransitionFailures,
             .test_name = "ReplaceSent_CancellationRejected",
         }),
     [](const ::testing::TestParamInfo<TransitionTestInput>& info) { return info.param.test_name; });
+
+
+TEST(OrderStorage, NonReserved) {
+  OrderStorage storage;
+  ASSERT_ANY_THROW(storage.handle(constOrderAddRequest));
+}
