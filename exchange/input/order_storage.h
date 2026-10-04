@@ -12,7 +12,7 @@ namespace exchange_sim {
 
 class OrderStorage {
 public:
-  struct Order {
+  struct ActiveOrder {
     using UniqueID = std::pair<ClientID, ClientOrderID>;
 
     ClientID client_id;
@@ -51,11 +51,11 @@ public:
   }
 
 private:
-  using OrderContainer = std::unordered_map<std::pair<ClientID, ClientOrderID>, Order>;
+  using OrderContainer = ankerl::unordered_dense::map<std::pair<ClientID, ClientOrderID>, ActiveOrder>;
 
   class ActiveOrderContainerWrapper {
   public:
-    using ActiveOrderContainer = IndexedMap<Order::UniqueID, Order>;
+    using ActiveOrderContainer = IndexedMap<ActiveOrder::UniqueID, ActiveOrder>;
 
     size_t size() const { return orders_[Direction::BUY].size() + orders_[Direction::SELL].size(); }
 
@@ -65,7 +65,7 @@ private:
       return std::forward_like<decltype(self)>(self.orders_)[direction];
     }
 
-    void erase(Direction direction, const Order::UniqueID& key) { orders_[direction].erase(key); }
+    void erase(Direction direction, const ActiveOrder::UniqueID& key) { orders_[direction].erase(key); }
 
     void emplace(Direction direction, auto&&... args) {
       orders_[direction].emplace(std::forward<decltype(args)>(args)...);
@@ -93,7 +93,7 @@ private:
   ActiveOrderContainerWrapper active_orders_;
 };
 
-constexpr std::string_view format_as(OrderStorage::Order::State state) {
+constexpr std::string_view format_as(OrderStorage::ActiveOrder::State state) {
   return magic_enum::enum_name(state);
 }
 

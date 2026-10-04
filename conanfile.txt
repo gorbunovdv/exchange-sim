@@ -7,6 +7,7 @@ boost/1.91.0
 cpptrace/1.0.4
 mimalloc/3.3.2
 benchmark/1.9.5
+unordered_dense/4.9.2
 
 [generators]
 CMakeConfigDeps
