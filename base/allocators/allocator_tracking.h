@@ -3,9 +3,6 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
 
-#include <cstdlib>
-#include <iostream>
-
 namespace exchange_sim {
 
 class AllocatorTracking {
