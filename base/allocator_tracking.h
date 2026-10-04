@@ -14,9 +14,9 @@ public:
 
   void disable_tracking() {
     enabled_tracking_ = false;
-    if (allocated_memory_size_ > 0) {
-      INFO("AllocatorTracking: total allocated memory size: {}", allocated_memory_size_.load());
-    }
+    CHECK(allocated_memory_size_ == 0,
+        "AllocatorTracking: total allocated memory size: {}",
+        allocated_memory_size_.load());
   }
 
   static AllocatorTracking& instance() {
@@ -27,17 +27,12 @@ public:
   void on_new(size_t size) {
     if (enabled_tracking_) {
       allocated_memory_size_ += size;
-      if (print_allocations_) {
-        INFO("AllocatorTracking: allocated memory size: {}", allocated_memory_size_.load());
-      }
     }
   }
 
 private:
   std::atomic<size_t> allocated_memory_size_ = 0;
   std::atomic<bool> enabled_tracking_ = false;
-
-  bool print_allocations_ = false;
 };
 
 }  // namespace exchange_sim
