@@ -3,6 +3,8 @@
 #include "base/logging/loggable_class.h"
 #include "base/logging/logging_backend.h"
 
+#include <cpptrace/cpptrace.hpp>
+
 namespace exchange_sim {
 
 class AllocatorTracking {
@@ -22,8 +24,12 @@ public:
   }
 
   void on_new(size_t size) {
-    if (enabled_tracking_) {
+    thread_local bool local_enabled_tracking = false;
+    if (enabled_tracking_ && local_enabled_tracking) {
+      local_enabled_tracking = false;
       allocated_memory_size_ += size;
+      DEBUG("Allocated {} bytes, trace={}", size, cpptrace::generate_trace().to_string());
+      local_enabled_tracking = true;
     }
   }
 
