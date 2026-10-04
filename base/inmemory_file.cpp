@@ -2,6 +2,11 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#ifdef __APPLE__
+#define MAP_HUGETLB 0
+#define MAP_HUGE_1GB 0
+#endif
+
 namespace exchange_sim {
 
 InMemoryFile::InMemoryFile(const std::filesystem::path& path, Mode mode, bool binary):
@@ -9,12 +14,16 @@ InMemoryFile::InMemoryFile(const std::filesystem::path& path, Mode mode, bool bi
     size_(std::filesystem::file_size(path)) {
   CHECK(mode == Mode::READ, "Invalid file mode, mode={}", magic_enum::enum_name(mode));
   INFO("Initializing inmemory file, path={} size={}", path.string(), size_);
+
   buffer_ = static_cast<char*>(mmap(nullptr,
       round_up(size_),
       PROT_READ | PROT_WRITE,
       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB,
       -1,
       0));
+  if (buffer_ == MAP_FAILED) {
+    throw std::runtime_error("Could not mmap file");
+  }
 
   CHECK(file_.read(std::span(buffer_, buffer_ + size_)) == size_, "Could not read file");
   INFO("Finished initializing inmemory file, path={} size={}", path.string(), size_);

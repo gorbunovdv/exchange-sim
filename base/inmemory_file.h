@@ -6,7 +6,7 @@
 
 namespace exchange_sim {
 
-class InMemoryFile {
+class InMemoryFile : NonCopyable {
 public:
   enum class Mode : uint8_t { READ, WRITE };
 
@@ -19,7 +19,7 @@ public:
   bool eof() const { return position_ == size_; }
 
 private:
-  size_t round_up(size_t size) { return ((size + (1 << 30) - 1) >> 30) << 30; }
+  static constexpr size_t round_up(size_t size) { return ((size + (1 << 30) - 1) >> 30) << 30; }
 
   File file_;
   size_t size_;

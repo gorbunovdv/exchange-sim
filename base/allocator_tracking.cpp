@@ -2,7 +2,9 @@
 
 #include <cpptrace/cpptrace.hpp>
 
-#include <iostream>
+#if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__) && !__has_feature(thread_sanitizer) && \
+    !defined(__SANITIZE_THREAD__)
+
 #include <mimalloc.h>
 
 void operator delete(void* p) noexcept {
@@ -98,3 +100,5 @@ void* operator new[](std::size_t n, std::align_val_t al, const std::nothrow_t&) 
   AllocatorTracking::instance().on_new(n);
   return mi_new_aligned_nothrow(n, static_cast<size_t>(al));
 }
+
+#endif
