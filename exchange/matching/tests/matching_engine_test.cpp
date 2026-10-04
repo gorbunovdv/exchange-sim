@@ -34,9 +34,9 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .security_id = SecurityID{1},
       .time_in_force = OrderTimeInForce::IOC,
       .order_type = OrderType::LIMIT,
-      .direction = Direction::BUY,
       .price = Price(1),
       .quantity = Amount(1),
+      .direction = Direction::BUY,
   });
   engine.process(request::OrderReplaceRequest{
       .origin_time = Ticks{0},
@@ -44,9 +44,9 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .client_order_id = ClientOrderID{0},
       .client_replacement_id = ClientOrderID{1},
       .security_id = SecurityID{1},
-      .direction = Direction::BUY,
       .price = Price(2),
       .quantity = Amount(1),
+      .direction = Direction::BUY,
   });
   engine.process(request::OrderCancelRequest{
       .origin_time = Ticks{0},
