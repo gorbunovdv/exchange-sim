@@ -1,7 +1,5 @@
 #include "allocator_tracking.h"
 
-#include <cpptrace/cpptrace.hpp>
-
 #if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__) && !__has_feature(thread_sanitizer) && \
     !defined(__SANITIZE_THREAD__)
 
@@ -102,3 +100,11 @@ void* operator new[](std::size_t n, std::align_val_t al, const std::nothrow_t&) 
 }
 
 #endif
+
+namespace exchange_sim {
+
+const AllocatorTracking::Config AllocatorTracking::constDefaultConfig = {
+    .enabled_printing = false,
+};
+
+}  // namespace exchange_sim
