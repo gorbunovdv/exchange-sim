@@ -86,6 +86,8 @@ private:
         max_book_order_amount_(max_book_order_amount_in_lot_sizes * security_.lot_size),
         random_(random),
         middle_price_(security_.low_price) {
+      refills_.reserve(max_active_orders_by_security_);
+
       CHECK(max_book_order_amount_ <= security_.max_amount,
           "Max book order amount must be less than or equal to max_amount, max_book_order_amount={} "
           "security.max_amount={}",
