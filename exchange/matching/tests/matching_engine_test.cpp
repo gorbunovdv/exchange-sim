@@ -26,7 +26,10 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
           .max_amount = Amount(1000),
       },
   });
-  MatchingEngine<StlL3BookContainer, decltype(event_sink)> engine(glz::generic{}, storage, event_sink);
+
+  using MatchingEngineType = MatchingEngine<StlL3BookContainer, decltype(event_sink)>;
+
+  MatchingEngineType engine(MatchingEngineType::Config{.reserve_books_size = 128}, storage, event_sink);
   engine.process(request::OrderAddRequest{
       .origin_time = Ticks{0},
       .client_id = ClientID{0},
