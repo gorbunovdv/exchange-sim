@@ -13,9 +13,7 @@ public:
 
   void disable_tracking() {
     enabled_tracking_ = false;
-    CHECK(allocated_memory_size_ == 0,
-        "AllocatorTracking: total allocated memory size: {}",
-        allocated_memory_size_);
+    CHECK(allocated_memory_size_ == 0, "AllocatorTracking: total allocated memory size: {}", allocated_memory_size_);
   }
 
   static AllocatorTracking& instance() {

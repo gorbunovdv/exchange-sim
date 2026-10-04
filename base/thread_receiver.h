@@ -1,12 +1,11 @@
 #pragma once
 
 #include "base/aligned_spsc_queue.h"
+#include "base/allocators/allocator_tracking.h"
 #include "base/logging/loggable_class.h"
 #include "base/processor.h"
 #include "base/threading/core_allocator.h"
 #include "base/time/rdtsc.h"
-
-#include "base/allocators/allocator_tracking.h"
 
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
