@@ -6,6 +6,8 @@
 #include "base/threading/core_allocator.h"
 #include "base/time/rdtsc.h"
 
+#include "base/allocators/allocator_tracking.h"
+
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
 

@@ -1,6 +1,5 @@
 #include "signals.h"
 
-#include "base/allocators/allocator_tracking.h"
 #include "base/threading/core_allocator.h"
 #include "base/time/rdtsc.h"
 
@@ -38,7 +37,6 @@ ShutdownSignalThread::ShutdownSignalThread(std::stop_source stop_source, CoreLea
           }
           continue;
         }
-        AllocatorTracking::instance().disable_tracking();
         // Unfortunately, lots of utils (like timeout) send signals to both the process and the group. There's a race
         // between this signal and signal handler. So there must be a delay between those signals to terminate.
         if (first_signal_received.has_value() && first_signal_received.value().nanoseconds_till_now() > 100ms &&
