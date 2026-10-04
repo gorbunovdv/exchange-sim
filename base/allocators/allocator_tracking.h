@@ -23,15 +23,7 @@ public:
     return instance;
   }
 
-  void on_new(size_t size) {
-    thread_local bool local_enabled_tracking = false;
-    if (enabled_tracking_ && local_enabled_tracking) {
-      local_enabled_tracking = false;
-      allocated_memory_size_ += size;
-      DEBUG("Allocated {} bytes, trace={}", size, cpptrace::generate_trace().to_string());
-      local_enabled_tracking = true;
-    }
-  }
+  void on_new(size_t size);
 
 private:
   std::atomic<size_t> allocated_memory_size_ = 0;

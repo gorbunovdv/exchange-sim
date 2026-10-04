@@ -102,3 +102,17 @@ void* operator new[](std::size_t n, std::align_val_t al, const std::nothrow_t&) 
 }
 
 #endif
+
+namespace exchange_sim {
+
+void AllocatorTracking::on_new(size_t size) {
+  thread_local bool local_enabled_tracking = true;
+  if (enabled_tracking_ && local_enabled_tracking) {
+    local_enabled_tracking = false;
+    allocated_memory_size_ += size;
+    DEBUG("Allocated {} bytes, trace={}", size, cpptrace::generate_trace().to_string());
+    local_enabled_tracking = true;
+  }
+}
+
+}  // namespace exchange_sim
