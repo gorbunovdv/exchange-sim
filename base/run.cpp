@@ -6,8 +6,6 @@
 #include "base/threading/runtime.h"
 #include "base/time/rdtsc.h"
 
-#include "allocators/allocator_tracking.h"
-
 #include <magic_enum/magic_enum.hpp>
 
 #include <iostream>
@@ -78,11 +76,6 @@ std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_lo
   runtime->core_allocator().lease_core(CoreType::SHARED).pin_thread("main");
   INFO("config={}", glz::write_json(config).value());
   INFO("Initialized time backend, tsc_hw: {}", rdtsc_frequency());
-  AllocatorTracking::Config allocator_config{
-      .enabled_printing = config.contains("allocator") && config["allocator"].contains("print_allocations") &&
-          config["allocator"]["print_allocations"].as<bool>(),
-  };
-  AllocatorTracking::init(allocator_config);
   return std::tuple{std::move(runtime), config};
 }
 
