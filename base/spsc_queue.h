@@ -22,7 +22,7 @@ public:
   template<typename Producer>
   bool produce(Producer&& producer) {
     size_t current_head = head_.load(std::memory_order_relaxed);
-    size_t next_head = (current_head + 1) % capacity_;
+    size_t next_head = next(current_head);
     if (next_head == cached_tail_) {
       cached_tail_ = tail_.load(std::memory_order_acquire);
       if (next_head == cached_tail_) {
@@ -44,7 +44,7 @@ public:
       }
     }
     std::forward<Consumer>(consumer)(queue_[current_tail]);
-    tail_.store((current_tail + 1) % capacity_, std::memory_order_release);
+    tail_.store(next(current_tail), std::memory_order_release);
     return true;
   }
 
@@ -57,7 +57,7 @@ public:
     size_t last_head = current_tail <= cached_head_ ? cached_head_ : capacity_;
     auto result = std::forward<Consumer>(consumer)(std::span{queue_ + current_tail, queue_ + last_head});
     if (current_tail != last_head) {
-      tail_.store(last_head % capacity_, std::memory_order_release);
+      tail_.store(last_head == capacity_ ? 0 : last_head, std::memory_order_release);
     }
     return result;
   }
@@ -65,7 +65,7 @@ public:
   template<typename Producer>
   auto produce_span(Producer&& producer) {
     size_t current_head = head_.load(std::memory_order_relaxed);
-    size_t next_head = (current_head + 1) % capacity_;
+    size_t next_head = next(current_head);
     if (next_head == cached_tail_) {
       cached_tail_ = tail_.load(std::memory_order_acquire);
     }
@@ -73,7 +73,8 @@ public:
         cached_tail_ <= current_head ? (cached_tail_ == 0 ? capacity_ - 1 : capacity_) : cached_tail_ - 1;
     size_t produced_count = std::forward<Producer>(producer)(std::span{queue_ + current_head, queue_ + last_head});
     if (produced_count != 0) {
-      head_.store((current_head + produced_count) % capacity_, std::memory_order_release);
+      current_head += produced_count;
+      head_.store(current_head == capacity_ ? 0 : current_head, std::memory_order_release);
     }
     return produced_count;
   }
@@ -108,6 +109,11 @@ public:
   }
 
 private:
+  constexpr size_t next(size_t current) const {
+    ++current;
+    return current == capacity_ ? 0 : current;
+  }
+
   size_t capacity_;
   ObjectType* queue_;
 
