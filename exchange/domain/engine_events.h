@@ -19,10 +19,10 @@ struct OrderAccepted {
   ClientID client_id;
   ClientOrderID client_order_id;
   SecurityID security_id;
-  OrderTimeInForce time_in_force;
-  Direction direction;
   Price price;
   Amount quantity;
+  Direction direction;
+  OrderTimeInForce time_in_force;
 
   bool operator==(const OrderAccepted& other) const = default;
 };
@@ -30,9 +30,6 @@ struct OrderAccepted {
 struct Trade {
   Ticks origin_time;
   SecurityID security_id;
-  Direction aggressor_direction;
-  Price price;
-  Amount quantity;
   ExchangeTradeID trade_id;
   ExchangeOrderID aggressor_order_id;
   ClientID aggressor_client_id;
@@ -40,6 +37,9 @@ struct Trade {
   ExchangeOrderID recipient_order_id;
   ClientID recipient_client_id;
   ClientOrderID recipient_client_order_id;
+  Price price;
+  Amount quantity;
+  Direction aggressor_direction;
 
   bool operator==(const Trade& other) const = default;
 };
@@ -50,9 +50,9 @@ struct OrderBookEntry {
   ClientID client_id;
   ClientOrderID client_order_id;
   SecurityID security_id;
-  Direction direction;
   Price price;
   Amount quantity;
+  Direction direction;
 
   bool operator==(const OrderBookEntry& other) const = default;
 };
@@ -65,8 +65,8 @@ struct OrderFilled {
   ClientID client_id;
   ClientOrderID client_order_id;
   SecurityID security_id;
-  Direction direction;
   Price price;
+  Direction direction;
   FilledType type;
 
   bool operator==(const OrderFilled& other) const = default;
@@ -78,9 +78,9 @@ struct OrderReduced {
   ClientID client_id;
   ClientOrderID client_order_id;
   SecurityID security_id;
-  Direction direction;
   Price price;
   Amount remaining_quantity;
+  Direction direction;
 
   bool operator==(const OrderReduced& other) const = default;
 };
@@ -159,9 +159,9 @@ struct ReplacementAccepted {
   ClientOrderID client_order_id;
   ClientOrderID client_replacement_id;
   SecurityID security_id;
-  Direction direction;
   Price price;
   Amount quantity;
+  Direction direction;
 
   bool operator==(const ReplacementAccepted& other) const = default;
 };

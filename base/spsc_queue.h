@@ -13,6 +13,8 @@ template<typename ObjectType>
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class SPSCQueue {
 public:
+  static_assert(sizeof(ObjectType) <= constCacheLineSize);
+
   explicit SPSCQueue(size_t size): capacity_(size), queue_(std::allocator<ObjectType>().allocate(size)) {}
 
   ~SPSCQueue() { std::allocator<ObjectType>().deallocate(queue_, capacity_); }
@@ -109,11 +111,11 @@ private:
   size_t capacity_;
   ObjectType* queue_;
 
-  alignas(constCacheLineSize) std::atomic<size_t> head_ = 0;
-  alignas(constCacheLineSize) std::atomic<size_t> tail_ = 0;
+  alignas(constCacheLineSeparationSize) std::atomic<size_t> head_ = 0;
+  alignas(constCacheLineSeparationSize) std::atomic<size_t> tail_ = 0;
 
-  alignas(constCacheLineSize) size_t cached_head_ = 0;
-  alignas(constCacheLineSize) size_t cached_tail_ = 0;
+  alignas(constCacheLineSeparationSize) size_t cached_head_ = 0;
+  alignas(constCacheLineSeparationSize) size_t cached_tail_ = 0;
 };
 
 }  // namespace exchange_sim
