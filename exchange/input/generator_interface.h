@@ -27,7 +27,9 @@ public:
       core_allocator_(allocator),
       security_storage_(security_storage),
       sink_(sink),
-      journal_(journal) {}
+      journal_(journal) {
+    request_buffer_.reserve(constEventBufferSize);
+  }
 
   ClientOrderID send_order_add_request(ClientID client_id,
       SecurityID security_id,
@@ -126,6 +128,8 @@ private:
   }
 
   ClientOrderID generate_client_order_id() { return current_client_order_id_.inc(); }
+
+  static constexpr size_t constEventBufferSize = 1024;
 
   std::stop_token stop_token_;
   CoreAllocator& core_allocator_;

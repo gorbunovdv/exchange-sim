@@ -24,9 +24,8 @@ public:
       std::this_thread::sleep_for(100ms);
     }
     current_request_ = replay_journal_.begin();
-    if (config.contains("max_active_orders_by_security")) {
-      interface_.reserve(config["max_active_orders_by_security"].as<std::uint32_t>());
-    }
+    interface_.reserve(config["max_active_orders_by_security"].as<std::uint32_t>() +
+        config["max_pending_transactions"].as<std::uint32_t>());
   }
 
   void process_market_event(const auto&) {}

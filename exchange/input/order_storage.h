@@ -46,6 +46,7 @@ public:
   const auto& active_orders() const { return active_orders_; }
 
   void reserve(size_t size) {
+    capacity_ = size;
     orders_.reserve(size);
     active_orders_.reserve(size);
   }
@@ -68,6 +69,10 @@ private:
     void erase(Direction direction, const Order::UniqueID& key) { orders_[direction].erase(key); }
 
     void emplace(Direction direction, auto&&... args) {
+      CHECK(capacity_ > orders_[direction].size(),
+          "Order container is full, size={} capacity={}",
+          orders_[direction].size(),
+          capacity_);
       orders_[direction].emplace(std::forward<decltype(args)>(args)...);
     }
 
@@ -78,17 +83,20 @@ private:
     }
 
     void reserve(size_t size) {
+      capacity_ = size;
       for (auto& container : orders_) {
         container.reserve(size);
       }
     }
 
   private:
+    size_t capacity_ = 0;
     magic_enum::containers::array<Direction, ActiveOrderContainer> orders_;
   };
 
   OrderContainer::iterator find_order(ClientID client_id, ClientOrderID client_order_id);
 
+  size_t capacity_ = 0;
   OrderContainer orders_;
   ActiveOrderContainerWrapper active_orders_;
 };
