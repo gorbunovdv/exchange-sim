@@ -65,7 +65,6 @@ jobs:
           just test clang-debug-asan
           just test gcc-debug-asan
           just test clang-debug-tsan
-          just test clang-debug
 
       - name: Run linter
         run: |
