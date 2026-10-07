@@ -1,20 +1,56 @@
 #pragma once
 
+#include "base/allocators/custom_allocator.h"
+#include "base/allocators/place_arena.h"
+#include "base/threading/cache_line.h"
+
 #include "domain/types.h"
 
 #include "exchange/book_containers/book_container_concept.h"
-#include "exchange/domain/types.h"
 
 #include <list>
 #include <map>
 
 namespace exchange_sim {
 
+template<typename T>
+using StlListNodeType =
+#if defined(_LIBCPP_VERSION)
+    std::__list_node<T, void*>;
+#else
+    std::_List_node<T>;
+#endif
+
+template<typename Key, typename Value>
+using StlMapNodeType =
+#if defined(_LIBCPP_VERSION)
+    std::__tree_node<std::__value_type<Key, Value>, void*>;
+#else
+    std::_Rb_tree_node<std::pair<const Key, Value>>;
+#endif
+
+template<typename Key, typename Value>
+using StlUnorderedMapNodeType =
+#if defined(_LIBCPP_VERSION)
+    std::__hash_node<std::__hash_value_type<Key, Value>, void*>;
+#else
+    std::__detail::_Hash_node<std::pair<const Key, Value>, std::__cache_default<Key, std::hash<Key>>::value>;
+#endif
+
 template<typename ActiveOrder>
 class StlL3BookLevel {
 public:
   using OrderType = ActiveOrder;
-  using iterator = std::list<OrderType>::iterator;
+  using NodeType = StlListNodeType<OrderType>;
+  static constexpr size_t NodeSize = sizeof(NodeType);
+
+  static_assert(NodeSize <= constCacheLineSize);
+
+  using Arena = PlaceArena<NodeSize, constCacheLineSize>;
+  using ListType = std::list<OrderType, CustomAllocator<ActiveOrder, Arena>>;
+  using iterator = ListType::iterator;
+
+  explicit StlL3BookLevel(Arena& arena): level_(CustomAllocator<ActiveOrder, Arena>(&arena)) {}
 
   bool empty() const { return level_.empty(); }
 
@@ -33,15 +69,27 @@ public:
   auto end(this auto&& self) { return std::forward_like<decltype(self)>(self.level_).end(); }
 
 private:
-  std::list<OrderType> level_;
+  ListType level_;
 };
 
 template<typename ActiveOrder, Direction direction>
 class StlL3HalfBook {
 public:
+  using LevelType = StlL3BookLevel<ActiveOrder>;
+  using LevelArena = LevelType::Arena;
+
+  using MapNodeType = StlMapNodeType<Price, LevelType>;
+  static constexpr size_t MapNodeSize = sizeof(MapNodeType);
+  using MapArena = PlaceArena<MapNodeSize, constCacheLineSize>;
+
+  explicit StlL3HalfBook(MapArena& map_arena, LevelArena& level_arena):
+      level_arena_(level_arena), half_book_(CustomAllocator<std::pair<const Price, LevelType>, MapArena>(&map_arena)) {}
+
   using Map = std::map<Price,
-      StlL3BookLevel<ActiveOrder>,
-      std::conditional_t<direction == Direction::BUY, std::greater<Price>, std::less<Price>>>;
+      LevelType,
+      std::conditional_t<direction == Direction::BUY, std::greater<Price>, std::less<Price>>,
+      CustomAllocator<std::pair<const Price, LevelType>, MapArena>>;
+
   using iterator = Map::iterator;
   using const_iterator = Map::const_iterator;
 
@@ -52,7 +100,8 @@ public:
   auto end(this auto&& self) { return self.half_book_.end(); }
   auto find(this auto&& self, Price price) { return self.half_book_.find(price); }
 
-  auto& operator[](Price price) { return half_book_[price]; }
+  auto& operator[](Price price) { return half_book_.try_emplace(price, level_arena_).first->second; }
+
   iterator erase(const_iterator it) { return half_book_.erase(it); }
 
   Price best_price() const { return half_book_.empty() ? min_price() : half_book_.begin()->first; }
@@ -64,6 +113,7 @@ private:
     return direction == Direction::BUY ? std::numeric_limits<Price>::lowest() : std::numeric_limits<Price>::max();
   }
 
+  LevelArena& level_arena_;
   Map half_book_;
 };
 
@@ -73,6 +123,11 @@ public:
   using OrderType = ActiveOrder;
   using BookLevelType = StlL3BookLevel<ActiveOrder>;
   using UniqueID = decltype(std::declval<ActiveOrder>().id());
+
+  explicit StlL3BookContainer():
+      buy_(map_arena_, level_arena_),
+      sell_(map_arena_, level_arena_),
+      active_orders_(ActiveOrderAllocator(InternalActiveOrderAllocator(&active_orders_arena_))) {}
 
   bool contains(UniqueID id) const { return active_orders_.contains(id); }
 
@@ -133,8 +188,9 @@ public:
 
   void reserve(size_t size) {
     active_orders_.reserve(size);
-    buy_.reserve(size / 2);
-    sell_.reserve(size / 2);
+    map_arena_.reserve(size);
+    level_arena_.reserve(size);
+    active_orders_arena_.reserve(size);
   }
 
 private:
@@ -147,9 +203,74 @@ private:
     }
   }
 
+  template<Direction direction>
+  using HalfBookType = StlL3HalfBook<ActiveOrder, direction>;
+
+  using LevelArena = typename HalfBookType<Direction::BUY>::LevelArena;
+  using MapArena = typename HalfBookType<Direction::BUY>::MapArena;
+
+  static_assert(std::is_same_v<LevelArena, typename HalfBookType<Direction::BUY>::LevelArena>);
+  static_assert(std::is_same_v<LevelArena, typename HalfBookType<Direction::SELL>::LevelArena>);
+  static_assert(std::is_same_v<MapArena, typename HalfBookType<Direction::BUY>::MapArena>);
+  static_assert(std::is_same_v<MapArena, typename HalfBookType<Direction::SELL>::MapArena>);
+
+  using UnorderedMapNodeType = StlUnorderedMapNodeType<UniqueID, typename BookLevelType::iterator>;
+  static constexpr size_t UnorderedMapNodeSize = sizeof(UnorderedMapNodeType);
+
+  using UnorderedMapArena = PlaceArena<UnorderedMapNodeSize, 32>;
+
+  template<typename T, typename DefaultAllocator>
+  class StlUnorderedMapAllocator {
+  public:
+    using value_type = T;
+
+    explicit StlUnorderedMapAllocator(const DefaultAllocator& default_allocator):
+        default_allocator_(default_allocator) {}
+
+    template<typename OtherT>
+    StlUnorderedMapAllocator(StlUnorderedMapAllocator<OtherT, DefaultAllocator> allocator):
+        default_allocator_(allocator.default_allocator_) {}
+
+    T* allocate(size_t n) {
+      if constexpr (std::is_pointer_v<T>) {
+        return static_cast<T*>(::operator new(n * sizeof(T)));
+      } else {
+        return default_allocator_.allocate(n);
+      }
+    }
+
+    void deallocate(T* p, size_t n) {
+      if constexpr (std::is_pointer_v<T>) {
+        ::operator delete(static_cast<void*>(p), n * sizeof(T));
+      } else {
+        default_allocator_.deallocate(p, n);
+      }
+    }
+
+  private:
+    template<typename OtherT, typename OtherDefaultAllocator>
+    friend class StlUnorderedMapAllocator;
+
+    typename std::allocator_traits<DefaultAllocator>::template rebind_alloc<T> default_allocator_;
+  };
+
+  MapArena map_arena_;
+  LevelArena level_arena_;
+  UnorderedMapArena active_orders_arena_;
   StlL3HalfBook<ActiveOrder, Direction::BUY> buy_;
   StlL3HalfBook<ActiveOrder, Direction::SELL> sell_;
-  std::unordered_map<UniqueID, typename BookLevelType::iterator> active_orders_;
+
+  using InternalActiveOrderAllocator =
+      CustomAllocator<std::pair<const UniqueID, typename BookLevelType::iterator>, UnorderedMapArena>;
+  using ActiveOrderAllocator = StlUnorderedMapAllocator<std::pair<const UniqueID, typename BookLevelType::iterator>,
+      InternalActiveOrderAllocator>;
+
+  std::unordered_map<UniqueID,
+      typename BookLevelType::iterator,
+      std::hash<UniqueID>,
+      std::equal_to<UniqueID>,
+      ActiveOrderAllocator>
+      active_orders_;
 };
 
 }  // namespace exchange_sim
