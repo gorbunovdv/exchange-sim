@@ -20,9 +20,9 @@ struct OrderAddRequest {
   SecurityID security_id;
   OrderTimeInForce time_in_force;
   OrderType order_type;
-  Direction direction;
   Price price;
   Amount quantity;
+  Direction direction;
 };
 
 struct OrderReplaceRequest {
@@ -31,9 +31,9 @@ struct OrderReplaceRequest {
   ClientOrderID client_order_id;
   ClientOrderID client_replacement_id;
   SecurityID security_id;
-  Direction direction;
   Price price;
   Amount quantity;
+  Direction direction;
 };
 
 struct OrderCancelRequest {

@@ -26,7 +26,10 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
           .max_amount = Amount(1000),
       },
   });
-  MatchingEngine<StlL3BookContainer, decltype(event_sink)> engine(glz::generic{}, storage, event_sink);
+
+  using MatchingEngineType = MatchingEngine<StlL3BookContainer, decltype(event_sink)>;
+
+  MatchingEngineType engine(MatchingEngineType::Config{.reserve_books_size = 128}, storage, event_sink);
   engine.process(request::OrderAddRequest{
       .origin_time = Ticks{0},
       .client_id = ClientID{0},
@@ -34,9 +37,9 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .security_id = SecurityID{1},
       .time_in_force = OrderTimeInForce::IOC,
       .order_type = OrderType::LIMIT,
-      .direction = Direction::BUY,
       .price = Price(1),
       .quantity = Amount(1),
+      .direction = Direction::BUY,
   });
   engine.process(request::OrderReplaceRequest{
       .origin_time = Ticks{0},
@@ -44,9 +47,9 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
       .client_order_id = ClientOrderID{0},
       .client_replacement_id = ClientOrderID{1},
       .security_id = SecurityID{1},
-      .direction = Direction::BUY,
       .price = Price(2),
       .quantity = Amount(1),
+      .direction = Direction::BUY,
   });
   engine.process(request::OrderCancelRequest{
       .origin_time = Ticks{0},

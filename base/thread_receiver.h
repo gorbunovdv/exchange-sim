@@ -1,9 +1,9 @@
 #pragma once
 
+#include "base/aligned_spsc_queue.h"
 #include "base/allocators/allocator_tracking.h"
 #include "base/logging/loggable_class.h"
 #include "base/processor.h"
-#include "base/spsc_queue.h"
 #include "base/threading/core_allocator.h"
 #include "base/time/rdtsc.h"
 
@@ -84,7 +84,7 @@ private:
   std::string name_;
   CoreLease lease_;
   BaseClass base_class_;
-  SPSCQueue<ArgumentClass> sink_;
+  AlignedSPSCQueue<ArgumentClass> sink_;
   std::atomic<bool> ready_to_receive_;
   std::jthread thread_;
 };
