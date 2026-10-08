@@ -51,8 +51,8 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   auto stop_token = runtime->stop_token();
 
-  using MarketDataSinkType = SPSCQueue<market_events::EventType>;
-  using ReportSinkType = SPSCQueue<report::ReportType>;
+  using MarketDataSinkType = AlignedSPSCQueue<market_events::EventType>;
+  using ReportSinkType = AlignedSPSCQueue<report::ReportType>;
 
   MarketDataSinkType market_data_generator_sink(constQueueSize);
   ReportSinkType report_generator_sink(constQueueSize);
