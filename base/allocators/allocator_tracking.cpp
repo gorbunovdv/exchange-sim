@@ -105,11 +105,25 @@ void* operator new[](std::size_t n, std::align_val_t al, const std::nothrow_t&) 
 
 namespace exchange_sim {
 
-void AllocatorTracking::on_new(size_t size) {
+void AllocatorTracking::disable_tracking() {
+  enabled_tracking_ = false;
+  CHECK(allocated_memory_size_ == 0, "AllocatorTracking: total allocated memory size: {}", allocated_memory_size_);
+  if (last_exception_.has_value()) {
+    ERROR("AllocatorTracking: exception occured during print");
+    std::rethrow_exception(last_exception_.value());
+  }
+}
+
+void AllocatorTracking::on_new(size_t size) noexcept {
   if (enabled_tracking_) {
     enabled_tracking_ = false;
     allocated_memory_size_ += size;
-    DEBUG("Allocated {} bytes, trace={}", size, cpptrace::generate_trace().to_string());
+    try {
+      DEBUG("Allocated {} bytes, trace={}", size, cpptrace::generate_trace().to_string());
+    }
+    catch (...) {
+      last_exception_ = std::current_exception();
+    }
     enabled_tracking_ = true;
   }
 }

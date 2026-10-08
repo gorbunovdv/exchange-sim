@@ -11,21 +11,20 @@ class AllocatorTracking {
 public:
   void enable_tracking() { enabled_tracking_ = true; }
 
-  void disable_tracking() {
-    enabled_tracking_ = false;
-    CHECK(allocated_memory_size_ == 0, "AllocatorTracking: total allocated memory size: {}", allocated_memory_size_);
-  }
+  void disable_tracking();
 
   static AllocatorTracking& instance() {
     thread_local AllocatorTracking instance;
     return instance;
   }
 
-  void on_new(size_t size);
+  void on_new(size_t size) noexcept;
 
 private:
   size_t allocated_memory_size_ = 0;
   bool enabled_tracking_ = false;
+
+  std::optional<std::exception_ptr> last_exception_;
 };
 
 }  // namespace exchange_sim
