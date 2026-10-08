@@ -30,7 +30,7 @@ public:
     uint32_t max_quiet_state_sent_orders_count = config["max_quiet_state_sent_orders_count"].as<std::uint32_t>();
     uint32_t max_beat_filled_levels_count = config["max_beat_filled_levels_count"].as<std::uint32_t>();
     uint32_t max_book_order_amount_in_lot_sizes = config["max_book_order_amount_in_lot_sizes"].as<std::uint32_t>();
-    interface_.reserve(max_active_orders_by_security);
+    interface_.reserve(max_active_orders_by_security + max_pending_transactions_);
     CHECK(min_active_orders_by_security <= max_active_orders_by_security,
         "Min active orders must be less than max, min_active_orders_by_security={} max_active_orders_by_security={}",
         min_active_orders_by_security,
@@ -86,6 +86,8 @@ private:
         max_book_order_amount_(max_book_order_amount_in_lot_sizes * security_.lot_size),
         random_(random),
         middle_price_(security_.low_price) {
+      refills_.reserve(max_active_orders_by_security_);
+
       CHECK(max_book_order_amount_ <= security_.max_amount,
           "Max book order amount must be less than or equal to max_amount, max_book_order_amount={} "
           "security.max_amount={}",

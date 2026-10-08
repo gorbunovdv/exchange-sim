@@ -46,6 +46,9 @@ TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   const auto& input = GetParam();
 
   generator_interface_skills::MaintainBook<StlL3BookContainer> maintain_book_skill(security_storage());
+
+  maintain_book_skill.reserve(128);
+
   CallbackSink market_data_sink([&](market_events::EventType&& event) {
     std::visit([&](auto&& event) { maintain_book_skill.handle_market_event(event); }, event);
   });
@@ -53,14 +56,16 @@ TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   ExchangeDispatcher exchange_dispatcher(glz::generic{}, market_data_sink, report_sink);
   CallbackSink engine_events_sink([&](engine_events::EventType&& event) { exchange_dispatcher.process(event); });
 
-  MatchingEngine<StlL3BookContainer, decltype(engine_events_sink)> matching_engine(
-      glz::generic{}, security_storage(), engine_events_sink);
+  using MatchingEngineType = MatchingEngine<StlL3BookContainer, decltype(engine_events_sink)>;
+
+  MatchingEngineType matching_engine(
+      MatchingEngineType::Config{.reserve_books_size = 128}, security_storage(), engine_events_sink);
 
   for (const auto& request : input.requests) {
     matching_engine.process(request);
     for (const Security& security : security_storage().securities()) {
       EXPECT_EQ(snapshot(maintain_book_skill.book_storage()[security.security_id].container()),
-          snapshot(matching_engine.books()[security.security_id].container()));
+          snapshot(matching_engine.books()[security.security_id]->container()));
     }
   }
 }

@@ -25,9 +25,9 @@ TEST(RiskChecker, CorrectOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(1.2),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       std::nullopt);
 }
@@ -39,9 +39,9 @@ TEST(RiskChecker, CorrectReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       std::nullopt);
 }
@@ -54,9 +54,9 @@ TEST(RiskChecker, TooMuchAmountOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(10000),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::MAX_AMOUNT_EXCEEDED);
 }
@@ -68,9 +68,9 @@ TEST(RiskChecker, TooMuchAmountReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(10000),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::MAX_AMOUNT_EXCEEDED);
 }
@@ -83,9 +83,9 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(0),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::INVALID_QUANTITY);
 
@@ -96,9 +96,9 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(-1),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::INVALID_QUANTITY);
 
@@ -109,9 +109,9 @@ TEST(RiskChecker, InvalidAmountOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(1.05),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::INVALID_QUANTITY);
 }
@@ -123,9 +123,9 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(0),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 
@@ -135,9 +135,9 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(-1),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 
@@ -147,9 +147,9 @@ TEST(RiskChecker, InvalidAmountReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(1),
                 .quantity = Amount(1.05),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::INVALID_QUANTITY);
 }
@@ -162,9 +162,9 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(0.5),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::PRICE_OUT_OF_RANGE);
 
@@ -175,9 +175,9 @@ TEST(RiskChecker, PriceOutOfRangeOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(20),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::PRICE_OUT_OF_RANGE);
 }
@@ -189,9 +189,9 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(0.5),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
 
@@ -201,9 +201,9 @@ TEST(RiskChecker, PriceOutOfRangeReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(20),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::PRICE_OUT_OF_RANGE);
 }
@@ -216,9 +216,9 @@ TEST(RiskChecker, InvalidPriceTickSizeOrderTest) {
                 .security_id = SecurityID{0},
                 .time_in_force = OrderTimeInForce::IOC,
                 .order_type = OrderType::LIMIT,
-                .direction = Direction::BUY,
                 .price = Price(1.1),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       engine_events::OrderRejectedReason::PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
 }
@@ -230,9 +230,9 @@ TEST(RiskChecker, InvalidPriceTickSizeReplaceTest) {
                 .client_order_id = ClientOrderID{0},
                 .client_replacement_id = ClientOrderID{0},
                 .security_id = SecurityID{0},
-                .direction = Direction::BUY,
                 .price = Price(1.1),
                 .quantity = Amount(1),
+                .direction = Direction::BUY,
             }),
       engine_events::ReplacementRejectedReason::PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
 }
