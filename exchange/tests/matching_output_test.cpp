@@ -43,8 +43,12 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   CallbackReceiver<engine_events::EventType,
       ExchangeDispatcher<decltype(market_data_sink), decltype(report_generator_sink)>>
       exchange_dispatcher(glz::generic{}, market_data_sink, report_generator_sink);
-  MatchingEngine<StlL3BookContainer, std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>> matching_engine(
-      glz::generic{}, security_storage(), exchange_dispatcher.get_sink());
+
+  using MatchingEngineType =
+      MatchingEngine<StlL3BookContainer, std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>>;
+
+  MatchingEngineType matching_engine(
+      MatchingEngineType::Config{.reserve_books_size = 128}, security_storage(), exchange_dispatcher.get_sink());
 
   for (auto request : input.requests) {
     matching_engine.process(request);

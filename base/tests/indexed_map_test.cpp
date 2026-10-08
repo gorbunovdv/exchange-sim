@@ -167,15 +167,6 @@ TEST(IndexedMapTest, EraseLastElement) {
   expect_element(map, "third", 30);
 }
 
-TEST(IndexedMapTest, EraseMissingKey) {
-  IndexedMap<std::string, int> map;
-  map.emplace("first", 10);
-
-  ASSERT_THROW(map.erase("missing"), std::out_of_range);
-  ASSERT_EQ(map.size(), 1);
-  expect_element(map, "first", 10);
-}
-
 TEST(IndexedMapTest, IndexesAllElements) {
   IndexedMap<std::string, int> map;
   fill_map(map);

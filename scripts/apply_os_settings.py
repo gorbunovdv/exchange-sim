@@ -43,7 +43,7 @@ def build_cmdline(config):
             [
                 "default_hugepagesz=1G",
                 "hugepagesz=1G",
-                f"hugepages={config['memory']['huge_os_pages_count']}",
+                f"hugepages={config['memory']['huge_os_pages_count'] + config['memory']['huge_os_pages_file_count']}",
             ]
         )
     return " ".join(parameters)
