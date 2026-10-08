@@ -120,8 +120,7 @@ void AllocatorTracking::on_new(size_t size) noexcept {
     allocated_memory_size_ += size;
     try {
       DEBUG("Allocated {} bytes, trace={}", size, cpptrace::generate_trace().to_string());
-    }
-    catch (...) {
+    } catch (...) {
       last_exception_ = std::current_exception();
     }
     enabled_tracking_ = true;
