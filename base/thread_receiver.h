@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/allocators/allocator_tracking.h"
 #include "base/logging/loggable_class.h"
 #include "base/processor.h"
 #include "base/spsc_queue.h"
@@ -52,6 +53,7 @@ private:
 
       lease_.pin_thread(name_);
       ready_to_receive_ = true;
+      AllocatorTracking::instance().enable_tracking();
       while (!stop_token.stop_requested()) {
         sink_.consume(consumer);
       }
@@ -61,6 +63,7 @@ private:
           latest_event = Ticks::rdtsc();
         }
       }
+      AllocatorTracking::instance().disable_tracking();
       CHECK(sink_.empty(), "Sink must be empty prior to exit");
     }
     CPPTRACE_CATCH(...) {

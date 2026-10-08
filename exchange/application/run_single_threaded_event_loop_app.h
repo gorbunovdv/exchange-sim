@@ -1,4 +1,5 @@
 #pragma once
+#include "base/allocators/allocator_tracking.h"
 #include "base/file.h"
 #include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
@@ -141,6 +142,8 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
   AppExchangeDispatcher event_dispatcher(
       config["exchange_dispatcher"], sinks->market_data_generator_sink, sinks->report_generator_sink);
 
+  AllocatorTracking::instance().enable_tracking();
+
   while (!stop_token.stop_requested() && !order_generator_wrapper.generator_stopped()) {
     order_generator_wrapper.generate_event();
     for (const auto& request : sinks->request_sink) {
@@ -160,6 +163,8 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
     sinks->market_data_generator_sink.clear();
     sinks->report_generator_sink.clear();
   }
+
+  AllocatorTracking::instance().disable_tracking();
 }
 
 
