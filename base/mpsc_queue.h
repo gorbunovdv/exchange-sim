@@ -20,12 +20,19 @@ public:
 
   bool produce(auto&& producer) {
     size_t current_head = head_.load(std::memory_order_acquire);
-    do {
+    for (;;) {
       if (next(current_head) == tail_.load(std::memory_order_acquire)) {
+        if (size_t actual_head = head_.load(std::memory_order_acquire); current_head != actual_head) {
+          current_head = actual_head;
+          continue;
+        }
         return false;
       }
-    } while (!head_.compare_exchange_weak(
-        current_head, next(current_head), std::memory_order_release, std::memory_order_acquire));
+      if (head_.compare_exchange_weak(
+              current_head, next(current_head), std::memory_order_release, std::memory_order_acquire)) {
+        break;
+      }
+    }
     std::forward<decltype(producer)>(producer)(queue_[current_head]);
 
     size_t published_head = current_head;
