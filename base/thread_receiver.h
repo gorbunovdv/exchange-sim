@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/aligned_spsc_queue.h"
+#include "base/aligned_queue.h"
 #include "base/logging/loggable_class.h"
 #include "base/processor.h"
 #include "base/threading/core_allocator.h"
@@ -14,7 +14,7 @@
 
 namespace exchange_sim {
 
-template<typename ArgumentClass, typename BaseClass>
+template<typename ArgumentClass, typename BaseClass, template<typename> typename QueueType>
   requires ProcessorOf<BaseClass, ArgumentClass>
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class ThreadReceiver : public LoggableClass {
@@ -81,7 +81,7 @@ private:
   std::string name_;
   CoreLease lease_;
   BaseClass base_class_;
-  AlignedSPSCQueue<ArgumentClass> sink_;
+  AlignedQueue<QueueType, ArgumentClass> sink_;
   std::atomic<bool> ready_to_receive_;
   std::jthread thread_;
 };

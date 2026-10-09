@@ -4,21 +4,19 @@
 
 namespace exchange_sim {
 
-template<typename ObjectType>
-class AlignedSPSCQueue {
+template<template<typename> typename QueueType, typename ObjectType>
+class AlignedQueue {
 public:
-  explicit AlignedSPSCQueue(size_t capacity): spsc_queue_(capacity) {}
+  explicit AlignedQueue(size_t capacity): queue_(capacity) {}
 
   template<typename Producer>
   bool produce(Producer&& producer) {
-    return spsc_queue_.produce(
-        [&producer](AlignedObjectType& place) { std::forward<Producer>(producer)(place.object); });
+    return queue_.produce([&producer](AlignedObjectType& place) { std::forward<Producer>(producer)(place.object); });
   }
 
   template<typename Consumer>
   bool consume(Consumer&& consumer) {
-    return spsc_queue_.consume(
-        [&consumer](AlignedObjectType& place) { std::forward<Consumer>(consumer)(place.object); });
+    return queue_.consume([&consumer](AlignedObjectType& place) { std::forward<Consumer>(consumer)(place.object); });
   }
 
   bool try_push(ObjectType&& object) { return try_emplace(std::move(object)); }
@@ -37,16 +35,16 @@ public:
     return consume([&](ObjectType& place) { object = std::move(place); });
   }
 
-  bool empty() const { return spsc_queue_.empty(); }
+  bool empty() const { return queue_.empty(); }
 
-  size_t capacity() const { return spsc_queue_.capacity(); }
+  size_t capacity() const { return queue_.capacity(); }
 
 private:
   struct alignas(constCacheLineSize) AlignedObjectType {
     ObjectType object;
   };
 
-  SPSCQueue<AlignedObjectType> spsc_queue_;
+  QueueType<AlignedObjectType> queue_;
 };
 
 }  // namespace exchange_sim

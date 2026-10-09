@@ -19,6 +19,7 @@ inline SecurityStorage& security_storage() {
           .low_price = Price(0),
           .high_price = Price(100),
           .max_amount = Amount(1000),
+          .section = "SECTION0",
       },
       SecurityConfig{
           .symbol = Symbol{"B"},
@@ -27,6 +28,7 @@ inline SecurityStorage& security_storage() {
           .low_price = Price(0),
           .high_price = Price(100),
           .max_amount = Amount(1000),
+          .section = "SECTION1",
       },
   });
   return storage;

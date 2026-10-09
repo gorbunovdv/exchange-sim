@@ -24,6 +24,7 @@ TEST(MatchingEngineTest, UnavailableSecurityTest) {
           .low_price = Price(0),
           .high_price = Price(100),
           .max_amount = Amount(1000),
+          .section = "SECTION0",
       },
   });
 

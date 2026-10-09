@@ -14,7 +14,9 @@ static const auto security = Security{
     .low_price = Price(1),
     .high_price = Price(10),
     .max_amount = Amount(100),
+    .section_id = SectionID{0},
 };
+
 static const auto risk_checker = RiskChecker(security);
 
 TEST(RiskChecker, CorrectOrderTest) {

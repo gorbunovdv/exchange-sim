@@ -13,6 +13,7 @@ TEST(SecurityStorage, BasicSecurityStorageTest) {
           .low_price = Price(10),
           .high_price = Price(1000),
           .max_amount = Amount(10000),
+          .section = "SECTION0",
       },
       SecurityConfig{
           .symbol = Symbol{"B"},
@@ -21,6 +22,7 @@ TEST(SecurityStorage, BasicSecurityStorageTest) {
           .low_price = Price(1),
           .high_price = Price(100),
           .max_amount = Amount(10000),
+          .section = "SECTION1",
       },
   }};
   EXPECT_EQ(storage.size(), 2);
@@ -47,15 +49,15 @@ TEST(SecurityStorage, DuplicateSymbolsTest) {
                        .low_price = Price(10),
                        .high_price = Price(1000),
                        .max_amount = Amount(10000),
+                       .section = "SECTION0",
                    },
-                   SecurityConfig{
-                       .symbol = Symbol{"A"},
+                   SecurityConfig{.symbol = Symbol{"A"},
                        .tick_size = Price(0.1),
                        .lot_size = Amount(10),
                        .low_price = Price(1),
                        .high_price = Price(100),
                        .max_amount = Amount(10000),
-                   },
+                       .section = "SECTION1"},
                }),
       std::runtime_error);
 }
