@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:26.04
-      options: --security-opt seccomp=unconfined
+      options: --security-opt seccomp=unconfined --ulimit memlock=-1:-1
 
     steps:
       - name: Update apt
@@ -64,6 +64,7 @@ jobs:
         run: |
           just test clang-debug-asan
           just test gcc-debug-asan
+          just test clang-debug
           just test clang-debug-tsan
 
       - name: Run linter

@@ -20,7 +20,14 @@ namespace exchange_sim {
 
 std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(
     std::span<char*> args, bool secondary_app) {
+  mi_option_set(mi_option_purge_delay, -1);
   block_shutdown_signals();
+#if !defined(__APPLE__) && !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__) && \
+    !__has_feature(thread_sanitizer) && !defined(__SANITIZE_THREAD__)
+  if (int ec = mlockall(MCL_CURRENT | MCL_FUTURE); ec != 0) {
+    throw std::system_error(errno, std::generic_category(), "mlockall failed");
+  }
+#endif
 
   auto value_or_raise = [](std::string_view type, auto expected) {
     if (!expected.has_value()) {
