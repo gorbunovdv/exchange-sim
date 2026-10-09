@@ -9,6 +9,7 @@
 namespace exchange_sim {
 
 template<typename ObjectType>
+  requires std::is_trivially_destructible_v<ObjectType>
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class SPSCQueue {
 public:
@@ -16,11 +17,7 @@ public:
 
   explicit SPSCQueue(size_t size): capacity_(size), queue_(std::allocator<ObjectType>().allocate(size)) {}
 
-  ~SPSCQueue() {
-    while (consume([](ObjectType& object) { std::destroy_at(&object); })) {
-    }
-    std::allocator<ObjectType>().deallocate(queue_, capacity_);
-  }
+  ~SPSCQueue() { std::allocator<ObjectType>().deallocate(queue_, capacity_); }
 
   bool produce(auto&& producer) {
     size_t current_head = head_.load(std::memory_order_relaxed);

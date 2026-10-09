@@ -8,17 +8,14 @@
 namespace exchange_sim {
 
 template<typename ObjectType>
+  requires std::is_trivially_destructible_v<ObjectType>
 class MPSCQueue {
 public:
   static_assert(sizeof(ObjectType) <= constCacheLineSize);
 
   explicit MPSCQueue(size_t size): capacity_(size), queue_(std::allocator<ObjectType>().allocate(size)) {}
 
-  ~MPSCQueue() {
-    while (consume([](ObjectType& object) { std::destroy_at(&object); })) {
-    }
-    std::allocator<ObjectType>().deallocate(queue_, capacity_);
-  }
+  ~MPSCQueue() { std::allocator<ObjectType>().deallocate(queue_, capacity_); }
 
   bool produce(auto&& producer) {
     size_t current_head = head_.load(std::memory_order_acquire);
