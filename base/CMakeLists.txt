@@ -40,3 +40,7 @@ gtest_discover_tests(indexed_map_test DISCOVERY_MODE PRE_TEST)
 add_executable(spsc_queue_test tests/spsc_queue_test.cpp)
 target_link_libraries(spsc_queue_test PUBLIC base gtest::gtest)
 gtest_discover_tests(spsc_queue_test DISCOVERY_MODE PRE_TEST)
+
+add_executable(mpsc_queue_test tests/mpsc_queue_test.cpp)
+target_link_libraries(mpsc_queue_test PUBLIC base gtest::gtest)
+gtest_discover_tests(mpsc_queue_test DISCOVERY_MODE PRE_TEST)

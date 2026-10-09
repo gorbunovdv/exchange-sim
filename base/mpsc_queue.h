@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/logging/logging_backend.h"
 #include "base/threading/cache_line.h"
 
 #include <atomic>
@@ -46,6 +47,22 @@ public:
   }
 
   bool empty() const { return head_.load(std::memory_order_acquire) == tail_.load(std::memory_order_acquire); }
+
+  bool try_push(ObjectType&& object) { return try_emplace(std::move(object)); }
+
+  void push(ObjectType&& object) { CHECK(try_push(std::move(object)), "Push failed, queue is full"); }
+
+  bool try_emplace(auto&&... args) {
+    return produce([&](ObjectType& place) { std::construct_at(&place, std::forward<decltype(args)>(args)...); });
+  }
+
+  void emplace(auto&&... args) {
+    CHECK(try_emplace(std::forward<decltype(args)>(args)...), "Push failed, queue is full");
+  }
+
+  bool try_pop(ObjectType& object) {
+    return consume([&](ObjectType& place) { object = std::move(place); });
+  }
 
 private:
   constexpr size_t next(size_t index) const {
