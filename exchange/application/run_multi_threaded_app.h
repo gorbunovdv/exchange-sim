@@ -32,18 +32,13 @@ public:
       engine_events::Sink auto& sink) {
     receivers_.reserve(storage.sections_count());
     for (uint32_t i = 0; i < storage.sections_count(); i++) {
-      auto securities = storage.securities() |
-          std::views::filter(
-              [section_id = SectionID{i}](const Security& security) { return security.section_id == section_id; }) |
-          std::views::transform([](const Security& security) { return security.security_id; }) |
-          std::ranges::to<std::vector<SecurityID>>();
       receivers_.emplace_back(
           std::make_unique<ThreadReceiver<ArgumentClass, BaseClass, SPSCQueue>>(std::format("{}_section_{}", name, i),
               queue_size,
               core_allocator.lease_core(CoreType::DEDICATED),
               config,
               storage,
-              std::move(securities),
+              SectionID{i},
               sink));
     }
     section_by_security_id_.reserve(storage.size());

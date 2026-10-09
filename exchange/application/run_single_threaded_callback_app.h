@@ -70,7 +70,7 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   static_assert(concepts::MatchingEngine<AppMatchingEngine>);
 
   CallbackReceiver<request::RequestType, AppMatchingEngine> matching_engine(
-      config["matching_engine"], security_storage, exchange_dispatcher.get_sink());
+      config["matching_engine"], security_storage, std::nullopt, exchange_dispatcher.get_sink());
 
   auto stop_token = runtime->stop_token();
 

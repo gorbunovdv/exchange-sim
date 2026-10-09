@@ -131,7 +131,8 @@ void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime,
 
   static_assert(concepts::MatchingEngine<AppMatchingEngine>);
 
-  AppMatchingEngine matching_engine(config["matching_engine"], security_storage, sinks->engine_event_sink);
+  AppMatchingEngine matching_engine(
+      config["matching_engine"], security_storage, std::nullopt, sinks->engine_event_sink);
 
   using AppExchangeDispatcher =
       ExchangeDispatcher<decltype(sinks->market_data_generator_sink), decltype(sinks->report_generator_sink)>;

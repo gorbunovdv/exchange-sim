@@ -13,7 +13,7 @@ concept MatchingEngine = request::Processor<Engine> &&
     std::constructible_from<Engine,
         const glz::generic&,
         const SecurityStorage&,
-        std::vector<SecurityID>&&,
+        std::optional<SectionID>,
         typename Engine::OutputSinkType&>;
 
 }  // namespace exchange_sim::concepts

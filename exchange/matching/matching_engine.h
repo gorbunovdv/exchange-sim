@@ -24,23 +24,21 @@ public:
 
   explicit MatchingEngine(const glz::generic& config,
       const SecurityStorage& security_storage,
-      std::vector<SecurityID>&& securities,
+      std::optional<SectionID> section,
       OutputSinkType& sink):
       MatchingEngine(Config{.reserve_books_size = config["reserve_books_size"].as<std::size_t>()},
           security_storage,
-          std::move(securities),
+          section,
           sink) {}
 
-  explicit MatchingEngine(Config config,
-      const SecurityStorage& security_storage,
-      std::vector<SecurityID>&& securities,
-      OutputSinkType& sink):
+  explicit MatchingEngine(
+      Config config, const SecurityStorage& security_storage, std::optional<SectionID> section, OutputSinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     static_assert(request::Processor<MatchingEngine>);
 
     books_.reserve(security_storage_.size());
     for (auto& security : security_storage_.securities()) {
-      bool contains = std::ranges::find(securities, security.security_id) != securities.end();
+      bool contains = !section.has_value() || section.value() == security.section_id;
       books_.emplace_back(
           contains ? std::make_unique<L3Book<BookContainer>>(security, order_id_counter_, trade_id_counter_) : nullptr);
     }
