@@ -89,6 +89,7 @@ TEST(MPSCQueue, AlmostEmptyTest) {
   {
     std::jthread consumer([&queue] { consume_all(queue, true, false); });
     std::vector<std::jthread> producers;
+    producers.reserve(constProducerCount);
     for (int producer = 0; producer < constProducerCount; producer++) {
       producers.emplace_back([&queue, producer] {
         for (int i = 0; i < constIterPerProducer; i++) {
@@ -107,6 +108,7 @@ TEST(MPSCQueue, AlmostFullTest) {
   {
     std::jthread consumer([&queue] { consume_all(queue, false, true); });
     std::vector<std::jthread> producers;
+    producers.reserve(constProducerCount);
     for (int producer = 0; producer < constProducerCount; producer++) {
       producers.emplace_back([&queue, producer] {
         for (int i = 0; i < constIterPerProducer; i++) {
@@ -132,6 +134,7 @@ TEST(MPSCQueue, HalfFullTest) {
   {
     std::jthread consumer([&queue] { consume_all(queue, true, false); });
     std::vector<std::jthread> producers;
+    producers.reserve(constProducerCount);
     for (int producer = 0; producer < constProducerCount; producer++) {
       producers.emplace_back([&queue, producer] {
         for (int i = constPrefillPerProducer; i < constIterPerProducer; i++) {
