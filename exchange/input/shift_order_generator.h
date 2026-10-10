@@ -51,12 +51,13 @@ public:
     }
   }
 
-  void generate_event() {
+  bool generate_event() {
     if (interface_.pending_transactions() >= max_pending_transactions_) {
-      return;
+      return false;
     }
     SecurityID security_id = random_.rand_int_strong_type<SecurityID>(0, interface_.security_storage().size() - 1);
     generators_[security_id].generate_event();
+    return true;
   }
 
   void process_market_event(const auto&) {}

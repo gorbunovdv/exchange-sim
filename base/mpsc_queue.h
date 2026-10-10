@@ -10,6 +10,7 @@ namespace exchange_sim {
 
 template<typename ObjectType>
   requires std::is_trivially_destructible_v<ObjectType>
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class MPSCQueue {
 public:
   static_assert(sizeof(ObjectType) <= constCacheLineSize);

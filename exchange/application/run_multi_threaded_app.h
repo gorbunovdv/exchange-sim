@@ -165,12 +165,14 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
   };
 
   auto consume = [&] {
-    return market_data_generator_sink.consume(consumer) || report_generator_sink.consume(consumer);
+    bool md_consume = market_data_generator_sink.consume(consumer);
+    bool rt_consume = report_generator_sink.consume(consumer);
+    return md_consume || rt_consume;
   };
 
   while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
-    if (!consume()) {
-      order_generator.generate_event();
+    if (!order_generator.generate_event()) {
+      consume();
     }
   }
 

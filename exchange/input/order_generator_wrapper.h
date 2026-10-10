@@ -73,11 +73,12 @@ public:
     report_buffer_.emplace_back(report, timestamp);
   }
 
-  void generate_event() {
+  bool generate_event() {
     if (!generator_interface_.asked_to_stop()) {
       apply_stored_events();
-      generator_.generate_event();
+      return generator_.generate_event();
     }
+    return false;
   }
 
   bool generator_stopped() const { return generator_interface_.generator_stopped(); }
