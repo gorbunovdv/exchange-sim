@@ -209,9 +209,16 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     return order_generator.process(std::forward<decltype(event)>(event));
   };
 
-  auto consume = [&] {
-    bool md_consume = market_data_generator_sink.consume(consumer);
-    bool rt_consume = report_generator_sink.consume(consumer);
+  auto consume = [&, md_first = false]() mutable {
+    bool md_consume, rt_consume;
+    if (md_first) {
+      md_consume = market_data_generator_sink.consume(consumer);
+      rt_consume = report_generator_sink.consume(consumer);
+    } else {
+      rt_consume = report_generator_sink.consume(consumer);
+      md_consume = market_data_generator_sink.consume(consumer);
+    }
+    md_first ^= true;
     return md_consume || rt_consume;
   };
 
