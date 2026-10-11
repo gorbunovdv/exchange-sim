@@ -16,7 +16,7 @@ SecurityStorage::SecurityStorage(const std::vector<SecurityConfig>& securities):
   sections_count_ = sections.size();
 
   securities_.reserve(securities.size());
-  for (SecurityConfig security_config : securities) {
+  for (const auto& security_config : securities) {
     Security security{
         .security_id = static_cast<SecurityID>(id_by_symbol_.size()),
         .symbol = security_config.symbol,
