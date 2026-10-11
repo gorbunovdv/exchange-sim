@@ -81,7 +81,7 @@ public:
       request_iterator_(request_journal_.begin()) {}
 
   std::optional<RequestStat> next() {
-    static constexpr std::chrono::nanoseconds constMaxTimeDifference = 1ms;
+    static constexpr std::chrono::nanoseconds constMaxTimeDifference = 1s;
 
     if (request_iterator_ == request_journal_.end()) {
       return std::nullopt;

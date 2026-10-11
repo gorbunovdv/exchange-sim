@@ -12,7 +12,7 @@ class File : NonCopyable {
 public:
   enum class Mode : uint8_t { READ, WRITE };
 
-  explicit File(const std::filesystem::path& path, Mode mode, bool binary = false);
+  explicit File(const std::filesystem::path& path, Mode mode, bool binary);
 
   size_t read(std::span<char> buffer);
 

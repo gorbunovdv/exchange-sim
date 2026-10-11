@@ -10,7 +10,7 @@ class InMemoryFile : NonCopyable {
 public:
   enum class Mode : uint8_t { READ, WRITE };
 
-  explicit InMemoryFile(const std::filesystem::path& path, Mode mode, bool binary = false);
+  explicit InMemoryFile(const std::filesystem::path& path, Mode mode, bool binary, bool hugepages);
 
   ~InMemoryFile() { munmap(buffer_, round_up(size_)); }
 

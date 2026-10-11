@@ -9,7 +9,7 @@
 
 namespace exchange_sim {
 
-InMemoryFile::InMemoryFile(const std::filesystem::path& path, Mode mode, bool binary):
+InMemoryFile::InMemoryFile(const std::filesystem::path& path, Mode mode, bool binary, bool hugepages):
     file_(path, mode == Mode::READ ? File::Mode::READ : File::Mode::WRITE, binary),
     size_(std::filesystem::file_size(path)) {
   CHECK(mode == Mode::READ, "Invalid file mode, mode={}", magic_enum::enum_name(mode));
@@ -18,7 +18,7 @@ InMemoryFile::InMemoryFile(const std::filesystem::path& path, Mode mode, bool bi
   buffer_ = static_cast<char*>(mmap(nullptr,
       round_up(size_),
       PROT_READ | PROT_WRITE,
-      MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB,
+      MAP_PRIVATE | MAP_ANONYMOUS | (hugepages ? MAP_HUGETLB | MAP_HUGE_1GB : 0),
       -1,
       0));
   if (buffer_ == MAP_FAILED) {
