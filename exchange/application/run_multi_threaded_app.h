@@ -21,7 +21,13 @@
 
 namespace exchange_sim {
 
-template<typename ArgumentClass, typename BaseClass>
+template<typename ObjectType>
+using AlignedSPSCQueue = AlignedQueue<SPSCQueue, ObjectType>;
+
+template<typename ObjectType>
+using AlignedMPSCQueue = AlignedQueue<MPSCQueue, ObjectType>;
+
+template<typename ArgumentClass, typename BaseClass, template<typename> typename QueueType>
 class MultiSectionReceiver {
 public:
   explicit MultiSectionReceiver(std::string name,
@@ -29,17 +35,17 @@ public:
       size_t queue_size,
       CoreAllocator& core_allocator,
       const glz::generic& config,
-      engine_events::Sink auto& sink) {
+      auto&& sink_factory) {
     receivers_.reserve(storage.sections_count());
     for (uint32_t i = 0; i < storage.sections_count(); i++) {
       receivers_.emplace_back(
-          std::make_unique<ThreadReceiver<ArgumentClass, BaseClass, SPSCQueue>>(std::format("{}_section_{}", name, i),
+          std::make_unique<ThreadReceiver<ArgumentClass, BaseClass, QueueType>>(std::format("{}_section_{}", name, i),
               queue_size,
               core_allocator.lease_core(CoreType::DEDICATED),
               config,
               storage,
               SectionID{i},
-              sink));
+              sink_factory(SectionID{i})));
     }
     section_by_security_id_.reserve(storage.size());
     for (const auto& security : storage.securities()) {
@@ -64,6 +70,10 @@ public:
     }
   }
 
+  bool stopped() const {
+    return std::ranges::all_of(receivers_, [](const auto& receiver) { return receiver->stopped(); });
+  }
+
   void stop() {
     for (auto& receiver : receivers_) {
       receiver->stop();
@@ -75,9 +85,40 @@ public:
   }
 
 private:
-  StrongTypeIndexedVector<SectionID, std::unique_ptr<ThreadReceiver<ArgumentClass, BaseClass, SPSCQueue>>> receivers_;
+  StrongTypeIndexedVector<SectionID, std::unique_ptr<ThreadReceiver<ArgumentClass, BaseClass, QueueType>>> receivers_;
   StrongTypeIndexedVector<SecurityID, SectionID> section_by_security_id_;
 };
+
+template<typename ArgumentClass>
+class MultiSectionQueue {
+public:
+  explicit MultiSectionQueue(const SecurityStorage& storage, size_t queue_size) {
+    queues_.reserve(storage.sections_count());
+    for (size_t i = 0; i < storage.sections_count(); i++) {
+      queues_.emplace_back(std::make_unique<AlignedSPSCQueue<ArgumentClass>>(queue_size));
+    }
+  }
+
+  auto& get_queue(SectionID section_id) { return *queues_[section_id]; }
+
+  bool consume(auto&& consumer) {
+    bool consumed = false;
+    for (auto& queue : queues_) {
+      consumed = queue->consume(consumer) || consumed;
+    }
+    return consumed;
+  }
+
+  bool empty() const {
+    return std::ranges::all_of(queues_, [](const auto& queue) { return queue->empty(); });
+  }
+
+private:
+  StrongTypeIndexedVector<SectionID, std::unique_ptr<AlignedSPSCQueue<ArgumentClass>>> queues_;
+};
+
+template<typename ArgumentClass>
+using InternalQueue = MultiSectionQueue<ArgumentClass>&;
 
 template<template<typename> typename OrderGenerator,
     template<typename> typename MatchingEngine,
@@ -110,8 +151,8 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   auto stop_token = runtime->stop_token();
 
-  using MarketDataSinkType = AlignedQueue<SPSCQueue, market_events::EventType>;
-  using ReportSinkType = AlignedQueue<SPSCQueue, report::ReportType>;
+  using MarketDataSinkType = AlignedSPSCQueue<market_events::EventType>;
+  using ReportSinkType = AlignedSPSCQueue<report::ReportType>;
 
   MarketDataSinkType market_data_generator_sink(constQueueSize);
   ReportSinkType report_generator_sink(constQueueSize);
@@ -120,25 +161,29 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   static_assert(concepts::ExchangeDispatcher<AppDispatcher>);
 
-  ThreadReceiver<engine_events::EventType, AppDispatcher, MPSCQueue> exchange_dispatcher("ExchangeDispatcher",
-      constQueueSize,
+  MultiSectionQueue<engine_events::EventType> exchange_dispatcher_queues(security_storage, constQueueSize);
+
+  ThreadReceiver<engine_events::EventType, AppDispatcher, InternalQueue> exchange_dispatcher(
+      "ExchangeDispatcher",
+      [&exchange_dispatcher_queues]() -> auto& { return exchange_dispatcher_queues; },
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
       config["exchange_dispatcher"],
       market_data_generator_sink,
       report_generator_sink);
 
-  using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
+  using ExchangeDispatcherSinkType = AlignedSPSCQueue<engine_events::EventType>;
 
   using AppMatchingEngine = MatchingEngine<ExchangeDispatcherSinkType>;
 
   static_assert(concepts::MatchingEngine<AppMatchingEngine>);
 
-  MultiSectionReceiver<request::RequestType, AppMatchingEngine> matching_engines("MatchingEngine",
+  MultiSectionReceiver<request::RequestType, AppMatchingEngine, AlignedSPSCQueue> matching_engines("MatchingEngine",
       security_storage,
       constQueueSize,
       runtime->core_allocator(),
       config["matching_engine"],
-      exchange_dispatcher.get_sink());
+      [&exchange_dispatcher_queues](
+          SectionID section_id) -> decltype(auto) { return exchange_dispatcher_queues.get_queue(section_id); });
 
   using AppOrderGenerator = OrderGenerator<decltype(matching_engines.get_sink())>;
 
