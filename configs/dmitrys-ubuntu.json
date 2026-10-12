@@ -46,7 +46,7 @@
   },
   "journaling": {
     "market_events": "./results/market_data.bin",
-    "requests": "./results/requests.bin",
+    "requests": "./tmpfs/requests.bin",
     "reports": "./results/reports.bin"
   },
   "results": {
