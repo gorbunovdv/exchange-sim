@@ -20,7 +20,7 @@ jobs:
         run: apt update
 
       - name: Install just and git
-        run: apt install just git nodejs -y
+        run: apt install sudo just git nodejs -y
 
       - name: Checkout code
         uses: actions/checkout@v4
