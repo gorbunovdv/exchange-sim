@@ -11,10 +11,10 @@ default:
     @just --list
 
 create-docker-image image='exchange-sim:local':
-    sudo docker build --tag "{{ image }}" "{{ ROOT_DIR }}"
+    docker build --platform linux/amd64 --tag "{{ image }}" "{{ ROOT_DIR }}"
 
 run-docker image='exchange-sim:local':
-    sudo docker run -it --ulimit memlock=-1:-1 "{{ image }}"
+    docker run --platform linux/amd64 -it --ulimit memlock=-1:-1 "{{ image }}"
 
 venv:
     python3 -m venv .venv
