@@ -32,15 +32,17 @@ jobs:
         run: |
           DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC just bootstrap
 
-      - name: Cache ccache
-        uses: actions/cache@v4
+      - name: Restore ccache
+        id: ccache-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-
 
-      - name: Cache conan
-        uses: actions/cache@v4
+      - name: Restore conan
+        id: conan-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/.conan2
           key: conan-${{ runner.os }}-${{ hashFiles('**/conanfile.*') }}
@@ -75,3 +77,17 @@ jobs:
         run: |
           just generate-flow ./configs/github-ci.json 5
           just benchmark ./configs/github-ci.json --reps 1 --timeout 5 --skip-isolation-check
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+
+      - name: Save conan
+        if: always() && steps.conan-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.conan2
+          key: ${{ steps.conan-restore.outputs.cache-primary-key }}
