@@ -105,7 +105,7 @@ class IsolationMetadata:
             "huge_page_size": self._read_meminfo().get("Hugepagesize", "no Hugepagesize"),
             "huge_page_count": self._read_meminfo().get("HugePages_Total", "no HugePages_Total"),
             "scaling_governor": CPUMetadata(f"cpu{self.isolated[0]}").scaling_governor()
-            if isinstance(self.isolated, list)
+            if self.isolated and isinstance(self.isolated, list)
             else "no scaling governor",
         }
 
