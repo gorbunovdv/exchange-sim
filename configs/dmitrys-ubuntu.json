@@ -15,7 +15,8 @@
       "lot_size": 1,
       "low_price": 1.0,
       "high_price": 1000.0,
-      "max_amount": 1000
+      "max_amount": 1000,
+      "section": "SECTION1"
     },
     {
       "symbol": "USDJPY",
@@ -23,7 +24,8 @@
       "lot_size": 0.1,
       "low_price": 100,
       "high_price": 100000,
-      "max_amount": 100000
+      "max_amount": 100000,
+      "section": "SECTION2"
     }
   ],
   "logging": {
@@ -44,7 +46,7 @@
   },
   "journaling": {
     "market_events": "./results/market_data.bin",
-    "requests": "./results/requests.bin",
+    "requests": "./tmpfs/requests.bin",
     "reports": "./results/reports.bin"
   },
   "results": {

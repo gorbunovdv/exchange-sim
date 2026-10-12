@@ -38,34 +38,35 @@ public:
         min_active_orders_by_security_);
   }
 
-  void generate_event() {
+  bool generate_event() {
     if (interface_.pending_transactions() >= max_pending_transactions_) {
-      return;
+      return false;
     }
     if (auto it = std::ranges::find_if(interface_.order_storage(),
             [this](const auto& pair) { return pair.active_orders().size() >= max_active_orders_by_security_; });
         it != interface_.order_storage().end()) {
       generate_cancel_order_request(static_cast<SecurityID>(it - interface_.order_storage().begin()));
-      return;
+      return true;
     }
     if (auto it = std::ranges::find_if(interface_.order_storage(),
             [this](auto& pair) { return pair.active_orders().size() < min_active_orders_by_security_; });
         it != interface_.order_storage().end()) {
       generate_new_order_request(static_cast<SecurityID>(it - interface_.order_storage().begin()));
-      return;
+      return true;
     }
 
     auto type = random_.rand_int(0, 2);
     auto security = random_.rand_int_strong_type<SecurityID>(0, interface_.security_storage().size() - 1);
     if (type == 0) {
       generate_new_order_request(security);
-      return;
+      return true;
     }
     if (type == 1) {
       generate_cancel_order_request(security);
-      return;
+      return true;
     }
     generate_replace_order_request(security);
+    return true;
   }
 
   void process_market_event(const auto&) {}

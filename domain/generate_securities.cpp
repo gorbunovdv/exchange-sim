@@ -13,6 +13,7 @@ std::vector<SecurityConfig> generate_securities(const glz::generic& config) {
         .low_price = Price(security["low_price"].as<double>()),
         .high_price = Price(security["high_price"].as<double>()),
         .max_amount = Amount(security["max_amount"].as<double>()),
+        .section = security["section"].as<std::string>(),
     });
   }
   return securities;

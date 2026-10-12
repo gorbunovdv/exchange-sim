@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/aligned_spsc_queue.h"
+#include "base/aligned_queue.h"
 #include "base/allocators/allocator_tracking.h"
 #include "base/logging/loggable_class.h"
 #include "base/processor.h"
@@ -10,23 +10,31 @@
 #include <cpptrace/cpptrace.hpp>
 #include <cpptrace/from_current.hpp>
 
+#include <concepts>
 #include <functional>
 #include <thread>
 
 namespace exchange_sim {
 
-template<typename ArgumentClass, typename BaseClass>
+template<typename ArgumentClass, typename BaseClass, template<typename> typename QueueType>
   requires ProcessorOf<BaseClass, ArgumentClass>
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class ThreadReceiver : public LoggableClass {
 public:
+  explicit ThreadReceiver(std::string name, size_t queue_size, CoreLease lease, auto&&... args):
+      ThreadReceiver(
+          std::move(name),
+          [queue_size]() { return QueueType<ArgumentClass>(queue_size); },
+          std::move(lease),
+          std::forward<decltype(args)>(args)...) {}
+
   template<typename... Args>
-  explicit ThreadReceiver(std::string name, size_t queue_size, CoreLease lease, Args&&... args):
+  explicit ThreadReceiver(std::string name, auto&& sink_factory, CoreLease lease, Args&&... args):
       LoggableClass(name),
       name_(std::move(name)),
       lease_(std::move(lease)),
       base_class_(std::forward<Args>(args)...),
-      sink_(queue_size),
+      sink_(std::forward<decltype(sink_factory)>(sink_factory)()),
       ready_to_receive_(false),
       thread_([this](const std::stop_token& stop_token) { run(stop_token); }) {}
 
@@ -84,7 +92,7 @@ private:
   std::string name_;
   CoreLease lease_;
   BaseClass base_class_;
-  AlignedSPSCQueue<ArgumentClass> sink_;
+  QueueType<ArgumentClass> sink_;
   std::atomic<bool> ready_to_receive_;
   std::jthread thread_;
 };

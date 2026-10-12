@@ -31,13 +31,13 @@ public:
   void process_market_event(const auto&) {}
   void process_report(const auto&) {}
 
-  void generate_event() {
+  bool generate_event() {
     if (interface_.pending_transactions() >= max_pending_transactions_) {
-      return;
+      return false;
     }
     if (current_request_ == replay_journal_.end()) {
       interface_.inform_generator_stopped();
-      return;
+      return false;
     }
     std::visit(
         boost::hof::match(
@@ -78,6 +78,7 @@ public:
             }),
         current_request_->object);
     current_request_++;
+    return true;
   }
 
 private:

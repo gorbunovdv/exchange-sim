@@ -57,6 +57,7 @@ quill::Logger* get_logger();
   do { \
     [&] [[gnu::noinline, gnu::cold, noreturn]] () { \
       LOG_CRITICAL(get_logger(), __VA_ARGS__); \
+      get_logger()->flush_log(); \
       throw std::runtime_error("Critical error occured"); \
     }(); \
   } while (false)

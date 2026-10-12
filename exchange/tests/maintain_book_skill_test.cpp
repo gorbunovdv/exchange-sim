@@ -59,7 +59,7 @@ TEST_P(MaintainBookMatchesMatchingEngineTest, MatchesMatchingEngine) {
   using MatchingEngineType = MatchingEngine<StlL3BookContainer, decltype(engine_events_sink)>;
 
   MatchingEngineType matching_engine(
-      MatchingEngineType::Config{.reserve_books_size = 128}, security_storage(), engine_events_sink);
+      MatchingEngineType::Config{.reserve_books_size = 128}, security_storage(), std::nullopt, engine_events_sink);
 
   for (const auto& request : input.requests) {
     matching_engine.process(request);

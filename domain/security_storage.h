@@ -22,11 +22,15 @@ public:
   size_t size() const { return securities_.size(); }
   const std::vector<Security>& securities() const { return securities_; }
 
+  size_t sections_count() const { return sections_count_; }
+
 private:
   void validate_security(Security security) const;
 
   std::vector<Security> securities_;
   std::unordered_map<Symbol, SecurityID> id_by_symbol_;
+
+  size_t sections_count_;
 };
 
 

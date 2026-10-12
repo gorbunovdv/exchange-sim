@@ -1,6 +1,7 @@
 #pragma once
 #include "base/allocators/allocator_tracking.h"
 #include "base/file.h"
+#include "base/mpsc_queue.h"
 #include "base/thread_receiver.h"
 #include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
@@ -20,6 +21,105 @@
 #include <memory>
 
 namespace exchange_sim {
+
+template<typename ObjectType>
+using AlignedSPSCQueue = AlignedQueue<SPSCQueue, ObjectType>;
+
+template<typename ObjectType>
+using AlignedMPSCQueue = AlignedQueue<MPSCQueue, ObjectType>;
+
+template<typename ArgumentClass, typename BaseClass, template<typename> typename QueueType>
+class MultiSectionReceiver {
+public:
+  explicit MultiSectionReceiver(std::string name,
+      const SecurityStorage& storage,
+      size_t queue_size,
+      CoreAllocator& core_allocator,
+      const glz::generic& config,
+      auto&& sink_factory) {
+    receivers_.reserve(storage.sections_count());
+    for (uint32_t i = 0; i < storage.sections_count(); i++) {
+      receivers_.emplace_back(
+          std::make_unique<ThreadReceiver<ArgumentClass, BaseClass, QueueType>>(std::format("{}_section_{}", name, i),
+              queue_size,
+              core_allocator.lease_core(CoreType::DEDICATED),
+              config,
+              storage,
+              SectionID{i},
+              sink_factory(SectionID{i})));
+    }
+    section_by_security_id_.reserve(storage.size());
+    for (const auto& security : storage.securities()) {
+      section_by_security_id_.push_back(security.section_id);
+    }
+  }
+
+  bool ready_to_receive() const {
+    return std::ranges::all_of(receivers_, [](const auto& receiver) { return receiver->ready_to_receive(); });
+  }
+
+  void push(request::RequestType&& request) {
+    SecurityID security_id = std::visit([](const auto& request) { return request.security_id; }, request);
+    receivers_[section_by_security_id_[security_id]]->get_sink().push(std::move(request));
+  }
+
+  auto& get_sink() { return *this; }
+
+  void ask_to_stop() {
+    for (auto& receiver : receivers_) {
+      receiver->ask_to_stop();
+    }
+  }
+
+  bool stopped() const {
+    return std::ranges::all_of(receivers_, [](const auto& receiver) { return receiver->stopped(); });
+  }
+
+  void stop() {
+    for (auto& receiver : receivers_) {
+      receiver->stop();
+    }
+  }
+
+  bool empty() const {
+    return std::ranges::all_of(receivers_, [](auto& receiver) { return receiver->get_sink().empty(); });
+  }
+
+private:
+  StrongTypeIndexedVector<SectionID, std::unique_ptr<ThreadReceiver<ArgumentClass, BaseClass, QueueType>>> receivers_;
+  StrongTypeIndexedVector<SecurityID, SectionID> section_by_security_id_;
+};
+
+template<typename ArgumentClass>
+class MultiSectionQueue {
+public:
+  explicit MultiSectionQueue(const SecurityStorage& storage, size_t queue_size) {
+    queues_.reserve(storage.sections_count());
+    for (size_t i = 0; i < storage.sections_count(); i++) {
+      queues_.emplace_back(std::make_unique<AlignedSPSCQueue<ArgumentClass>>(queue_size));
+    }
+  }
+
+  auto& get_queue(SectionID section_id) { return *queues_[section_id]; }
+
+  bool consume(auto&& consumer) {
+    bool consumed = false;
+    for (auto& queue : queues_) {
+      consumed = queue->consume(consumer) || consumed;
+    }
+    return consumed;
+  }
+
+  bool empty() const {
+    return std::ranges::all_of(queues_, [](const auto& queue) { return queue->empty(); });
+  }
+
+private:
+  StrongTypeIndexedVector<SectionID, std::unique_ptr<AlignedSPSCQueue<ArgumentClass>>> queues_;
+};
+
+template<typename ArgumentClass>
+using InternalQueue = MultiSectionQueue<ArgumentClass>&;
 
 template<template<typename> typename OrderGenerator,
     template<typename> typename MatchingEngine,
@@ -62,34 +162,38 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   static_assert(concepts::ExchangeDispatcher<AppDispatcher>);
 
-  ThreadReceiver<engine_events::EventType, AppDispatcher> exchange_dispatcher("ExchangeDispatcher",
-      constQueueSize,
+  MultiSectionQueue<engine_events::EventType> exchange_dispatcher_queues(security_storage, constQueueSize);
+
+  ThreadReceiver<engine_events::EventType, AppDispatcher, InternalQueue> exchange_dispatcher(
+      "ExchangeDispatcher",
+      [&exchange_dispatcher_queues]() -> auto& { return exchange_dispatcher_queues; },
       runtime->core_allocator().lease_core(CoreType::DEDICATED),
       config["exchange_dispatcher"],
       market_data_generator_sink,
       report_generator_sink);
 
-  using ExchangeDispatcherSinkType = std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>;
+  using ExchangeDispatcherSinkType = AlignedSPSCQueue<engine_events::EventType>;
 
   using AppMatchingEngine = MatchingEngine<ExchangeDispatcherSinkType>;
 
   static_assert(concepts::MatchingEngine<AppMatchingEngine>);
 
-  ThreadReceiver<request::RequestType, AppMatchingEngine> matching_engine("MatchingEngine",
-      constQueueSize,
-      runtime->core_allocator().lease_core(CoreType::DEDICATED),
-      config["matching_engine"],
+  MultiSectionReceiver<request::RequestType, AppMatchingEngine, AlignedSPSCQueue> matching_engines("MatchingEngine",
       security_storage,
-      exchange_dispatcher.get_sink());
+      constQueueSize,
+      runtime->core_allocator(),
+      config["matching_engine"],
+      [&exchange_dispatcher_queues](
+          SectionID section_id) -> decltype(auto) { return exchange_dispatcher_queues.get_queue(section_id); });
 
-  using AppOrderGenerator = OrderGenerator<decltype(matching_engine.get_sink())>;
+  using AppOrderGenerator = OrderGenerator<decltype(matching_engines.get_sink())>;
 
   AppOrderGenerator order_generator(runtime,
       security_storage,
       request_journal,
       market_data_journal,
       report_journal,
-      matching_engine.get_sink(),
+      matching_engines.get_sink(),
       config["order_generator"]);
 
   static_assert(concepts::OrderGenerator<AppOrderGenerator>);
@@ -98,7 +202,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     std::this_thread::sleep_for(100ms);
   }
 
-  while (!matching_engine.ready_to_receive()) {
+  while (!matching_engines.ready_to_receive()) {
     std::this_thread::sleep_for(100ms);
   }
 
@@ -106,19 +210,28 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     return order_generator.process(std::forward<decltype(event)>(event));
   };
 
-  auto consume = [&] {
-    return market_data_generator_sink.consume(consumer) || report_generator_sink.consume(consumer);
+  auto consume = [&, md_first = false]() mutable {
+    bool md_consume, rt_consume;
+    if (md_first) {
+      md_consume = market_data_generator_sink.consume(consumer);
+      rt_consume = report_generator_sink.consume(consumer);
+    } else {
+      rt_consume = report_generator_sink.consume(consumer);
+      md_consume = market_data_generator_sink.consume(consumer);
+    }
+    md_first ^= true;
+    return md_consume || rt_consume;
   };
 
   AllocatorTracking::instance().enable_tracking();
 
   while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
-    if (!consume()) {
-      order_generator.generate_event();
+    if (!order_generator.generate_event()) {
+      consume();
     }
   }
 
-  matching_engine.ask_to_stop();
+  matching_engines.ask_to_stop();
   exchange_dispatcher.ask_to_stop();
 
   Ticks current = Ticks::rdtsc();
@@ -128,7 +241,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     }
   }
 
-  matching_engine.stop();
+  matching_engines.stop();
   exchange_dispatcher.stop();
   while (consume()) {
   }
@@ -137,7 +250,7 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
 
   CHECK(market_data_generator_sink.empty(), "MarketDataSink must be empty");
   CHECK(report_generator_sink.empty(), "ReportGeneratorSink must be empty");
-  CHECK(matching_engine.get_sink().empty(), "MatchingEngineSink must be empty");
+  CHECK(matching_engines.get_sink().empty(), "MatchingEngineSink must be empty");
   CHECK(exchange_dispatcher.get_sink().empty(), "ExchangeDispatcherSink must be empty");
 }
 

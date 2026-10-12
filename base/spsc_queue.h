@@ -19,8 +19,7 @@ public:
 
   ~SPSCQueue() { std::allocator<ObjectType>().deallocate(queue_, capacity_); }
 
-  template<typename Producer>
-  bool produce(Producer&& producer) {
+  bool produce(auto&& producer) {
     size_t current_head = head_.load(std::memory_order_relaxed);
     size_t next_head = next(current_head);
     if (next_head == cached_tail_) {
@@ -29,13 +28,12 @@ public:
         return false;
       }
     }
-    std::forward<Producer>(producer)(queue_[current_head]);
+    std::forward<decltype(producer)>(producer)(queue_[current_head]);
     head_.store(next_head, std::memory_order_release);
     return true;
   }
 
-  template<typename Consumer>
-  bool consume(Consumer&& consumer) {
+  bool consume(auto&& consumer) {
     size_t current_tail = tail_.load(std::memory_order_relaxed);
     if (cached_head_ == current_tail) {
       cached_head_ = head_.load(std::memory_order_acquire);
@@ -43,7 +41,7 @@ public:
         return false;
       }
     }
-    std::forward<Consumer>(consumer)(queue_[current_tail]);
+    std::forward<decltype(consumer)>(consumer)(queue_[current_tail]);
     tail_.store(next(current_tail), std::memory_order_release);
     return true;
   }

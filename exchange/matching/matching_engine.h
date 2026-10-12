@@ -22,21 +22,31 @@ public:
     size_t reserve_books_size;
   };
 
-  explicit MatchingEngine(const glz::generic& config, const SecurityStorage& security_storage, OutputSinkType& sink):
-      MatchingEngine(
-          Config{.reserve_books_size = config["reserve_books_size"].as<std::size_t>()}, security_storage, sink) {}
+  explicit MatchingEngine(const glz::generic& config,
+      const SecurityStorage& security_storage,
+      std::optional<SectionID> section,
+      OutputSinkType& sink):
+      MatchingEngine(Config{.reserve_books_size = config["reserve_books_size"].as<std::size_t>()},
+          security_storage,
+          section,
+          sink) {}
 
-  explicit MatchingEngine(Config config, const SecurityStorage& security_storage, OutputSinkType& sink):
+  explicit MatchingEngine(
+      Config config, const SecurityStorage& security_storage, std::optional<SectionID> section, OutputSinkType& sink):
       LoggableClass("MatchingEngine"), security_storage_(security_storage), sink_(sink) {
     static_assert(request::Processor<MatchingEngine>);
 
     books_.reserve(security_storage_.size());
     for (auto& security : security_storage_.securities()) {
-      books_.emplace_back(std::make_unique<L3Book<BookContainer>>(security, order_id_counter_, trade_id_counter_));
+      bool contains = !section.has_value() || section.value() == security.section_id;
+      books_.emplace_back(
+          contains ? std::make_unique<L3Book<BookContainer>>(security, order_id_counter_, trade_id_counter_) : nullptr);
     }
 
     for (auto& book : books_) {
-      book->reserve(config.reserve_books_size);
+      if (book != nullptr) {
+        book->reserve(config.reserve_books_size);
+      }
     }
   }
 
@@ -58,6 +68,7 @@ private:
       });
       return;
     }
+    CHECK(books_[request.security_id] != nullptr, "Book is nullptr, security_id={}", request.security_id.value());
     books_[request.security_id]->add(request, sink_);
   }
 
@@ -73,6 +84,7 @@ private:
       });
       return;
     }
+    CHECK(books_[request.security_id] != nullptr, "Book is nullptr, security_id={}", request.security_id.value());
     books_[request.security_id]->replace(request, sink_);
   }
 
@@ -88,6 +100,7 @@ private:
       });
       return;
     }
+    CHECK(books_[request.security_id] != nullptr, "Book is nullptr, security_id={}", request.security_id.value());
     books_[request.security_id]->cancel(request, sink_);
   }
 

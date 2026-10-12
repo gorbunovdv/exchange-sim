@@ -10,6 +10,7 @@ namespace exchange_sim {
 
 using SecurityID = StrongType<uint32_t, struct SecurityIDTag, skills::EqualTo>;
 using Symbol = StrongType<boost::static_string<8>, struct SymbolTag, skills::EqualTo, skills::Hashable>;
+using SectionID = StrongType<uint32_t, struct SectionIDTag, skills::EqualTo>;
 
 struct SecurityConfig {
   Symbol symbol;
@@ -18,6 +19,7 @@ struct SecurityConfig {
   Price low_price;
   Price high_price;
   Amount max_amount;
+  std::string section;
 };
 
 struct Security {
@@ -28,6 +30,7 @@ struct Security {
   Price low_price;
   Price high_price;
   Amount max_amount;
+  SectionID section_id;
 };
 
 }  // namespace exchange_sim

@@ -47,8 +47,10 @@ TEST_P(MatchingOutputTest, ReturnExpectedEvents) {
   using MatchingEngineType =
       MatchingEngine<StlL3BookContainer, std::remove_cvref_t<decltype(exchange_dispatcher.get_sink())>>;
 
-  MatchingEngineType matching_engine(
-      MatchingEngineType::Config{.reserve_books_size = 128}, security_storage(), exchange_dispatcher.get_sink());
+  MatchingEngineType matching_engine(MatchingEngineType::Config{.reserve_books_size = 128},
+      security_storage(),
+      std::nullopt,
+      exchange_dispatcher.get_sink());
 
   for (auto request : input.requests) {
     matching_engine.process(request);
