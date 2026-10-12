@@ -4,16 +4,59 @@
 
 A low-latency exchange simulator in C++23.
 
-It models the venue side of an electronic market: a matching engine that keeps an
-L3 order book per instrument with FIFO price-time priority fed by a synthetic
-order generator. The focus is carefully measured e2e latency and throughput.
+It models the venue side of an electronic market: a matching engine that keeps an L3 order book per instrument with 
+FIFO price-time priority fed by a synthetic order generator. All requests, reports and market data events are timestamped
+with TSC and written to a journal. The focus is carefully measured in-process round trip latency for single threaded apps 
+and throughput for multi threaded apps.
+
+Order generator, matching engine and exchange dispatcher are wired through C++ concepts and run unchanged in different 
+transport designs: direct callbacks, a single threaded event loop and connected by lock-free SPSC queues pinned threads for 
+each stage.
+
+## Results
+
+The numbers below are in-process round trips. Take a look at [benchmarking.md](docs/benchmarking.md) for the exact info on
+benchmarking and [benchmark_results.md](docs/benchmark_results.md) for the full tables, system specifications and environment.
+
+| Application     | Request | p50, ns | p99, ns | p99.9, ns | Throughput, req/s |
+|-----------------|---------|---------|---------|-----------|-------------------|
+| `replay_el_app` | ADD     | <TBD>   | <TBD>   | <TBD>     | <TBD>             |
+| `replay_el_app` | CANCEL  | <TBD>   | <TBD>   | <TBD>     |                   |
+| `replay_el_app` | REPLACE | <TBD>   | <TBD>   | <TBD>     |                   |
+| `replay_cb_app` | ADD     | <TBD>   | <TBD>   | <TBD>     | <TBD>             |
+| `replay_mt_app` | ADD     | <TBD>   | <TBD>   | <TBD>     | <TBD>             |
+
+## Main specifications
+
+- Each stage satisfies the `ProcessorOf` concept. The same stage is compiled into callback, event-loop and multi threaded
+applications. Take a look at [architecture.md](docs/architecture.md).
+- Each transport satisfies the `SinkOf` concept. `SPSCQueue` is lock-free with cached indices, correct memory ordering and
+128-bytes separation of the producer and consumer states. `AlignedQueue` is a wrapper that puts every element on its own
+cache line. Take a look at [base.md](docs/base.md).
+- There are no heap allocations on the hot path: it's checked in runtime, `operator new` is overridden and `AllocatorTracking`
+sums up all allocations that actually happened after initialization. In case there are some allocations, the app fails after
+the loop.
+- `StlL3BookContainer` that is used to store l3 book is basic `std::map` + `std::list` + `std::unordered_map`, but each
+node is preallocated with `PlaceArena`. Take a look at [matching.md](docs/matching.md).
+- All requests, reports and market data events are timestamped with TSC and written to a journal. Events are joined by 
+`origin_time` by `calc_stats` and those round trips are grouped by security, request type and the number of trades. 
+`just evaluate` print latencies by percentile of each group.
+- All benchmarks should be run on system with isolated cores, with huge pages allocated by OS and specific setup of `nohz_full`,
+`mlockall` and so on. The page cache is dropped prior to each run. Every run is fingerprinted. `just evaluate` emits `IMPROVED`/
+`REGRESSED`/`INCONSISTENT` taking the drift into account. Take a look at [benchmarking.md](docs/benchmarking.md).
+- `ShiftOrderGenerator` resemble a real market: it's basically a state machine per each security with quiet periods, price
+changes and book replenishment after price change. Take a look at [order_generation.md](docs/order_generation.md).
 
 ## Requirements
 
 - Linux (developed and benchmarked on Ubuntu 26.04 LTS)
-- C++23 compiler (GCC or Clang), CMake (>= 4.2.3), Conan 2, Just
+- C++23 compiler (GCC 15 or Clang 21, the presets and conan profiles specifically target those versions), CMake (>= 4.2.3), 
+Conan 2, Just, Ninja, ccache
 
 Compiler versions used for development are GCC 15.2.0 and Clang 21.1.8.
+
+The scripts expect an Intel CPU with `intel_pstate` and no SMT. Take a look at [benchmarking.md](docs/benchmarking.md) for
+details.
 
 ## Quickstart
 
@@ -21,8 +64,7 @@ Compiler versions used for development are GCC 15.2.0 and Clang 21.1.8.
     just build
     just test
 
-    just generate-flow ./configs/dmitrys-ubuntu.json
-    just benchmark ./configs/dmitrys-ubuntu.json --apps simple_el_app replay_cb_app
+`just bootstrap` installs apt packages and creates a Python venv at `.venv/` with packages required.
 
 ## Architecture at a glance
 
