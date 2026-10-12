@@ -1,4 +1,5 @@
 #pragma once
+#include "base/allocators/allocator_tracking.h"
 #include "base/callback_receiver.h"
 #include "base/callback_sink.h"
 #include "base/forward_sink.h"
@@ -94,9 +95,13 @@ void run_single_threaded_callback_app(const std::shared_ptr<Runtime>& runtime, c
   market_data_generator_sink.set_sink(&market_data_generator_sink_callback);
   report_generator_sink.set_sink(&report_generator_sink_callback);
 
+  AllocatorTracking::instance().enable_tracking();
+
   while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
     order_generator.generate_event();
   }
+
+  AllocatorTracking::instance().disable_tracking();
 }
 
 }  // namespace exchange_sim

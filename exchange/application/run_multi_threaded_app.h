@@ -1,4 +1,5 @@
 #pragma once
+#include "base/allocators/allocator_tracking.h"
 #include "base/file.h"
 #include "base/mpsc_queue.h"
 #include "base/thread_receiver.h"
@@ -222,6 +223,8 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
     return md_consume || rt_consume;
   };
 
+  AllocatorTracking::instance().enable_tracking();
+
   while (!stop_token.stop_requested() && !order_generator.generator_stopped()) {
     if (!order_generator.generate_event()) {
       consume();
@@ -242,6 +245,8 @@ void run_multi_threaded_app(const std::shared_ptr<Runtime>& runtime, const glz::
   exchange_dispatcher.stop();
   while (consume()) {
   }
+
+  AllocatorTracking::instance().disable_tracking();
 
   CHECK(market_data_generator_sink.empty(), "MarketDataSink must be empty");
   CHECK(report_generator_sink.empty(), "ReportGeneratorSink must be empty");

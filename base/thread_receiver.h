@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/aligned_queue.h"
+#include "base/allocators/allocator_tracking.h"
 #include "base/logging/loggable_class.h"
 #include "base/processor.h"
 #include "base/threading/core_allocator.h"
@@ -60,6 +61,7 @@ private:
 
       lease_.pin_thread(name_);
       ready_to_receive_ = true;
+      AllocatorTracking::instance().enable_tracking();
       while (!stop_token.stop_requested()) {
         sink_.consume(consumer);
       }
@@ -69,6 +71,7 @@ private:
           latest_event = Ticks::rdtsc();
         }
       }
+      AllocatorTracking::instance().disable_tracking();
       CHECK(sink_.empty(), "Sink must be empty prior to exit");
     }
     CPPTRACE_CATCH(...) {
@@ -91,7 +94,6 @@ private:
   BaseClass base_class_;
   QueueType<ArgumentClass> sink_;
   std::atomic<bool> ready_to_receive_;
-  std::atomic<bool> stopped_ = false;
   std::jthread thread_;
 };
 

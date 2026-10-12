@@ -11,11 +11,6 @@
 #include <iostream>
 #include <mimalloc.h>
 
-#if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__) && !__has_feature(thread_sanitizer) && \
-    !defined(__SANITIZE_THREAD__)
-#include <mimalloc-new-delete.h>
-#endif
-
 namespace exchange_sim {
 
 std::tuple<std::shared_ptr<Runtime>, glz::generic> read_config_and_initialize_logging(
