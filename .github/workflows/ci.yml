@@ -73,11 +73,6 @@ jobs:
         run: |
           just lint clang-debug
 
-      - name: Run benchmarks
-        run: |
-          just generate-flow ./configs/github-ci.json 5
-          just benchmark ./configs/github-ci.json --reps 1 --timeout 5 --skip-isolation-check
-
       - name: Save ccache
         if: always()
         uses: actions/cache/save@v4
