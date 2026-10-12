@@ -81,19 +81,14 @@ def run_one(
     if not skip_cache_drop:
         clear_cache()
     print("Running app: ", cmd)
-    try:
-        cmd.run(
-            stdout=flog,
-            stderr=flog,
-            retcode=(
-                0,
-                124,
-            ),
-        )
-    except:
-        print("Error running command, dumping logs")
-        plumbum.local["cat"][config["results"]["logs"]].run()
-        raise
+    cmd.run(
+        stdout=flog,
+        stderr=flog,
+        retcode=(
+            0,
+            124,
+        ),
+    )
     if perf and flog == sys.stdout:
         print(Path(perf_path).read_text())
 

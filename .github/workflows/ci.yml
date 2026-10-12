@@ -47,6 +47,32 @@ jobs:
           path: ~/.conan2
           key: conan-${{ runner.os }}-${{ hashFiles('**/conanfile.*') }}
 
+      - name: Check format
+        run: |
+          just format-check
+
+      - name: Run pylint
+        run: |
+          just pylint
+
+      - name: Verify compilation
+        run: |
+          just verify-headers clang-release
+          just build clang-release
+          just verify-headers gcc-release
+          just build gcc-release
+
+      - name: Run tests from scratch
+        run: |
+          just test clang-debug-asan
+          just test gcc-debug-asan
+          just test clang-debug
+          just test clang-debug-tsan
+
+      - name: Run linter
+        run: |
+          just lint clang-debug
+
       - name: Run benchmarks
         run: |
           just generate-flow ./configs/github-ci.json 5
