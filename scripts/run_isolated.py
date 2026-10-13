@@ -7,20 +7,31 @@ from pathlib import Path
 
 
 def main():
-    cmd, config = list(sys.argv[1:-1]), Path(sys.argv[-1])
+    cmd, config_path = list(sys.argv[1:-1]), Path(sys.argv[-1])
     if not cmd:
         raise Exception("No command provided")
-    cores_json = json.loads(config.read_text())["cpu_cores"]
-    cores = [cores_json["shared_core"]] + cores_json["dedicated_cores"]
-    cmd = [
-        "systemd-run",
-        "--scope",
-        "--slice=hft.slice",
-        "-p",
-        "AllowedCPUs={}".format(",".join(map(str, cores))),
-        *cmd,
-        str(config),
-    ]
+    config = json.loads(config_path.read_text())
+    cores_json = config["cpu_cores"]
+    cores = [] if config.get("fallback_to_none", False) else [cores_json["shared_core"]] + cores_json["dedicated_cores"]
+    cores_cmd = (
+        [
+            "-p",
+            "AllowedCPUs={}".format(",".join(map(str, cores))),
+        ]
+        if cores
+        else []
+    )
+    if config.get("without_systemd", False):
+        cmd = [*cmd, str(config_path)]
+    else:
+        cmd = [
+            "systemd-run",
+            "--scope",
+            "--slice=hft.slice",
+            *cores_cmd,
+            *cmd,
+            str(config_path),
+        ]
     print(f"Running command: {cmd}")
     try:
         os.execvp(cmd[0], cmd)

@@ -10,14 +10,22 @@ import? 'extra/Justfile'
 default:
     @just --list
 
+create-docker-image image='exchange-sim:local':
+    docker build --platform linux/amd64 --tag "{{ image }}" "{{ ROOT_DIR }}"
+
+run-docker image='exchange-sim:local':
+    docker run --platform linux/amd64 -it --ulimit memlock=-1:-1 "{{ image }}"
+
 venv:
     python3 -m venv .venv
     pip install --upgrade pip
     pip install -r requirements.txt
 
+# The reason behind the exact rust-coreutils version is that latest rust-coreutils contain a degradation of timeout: instead of sending soft timeout SIGINT
+# it simply sends SIGKILL on timeout. The workflow requires a soft timeout in order to drain all the queues and write journals correctly.
 bootstrap:
-    apt update
-    apt install linux-tools-generic linux-cpupower jq git gcc-15 g++-15 clang-21 llvm-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y
+    sudo apt update
+    sudo apt install rust-coreutils=0.8.0-0ubuntu3 linux-tools-generic linux-cpupower jq git gcc-15 g++-15 clang-21 llvm-21 clang-format clang-tidy ninja-build ccache cmake just python3-venv -y --allow-downgrades
     just venv
 
 patch-grub *args:
