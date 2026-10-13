@@ -1,0 +1,12 @@
+.idea/
+cmake-build-*
+CMakeUserPresets.json
+build/
+results/
+result*
+.DS_Store
+.venv/
+.ruff_cache/
+**/__pycache__/
+extra/
+tmpfs/

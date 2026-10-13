@@ -25,6 +25,7 @@ def benchmark_one(
     hard_timeout,
     huge_pages,
     skip_isolation_check,
+    skip_cache_drop=False,
     build=True,
 ):
     if build:
@@ -71,6 +72,7 @@ def benchmark_one(
             timeout=timeout,
             flog=flog,
             skip_isolation_check=True,
+            skip_cache_drop=skip_cache_drop,
         )
         calc_stats_cmd = just_run[ROOT_PATH / f"cmake-build-{preset}/exchange/application/calc_stats"][config_path]
         print("Running calc_stats: ", calc_stats_cmd)
@@ -90,6 +92,7 @@ def main():
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for the benchmark")
     parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
     parser.add_argument("--skip-isolation-check", action="store_true", help="Skip isolation check")
+    parser.add_argument("--skip-cache-drop", action="store_true", help="Skip cache drop")
     args = parser.parse_args()
     benchmark_one(
         app=args.app,
@@ -102,6 +105,7 @@ def main():
         hard_timeout=args.hard_timeout,
         huge_pages=args.huge_pages,
         skip_isolation_check=args.skip_isolation_check,
+        skip_cache_drop=args.skip_cache_drop,
     )
 
 

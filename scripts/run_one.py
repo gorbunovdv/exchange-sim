@@ -45,15 +45,17 @@ def run_one(
     hard_timeout,
     timeout,
     skip_isolation_check,
+    skip_cache_drop=False,
     build=True,
     flog=sys.stdout,
 ):
+    config = load_config(config_path)
+    skip_isolation_check = skip_isolation_check or config.get("skip_isolation_check", False)
     if build:
         with plumbum.local.cwd(ROOT_PATH):
             plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
     if not skip_isolation_check:
         check_isolation(path=config_path)
-    config = load_config(config_path)
     if perf and perf_path is None:
         perf_path = config["results"]["perf"]
     if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
@@ -75,7 +77,9 @@ def run_one(
         cmd = plumbum.local["setarch"]["--addr-no-randomize"][cmd]
     cmd = plumbum.local["timeout"]["-s"]["INT"]["-k"][hard_timeout][timeout][cmd]
     cmd = plumbum.local["python3"][ROOT_PATH / "scripts/run_isolated.py"][cmd]
-    clear_cache()
+    skip_cache_drop = skip_cache_drop or config.get("skip_cache_drop", False)
+    if not skip_cache_drop:
+        clear_cache()
     print("Running app: ", cmd)
     cmd.run(
         stdout=flog,
@@ -102,6 +106,7 @@ def main():
     parser.add_argument("--hard-timeout", type=int, default=5, help="Hard timeout for the benchmark")
     parser.add_argument("--huge-pages", type=int, help="Number of huge pages to reserve")
     parser.add_argument("--skip-isolation-check", action="store_true", help="Skip isolation check")
+    parser.add_argument("--skip-cache-drop", action="store_true", help="Skip cache drop")
     args = parser.parse_args()
 
     run_one(
@@ -115,6 +120,7 @@ def main():
         skip_isolation_check=args.skip_isolation_check,
         huge_pages=args.huge_pages,
         app=args.app,
+        skip_cache_drop=args.skip_cache_drop,
     )
 
 

@@ -78,10 +78,13 @@ public:
 
   enum class Mode : std::uint8_t { READ, WRITE };
 
-  explicit Journal(const std::string& name, const std::filesystem::path& journal_path, Mode mode):
+  explicit Journal(const std::string& name, const std::filesystem::path& journal_path, Mode mode, auto&&... file_args):
       LoggableClass(name),
       name_(name),
-      stream_(journal_path, mode == Mode::WRITE ? FileType::Mode::WRITE : FileType::Mode::READ, true),
+      stream_(journal_path,
+          mode == Mode::WRITE ? FileType::Mode::WRITE : FileType::Mode::READ,
+          true,
+          std::forward<decltype(file_args)>(file_args)...),
       mode_(mode),
       throughput_(name) {
     CHECK(mode_ == Mode::READ || mode_ == Mode::WRITE, "Invalid journal mode: {}", magic_enum::enum_name(mode_));

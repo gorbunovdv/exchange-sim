@@ -18,8 +18,10 @@ public:
   explicit ReplayOrderGenerator(GeneratorInterface& interface, const glz::generic& config):
       interface_(interface),
       max_pending_transactions_(config["max_pending_transactions"].as<std::uint32_t>()),
-      replay_journal_(
-          "replay_journal", config["generated_replay"].as<std::string>(), decltype(replay_journal_)::Mode::READ) {
+      replay_journal_("replay_journal",
+          config["generated_replay"].as<std::string>(),
+          decltype(replay_journal_)::Mode::READ,
+          config["use_hugepages_for_replay"].get_boolean()) {
     while (!replay_journal_.ready()) {
       std::this_thread::sleep_for(100ms);
     }
