@@ -97,6 +97,18 @@ memory limit is too low.
 
 ## Architecture at a glance
 
+```mermaid
+flowchart LR
+    OG["OrderGenerator"]
+    ME["MatchingEngine"]
+    ED["ExchangeDispatcher"]
+
+    OG -- requests --> ME
+    ME -- engine events --> ED
+    ED -- market data events --> OG
+    ED -- reports --> OG
+```
+
 The lifecycle of a single order is as follows: 
 - `OrderGenerator` decides what exactly is the request it wants to send next (either add, cancel or replace) and pushes it 
 into the transport
