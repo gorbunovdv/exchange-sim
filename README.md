@@ -10,10 +10,10 @@ scale), buys in green, sells in red.*
 
 ## Overview
 
-`exchange-sim` models the venue side of an electronic market: a matching engine keeps an L3 order book per instrument
-with FIFO price-time priority driven by a synthetic order generator. All requests, reports and market data events are
-timestamped with TSC and written to journals. The focus is carefully measured in-process round-trip latency for the
-single-threaded apps and throughput for the multi-threaded apps.
+`exchange-sim` models the venue side of an electronic market: a matching engine that keeps an L3 order book per
+instrument with FIFO price-time priority driven by a synthetic order generator. All requests, reports and market data
+events are timestamped with TSC and written to journals. The focus is carefully measured in-process round-trip latency
+for the single-threaded apps and throughput for the multi-threaded apps.
 
 The order generator, the matching engine and the exchange dispatcher are templated and run unchanged in three transport
 designs: direct callbacks, a single-threaded event loop and multithreaded (one pinned thread per stage connected by

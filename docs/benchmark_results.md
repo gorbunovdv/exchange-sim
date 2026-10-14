@@ -1,6 +1,6 @@
 # Benchmark results
 
-Add numbers in this document are in-process round trips measured with the pipeline described in the
+All numbers in this document are in-process round trips measured with the pipeline described in the
 [benchmarking.md](benchmarking.md).
 
 ## Environment

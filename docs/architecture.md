@@ -252,7 +252,7 @@ generators.
 ### Matching
 
 `MatchingEngine` validates that `security_id` is valid and the security of request exists. Next, it routes the request
-to that security's `L3Book`. It also owns the global order and trade id counters.
+to that security's `L3Book`. It also owns the order and trade id counters (either global or per section).
 
 `L3Book` implements the whole matching logic: `RiskChecker` checks requests validity (max amount, lot size, price tick),
 while `L3Book` checks duplicate `{client_id, client_order_id}` and implements FIFO price-time matching logic against the
