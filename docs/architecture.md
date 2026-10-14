@@ -292,7 +292,7 @@ Those pages come from the same kernel pool as mimalloc's, `just patch-grub` rese
 Every app starts with `read_config_and_initialize_logging` from `base/run.cpp`. It does the following:
 
 - `mi_option_purge_delay` is set to `-1` to prevent the return of memory to the OS by mimalloc.
-- `SIGINT`, `SIGTERM`, `SIGHUP` and `SIGUSR` are blocked.
+- `SIGINT`, `SIGTERM`, `SIGHUP` and `SIGUSR1` are blocked.
 - `mlockall(MCL_CURRENT | MCL_FUTURE)` on Linux builds without sanitizers so that nothing ever pages out.
 - JSON config is read and settings are verified. Unless the app is secondary (like `calc_stats`), the number of reserved
   huge os pages is checked (what mimalloc requested, not what OS actually provides). The app refuses to start in case of
@@ -324,7 +324,7 @@ The macros `INFO`, `DEBUG`, `WARNING`, `ERROR` pick the correct logger from the 
 basically the cost of logging is a push to the queue by quill frontend. `log_level` is picked up from the config.
 
 `CHECK(condition, fmt, ...)` is the assertion. It is not removed with specific defines and the whole project relies on
-this behavior. It logs `CRITICAL`, flushes the log and throws `std::runtime_exception`.
+this behavior. It logs `CRITICAL`, flushes the log and throws `std::runtime_error`.
 
 cpptrace is used to catch exceptions on high level and print valid stack traces for debug purposes.
 

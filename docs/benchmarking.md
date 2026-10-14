@@ -17,7 +17,7 @@ sudo just patch-grub ./configs/dmitrys-ubuntu.json
 ```
 isolcpus=domain,managed_irq,2,3,4,5,6,7 nohz_full=2,3,4,5,6,7 rcu_nocbs=2,3,4,5,6,7
 irqaffinity=0,1,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-default_hugepagesz=1G hugepagesz=1G hugepages=8
+default_hugepagesz=1G hugepagesz=1G hugepages=20
 ```
 
 The shared and all dedicated cpu cores in the json runtime config are isolated, every other core is not. The number of
@@ -64,7 +64,7 @@ validated and written as metadata, the run is aborted if any check fails:
 
 - every core from config in `/sys/devices/system/cpu/isolated` and `nohz_full`
 - `rcu_nocbs` in `/proc/cmdline` contains all isolated cores and `irqaffinity` in `/proc/cmdline` contains none of them
-- turbo is enabled, `kptr_restrict=0` and `perf_event_paranoid=-1`
+- turbo is enabled, `kptr_restrict=0` and `perf_event_paranoid <= 1`
 - every core is in `performance` mode
 - There are enough available OS allocated huge pages if the config reserves huge pages.
 
@@ -98,7 +98,7 @@ config_path
 - `--no-aslr` could be used to disable ASLR with `setarch --addr-no-randomize`
 - `--skip-isolation-check` skip isolation check, but metadata is still collected. You may add keys
   `skip_isolation_check`, `skip_cache_drop`, `without_systemd` and `fallback_to_none` to the config, take a look at
-  `config/machine-no-isol.json`.
+  `configs/machine-no-isol.json`.
 
 The full output of the app is saved to `<benchmark_path>/<app>/<label>/run_<rep>/logs.txt`.
 
