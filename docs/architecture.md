@@ -280,7 +280,7 @@ application is thrown. The application does not silently drop records.
 
 The timestamps are TSC ticks, `rdtscp` is used so that it would wait for all the preceding instructions to complete. The
 frequency is calibrated once at startup. `calc_stats` must be run on the same machine as it recalculates the same
-frequency and uses it afterwards. Take a look at [base.md](base.md#time) for more info.
+frequency and uses it afterwards.
 
 The replay file is simply a request journal that is fully read into the memory through `InMemoryFile`. `InMemoryFile`
 reads the whole files into 1GB huge pages at startup, so the replay generator does not touch nvme itself during the run.

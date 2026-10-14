@@ -33,7 +33,7 @@ environment.
   threaded applications. Take a look at [architecture.md](docs/architecture.md).
 - Each transport satisfies the `SinkOf` concept. `SPSCQueue` is lock-free with cached indices, correct memory ordering
   and 128-bytes separation of the producer and consumer states. `AlignedQueue` is a wrapper that puts every element on
-  its own cache line. Take a look at [base.md](docs/base.md).
+  its own cache line.
 - There are no heap allocations on the hot path: it's checked in runtime, `operator new` is overridden and
   `AllocatorTracking` sums up all allocations that actually happened after initialization. In case there are some
   allocations, the app fails after the loop.
@@ -257,9 +257,6 @@ exchange/output/        External event output classes: ExchangeDispatcher
 - [order_generation.md](docs/order_generation.md) -
 - [benchmarking.md](docs/benchmarking.md) -
 - [benchmark_results.md](docs/benchmark_results.md) -
-- [configuration.md](docs/configuration.md) -
-- [development.md](docs/development.md) -
-- [base.md](docs/base.md) -
 
 ## Scope
 
