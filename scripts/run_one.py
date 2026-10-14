@@ -54,6 +54,8 @@ def run_one(
     if build:
         with plumbum.local.cwd(ROOT_PATH):
             plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
+    results_path = ROOT_PATH / config["results"]["logs"]
+    results_path.parent.mkdir(parents=True, exist_ok=True)
     if not skip_isolation_check:
         check_isolation(path=config_path)
     if perf and perf_path is None:
