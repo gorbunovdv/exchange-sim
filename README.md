@@ -17,15 +17,19 @@ for each stage.
 
 The numbers below are in-process round trips. Take a look at [benchmarking.md](docs/benchmarking.md) for the exact info
 on benchmarking and [benchmark_results.md](docs/benchmark_results.md) for the full tables, system specifications and
-environment.
+environment. The metric here is `last_report`.
 
-| Application     | Request | p50, ns | p99, ns | p99.9, ns | Throughput, req/s |
-| --------------- | ------- | ------- | ------- | --------- | ----------------- |
-| `replay_el_app` | ADD     | <TBD>   | <TBD>   | <TBD>     | <TBD>             |
-| `replay_el_app` | CANCEL  | <TBD>   | <TBD>   | <TBD>     |                   |
-| `replay_el_app` | REPLACE | <TBD>   | <TBD>   | <TBD>     |                   |
-| `replay_cb_app` | ADD     | <TBD>   | <TBD>   | <TBD>     | <TBD>             |
-| `replay_mt_app` | ADD     | <TBD>   | <TBD>   | <TBD>     | <TBD>             |
+| Application     | Request            | p50, ns | p99, ns | p99.9, ns | Throughput, req/s |
+| --------------- | ------------------ | ------- | ------- | --------- | ----------------- |
+| `replay_el_app` | ADD, 10 trades     | 963     | 1,209   | 1,368     | 3,303,258         |
+| `replay_el_app` | CANCEL             | 148     | 257     | 357       |                   |
+| `replay_el_app` | REPLACE, 10 trades | 1,079   | 1,335   | 1,513     |                   |
+| `replay_cb_app` | ADD, 10 trades     | 991     | 1,220   | 1,351     | 3,254,139         |
+| `replay_mt_app` | ADD, 10 trades     | 3,230   | 11,781  | 19,266    | 3,953,390         |
+
+`10 trades` means that the new order traded against `10` resting orders of `EURUSD`, `CANCEL` never trades. The same
+requests with `0` trades take `202` ns (`ADD`) and `374` ns (`REPLACE`) at p50 in `replay_el_app`, take a look at
+[benchmark_results.md](docs/benchmark_results.md) for the full breakdown by the number of trades.
 
 ## Main specifications
 

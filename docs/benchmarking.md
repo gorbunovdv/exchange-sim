@@ -43,15 +43,15 @@ the apps write several million requests per second.
 
 ## HW & OS settings rationale
 
-The main benchmarking machine has Intel Core Ultra 9 285K, 64GB RAM, Samsung SSD 9100 PRO 2TB and Ubuntu 26.04 under the
+The main benchmarking machine has Intel Core Ultra 9 285K, 64GB RAM, Samsung SSD 9100 PRO 1TB and Ubuntu 26.04 under the
 hood.
 
-Here are the main non-obvious points behind the settings (or lack of them):
+Here are the main non-obvious points behind the settings:
 
 - Intel Core Ultra 9 285K lacks the SMT support, so there's no need to turn it off.
 - The app has been tested with turbo enabled/disabled. Turned on turbo makes the frequency a lot higher (up to 5.7 GHz
-  vs 3.7 GHz of basic frequency). The current result with turbo stays within the CONSISTENT threshold, so there's little
-  need to turn it off.
+  vs 3.7 GHz of basic frequency). The current result with turbo mainly stays within the CONSISTENT threshold, so there's
+  little need to turn it off.
 - The app has been tested with/without core sleep prevention (`processor.max_cstate=1 intel_idle.max_cstate=0`). The
   core is able to achieve a better frequency during the app benchmark with other cores allowed to sleep, so it's been
   decided to leave core sleep prevention off.
@@ -194,7 +194,7 @@ Both modes print the `summary` table after the latency tables, it is built from 
 - `throughput` is requests per second, calculated as the number of non-skipped requests divided by the time between the
   first and the last of them.
 - `rejections` is the total count of rejected non-skipped requests, grouped by `rejections <type> <reason>`
-- For each `rejectins <type> <reason>` there's a separate line that describes this group.
+- For each `rejection <type> <reason>` there's a separate line that describes this group.
 
 ## Label managements
 
