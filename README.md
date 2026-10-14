@@ -288,3 +288,16 @@ exchange/output/        External event output classes: ExchangeDispatcher
 
 - Replace `boost::decimal` with integer ticks
 - Comparison of `StlL3BookContainer` with other L3 book containers
+
+## License
+
+Copyright (c) 2026 Dmitry Gorbunov.
+
+Unless otherwise indicated, this project is licensed under the
+PolyForm Strict License 1.0.0. See [LICENSE](LICENSE) for the full terms.
+
+The license permits noncommercial use but does not grant permission
+to modify or redistribute the software.
+
+Third-party components and separately licensed files remain subject
+to their respective licenses.
