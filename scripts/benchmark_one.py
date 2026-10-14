@@ -28,12 +28,13 @@ def benchmark_one(
     skip_cache_drop=False,
     build=True,
 ):
+    config = load_config(config_path)
     if build:
         with plumbum.local.cwd(ROOT_PATH):
             plumbum.local["just"]["build-from-scratch"][preset].run(stdout=sys.stdout, stderr=sys.stderr)
+    skip_isolation_check = skip_isolation_check or config.get("skip_isolation_check", False)
     if not skip_isolation_check:
         check_isolation(path=config_path)
-    config = load_config(config_path)
     if huge_pages is None and "memory" in config and config["memory"]["reserve_huge_os_pages"]:
         huge_pages = config["memory"]["huge_os_pages_count"]
     log_path = ROOT_PATH / config["results"]["logs"]
