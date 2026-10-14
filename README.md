@@ -293,11 +293,9 @@ exchange/output/        External event output classes: ExchangeDispatcher
 
 Copyright (c) 2026 Dmitry Gorbunov.
 
-Unless otherwise indicated, this project is licensed under the
-PolyForm Strict License 1.0.0. See [LICENSE](LICENSE) for the full terms.
+Unless otherwise indicated, this project is licensed under the PolyForm Strict License 1.0.0. See [LICENSE](LICENSE) for
+the full terms.
 
-The license permits noncommercial use but does not grant permission
-to modify or redistribute the software.
+The license permits noncommercial use but does not grant permission to modify or redistribute the software.
 
-Third-party components and separately licensed files remain subject
-to their respective licenses.
+Third-party components and separately licensed files remain subject to their respective licenses.
