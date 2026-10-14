@@ -252,11 +252,11 @@ exchange/output/        External event output classes: ExchangeDispatcher
 
 ## Documentation
 
-- [architecture.md](docs/architecture.md) -
-- [matching.md](docs/matching.md) -
-- [order_generation.md](docs/order_generation.md) -
-- [benchmarking.md](docs/benchmarking.md) -
-- [benchmark_results.md](docs/benchmark_results.md) -
+- [architecture.md](docs/architecture.md) - Documentation of architecture
+- [matching.md](docs/matching.md) - Documentation of matching engine
+- [order_generation.md](docs/order_generation.md) - Documentation of current order generation
+- [benchmarking.md](docs/benchmarking.md) - Documentation of benchmarking architecture
+- [benchmark_results.md](docs/benchmark_results.md) - Current benchmark results
 
 ## Scope
 
