@@ -6,3 +6,5 @@ tabulate==0.10.0
 mypy==2.3.0
 types-tqdm==4.69.0.20260724
 types_tabulate==0.10.0.20260508
+mdformat==1.0.0
+mdformat-gfm==1.0.0
