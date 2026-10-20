@@ -1,6 +1,6 @@
 # Benchmark results
 
-All numbers in this document are in-process round trips measured with the pipeline described in the
+All numbers in this document are in-process round trips measured with the pipeline described in
 [benchmarking.md](benchmarking.md).
 
 ## Environment
@@ -39,16 +39,16 @@ skipped.
 
 ## General info
 
-The multithreaded applications haven't been optimized for latency - as the same order goes through the same pipeline
-stages, multithreaded apps are inferior in terms of latency as they simply add unnecessary SPSC queues to the pipeline.
+The multi-threaded applications haven't been optimized for latency - as the same order goes through the same pipeline
+stages, multi-threaded apps are inferior in terms of latency as they simply add unnecessary SPSC queues to the pipeline.
 
-The following results show latency and throughput for callback and event loop applications, while only throughput for
-multithreaded applications. You may find the full results of each application in the `benchmark_results` directory.
+The following results show latency and throughput for callback and event loop applications and only throughput for
+multi-threaded applications. You may find the full results of each application in the `benchmark_results` directory.
 
 ## Latency
 
-The latency metric used is `last_report`. As market data preceeds the reports, `last_report` is the last data event sent
-by exchange to client. All values are in nanoseconds, as printed by `just evaluate` in single mode with
+The latency metric used is `last_report`. As market data precedes the reports, `last_report` is the last data event sent
+by the exchange to the client. All values are in nanoseconds, as printed by `just evaluate` in single mode with
 `--percentiles 50 99 99.9`. `Trades` is the number of trades the request caused, `Events` is the smallest number of
 requests in the group in any run.
 
@@ -155,13 +155,14 @@ requests in the group in any run.
 
 ## Run-to-run drift
 
-`just evaluate` prints the maximum difference between median of percentile and value across the runs. A group is flagged
-as `INCONSISTENT` when the relative drift is above 3.5% and the absolute drift is above 15 ns, otherwise the verdict is
-`-`.
+`just evaluate` prints the maximum difference between the median of a percentile and its value across the runs. A group
+is flagged as `INCONSISTENT` when the relative drift is above 3.5% and the absolute drift is above 15 ns, otherwise the
+verdict is `-`.
 
 This table is an aggregation of the groups of `replay_el_app` over the number of trades: for every security and request
 type it shows the largest drift among the groups with at least 10000 orders with 0 to 10 trades. Please note that
-absolute and relative numbers are actually independent: absolute is maximum drift, relative is maximum relative drift.
+absolute and relative numbers are actually independent: absolute is the maximum drift, relative is the maximum relative
+drift.
 
 | Symbol | Type    | max p50 drift, ns (%) | max p99 drift, ns (%) | max p99.9 drift, ns (%) |
 | ------ | ------- | --------------------- | --------------------- | ----------------------- |
