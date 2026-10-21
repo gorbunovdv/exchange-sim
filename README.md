@@ -143,7 +143,8 @@ Take a look at [order_generation.md](docs/order_generation.md) for details.
   multi-threaded applications. Take a look at [architecture.md](docs/architecture.md).
 - Each transport satisfies the `SinkOf` concept. `SPSCQueue` is lock-free with cached indices, correct memory ordering
   and 128-byte separation of the producer and consumer states. `AlignedQueue` is a wrapper that puts every element on
-  its own cache line.
+  its own cache line. Take a look at
+  [optimizations.md](docs/optimizations.md#memory-orders-and-cached-indices-in-spscqueue) for the numbers behind it.
 - There are no heap allocations on the hot path: it's checked at runtime, `operator new` is overridden and
   `AllocatorTracking` sums up all allocations that actually happened after initialization. In case there are any
   allocations, the app fails after the loop.
@@ -302,6 +303,8 @@ exchange/output/        External event output classes: ExchangeDispatcher
 - [benchmarking.md](docs/benchmarking.md) - Documentation of the benchmarking architecture
 - [benchmark_results.md](docs/benchmark_results.md) - Current benchmark results
 - [testing.md](docs/testing.md) - Documentation of tests, runtime checks and CI
+- [optimizations.md](docs/optimizations.md) - Optimization stories: what was measured, what was changed and what was
+  rejected
 
 ## Scope
 
@@ -332,7 +335,8 @@ exchange/output/        External event output classes: ExchangeDispatcher
 ## Future plans
 
 - Replace `boost::decimal` with integer ticks. `boost::decimal` was chosen at first since prices and amounts stay the
-  same during the whole workflow.
+  same during the whole workflow. `decimal_fast` has already been tried and rejected, take a look at
+  [optimizations.md](docs/optimizations.md#decimal_fast-vs-decimal).
 - Comparison of `StlL3BookContainer` with other L3 book containers
 
 ## About the author

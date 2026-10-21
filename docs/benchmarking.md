@@ -96,7 +96,8 @@ config_path
   - all artifacts (perf, metadata, logs, stats, summary) are copied to `<benchmark_path>/<app>/<label>/run_<rep>/`
 - Only exit codes 0 and 124 are considered successful, any other exit code stops the run
 - `--use-perf` and `--perf-parameters` could be used to run `perf stat` on each run and copy the results
-- `--no-aslr` could be used to disable ASLR with `setarch --addr-no-randomize`
+- `--no-aslr` could be used to disable ASLR with `setarch --addr-no-randomize`, it was added to hunt down the 4K
+  aliasing drift, take a look at [optimizations.md](optimizations.md#4k-store-load-aliasing-in-the-event-loop)
 - `--skip-isolation-check` skips the isolation check, but metadata is still collected. You may add keys
   `skip_isolation_check`, `skip_cache_drop`, `without_systemd` and `fallback_to_none` to the config, take a look at
   `configs/machine-no-isol.json`.

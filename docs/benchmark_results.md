@@ -157,7 +157,8 @@ requests in the group in any run.
 
 `just evaluate` prints the maximum difference between the median of a percentile and its value across the runs. A group
 is flagged as `INCONSISTENT` when the relative drift is above 3.5% and the absolute drift is above 15 ns, otherwise the
-verdict is `-`.
+verdict is `-`. The p50 drift used to be +-16 ns before the 4K aliasing fix, take a look at
+[optimizations.md](optimizations.md#4k-store-load-aliasing-in-the-event-loop).
 
 This table is an aggregation of the groups of `replay_el_app` over the number of trades: for every security and request
 type it shows the largest drift among the groups with at least 10000 orders with 0 to 10 trades. Please note that

@@ -14,6 +14,8 @@ Each security belongs to a `section`. Sections are sorted by name and numbered, 
 `SectionID` to each section. Sections are used only in the multi-threaded design where sharding by section is required.
 
 `Price` is `boost::decimal::decimal64_t`. `Amount` is `boost::decimal::decimal32_t`, both are wrapped in `StrongType`.
+`decimal_fast` types have been tried and rejected, take a look at
+[optimizations.md](optimizations.md#decimal_fast-vs-decimal).
 
 ### Requests
 

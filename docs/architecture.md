@@ -149,7 +149,8 @@ Each stage basically processes everything the previous stage produced on the cur
 either. A single order that produces several hundred trades will overflow the queues.
 
 The four static vectors are separated by padding, a `static_assert` guarantees that the prefixes of these vectors are
-separate modulo 4096 to prevent 4K aliasing.
+separate modulo 4096 to prevent 4K aliasing. Take a look at
+[optimizations.md](optimizations.md#4k-store-load-aliasing-in-the-event-loop) for the story behind it.
 
 ### Multi-threaded app
 
@@ -202,7 +203,8 @@ flowchart LR
   created within its own `SectionID` and creates only books for securities from this section.
 - `ExchangeDispatcher` is a `ThreadReceiver` that has a `MultiSectionQueue` as input: it's `number of sections` SPSC
   queues, one SPSC queue per section. To obtain the next event from this queue, it iterates over all
-  `number of sections` queues.
+  `number of sections` queues. Placing `ExchangeDispatcher` on the same core as `MatchingEngine` has been tried and
+  rejected, take a look at [optimizations.md](optimizations.md#core-hop-against-pipelining-in-the-multi-threaded-app).
 - The main thread consumes market data and reports from queues only if it's currently impossible to generate any more
   requests (`pending_transactions == max_pending_transactions`). The order the queues are drained in is alternated on
   each step.
@@ -212,7 +214,8 @@ flowchart LR
 
 All queues have `1 << 14` slots. `AlignedQueue` puts each slot on its own cache line to prevent the producer and the
 consumer from touching the same line. The queues never block: `SPSCQueue` is lock-free and an overflow throws an
-exception that terminates the whole application.
+exception that terminates the whole application. The memory orders and the cached indices of `SPSCQueue` are covered in
+[optimizations.md](optimizations.md#memory-orders-and-cached-indices-in-spscqueue).
 
 The startup waits until every `Receiver` reports `ready_to_receive()` which means that the thread is fully initialized,
 pinned and ready to receive events. Take a look at [Shutdown](#shutdown) for the shutdown sequence.
