@@ -90,7 +90,7 @@ template<template<typename> typename OrderGenerator,
     template<typename, typename> typename ExchangeDispatcher>
 void run_single_threaded_event_loop_app(const std::shared_ptr<Runtime>& runtime, const glz::generic& config) {
   auto dedicated_core = runtime->core_allocator().lease_core(CoreType::DEDICATED);
-  dedicated_core.pin_thread("run_single_threaded_callback_app");
+  dedicated_core.pin_thread("run_single_threaded_event_loop_app");
 
   SecurityStorage security_storage(generate_securities(config));
 

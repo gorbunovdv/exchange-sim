@@ -63,10 +63,12 @@ test-from-scratch preset='clang-debug-asan':
 format:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file -i
     git ls-files -z -- '*.py' | xargs -0 -r ruff format
+    git ls-files -z -- '*.md' | xargs -0 -r mdformat
 
 format-check:
     git ls-files -z -- '*.cpp' '*.h' | xargs -0 -r clang-format --style=file --dry-run --Werror
     git ls-files -z -- '*.py' | xargs -0 -r ruff format --check
+    git ls-files -z -- '*.md' | xargs -0 -r mdformat --check
 
 pylint *args:
     git ls-files -z -- '*.py' | xargs -0 -r ruff check {{ args }}

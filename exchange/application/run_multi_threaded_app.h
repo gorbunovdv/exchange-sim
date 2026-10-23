@@ -1,7 +1,6 @@
 #pragma once
 #include "base/allocators/allocator_tracking.h"
 #include "base/file.h"
-#include "base/mpsc_queue.h"
 #include "base/thread_receiver.h"
 #include "base/threaded_journal.h"
 #include "base/threading/runtime.h"
@@ -24,9 +23,6 @@ namespace exchange_sim {
 
 template<typename ObjectType>
 using AlignedSPSCQueue = AlignedQueue<SPSCQueue, ObjectType>;
-
-template<typename ObjectType>
-using AlignedMPSCQueue = AlignedQueue<MPSCQueue, ObjectType>;
 
 template<typename ArgumentClass, typename BaseClass, template<typename> typename QueueType>
 class MultiSectionReceiver {

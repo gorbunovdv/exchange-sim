@@ -3,8 +3,10 @@
 #include "base/file.h"
 #include "base/inmemory_file.h"
 #include "base/threaded_journal.h"
+#include "base/traits.h"
 
 #include "exchange/domain/requests.h"
+#include "pending_transactions_skill.h"
 
 #include <boost/hof/match.hpp>
 #include <glaze/glaze.hpp>
@@ -12,6 +14,7 @@
 namespace exchange_sim {
 
 template<typename GeneratorInterface>
+  requires(derived_from_all<GeneratorInterface, generator_interface_skills::PendingTransactions>)
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 class ReplayOrderGenerator {
 public:
